@@ -1,0 +1,4 @@
+[pydocstyle]
+convention = numpy
+ignore-decorators= (property|pytest.fixture|locator)
+match-dir='[^\venv].*' # ignore venv

@@ -1,0 +1,148 @@
+"""Locust Custom Shapes.
+
+Sometimes, a completely custom shaped load test is required that cannot be achieved by
+simply setting or changing the user count and spawn rate. For example, one might want to
+generate a load spike or ramp up and down at custom times. By using a one of these
+classes which extend LoadTestShape, we have full control over the user count and spawn
+rate at all times.
+"""
+import logging
+
+from locust import LoadTestShape
+
+logger = logging.getLogger()
+
+
+class Default(LoadTestShape):
+    """Base shape for our all Load test shapes.
+
+    Replicate passing only runtime, spawn rate, users on the command line.
+    Also serves as the Base for the rest of our shapes, so that the launch method knows
+    how to instantiate. Note that all shapes now take in additional args in the
+    constructor, they are not obligated to do anything with them.
+    """
+
+    DEFAULT_RUNTIME = 120
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.users = kwargs.get("users") or 1
+        self.spawn_rate = kwargs.get("spawn_rate") or 1
+        self.runtime = kwargs.get("runtime") or self.DEFAULT_RUNTIME
+        self._configured_runtime = self.runtime
+
+    @property
+    def configured_runtime(self):
+        return self._configured_runtime
+
+    def tick(self):
+        """Tell locust about the new values for users and spawn rate.
+
+        Called by locust about 1x/second, allowing the shape to adjust the values over
+        time or terminate the test.
+
+        Per the locust documentation, return None to terminate the test. When using
+        locust as a library, you must also set a different greenlet to send the quit
+        message when runtime has elapsed to (see the launch method).
+        """
+        return self.users, self.spawn_rate
+
+
+class Smoke(Default):
+    """Shape to run for smoke tests, always use default values."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+
+class Trend(Default):
+    """Convenience shape with our standard trend parameters."""
+
+    # for the trend shape, override the default to 10m
+    DEFAULT_RUNTIME = 600
+
+    def __init__(self, *args, **kwargs):
+        kwargs["users"] = 10
+        kwargs["spawn_rate"] = 0.1
+        # don't specify runtime here because mostly we want it
+        # to pick up the runtime from scenario yaml
+        super().__init__(*args, **kwargs)
+
+
+class Stages(Default):  # noqa E501
+    """
+    Stolen from this set of examples as part of the locust.io documentation.
+    https://github.com/locustio/locust/blob/master/examples/custom_shape/stages.py
+
+    Keyword arguments:
+        stages -- A list of dicts, each representing a stage with the following keys:
+            duration -- When this many seconds pass the test is advanced to the next
+            stage
+            users -- Total user count
+            spawn_rate -- Number of users to start/stop per second
+            stop -- A boolean that can stop that test at a specific stage
+        stop_at_end -- Can be set to stop once all stages have run.
+
+    Most likely, you'd want to extend this class and only define a new stages attr.
+    """
+
+    stages = [
+        {"duration": 60, "users": 1, "spawn_rate": 1},
+        {"duration": 120, "users": 2, "spawn_rate": 2},
+        {"duration": 240, "users": 3, "spawn_rate": 3},
+        {"duration": 300, "users": 4, "spawn_rate": 4},
+        {"duration": 360, "users": 3, "spawn_rate": 1},
+        {"duration": 420, "users": 1, "spawn_rate": 1, "stop": True},
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._configured_runtime = self.stages[-1].get("duration", 0)
+
+    def tick(self):
+        """Tell locust about the new values for users and spawn rate."""
+        run_time = self.get_run_time()
+
+        logger.debug(f"Tick: runtime=[{run_time}]")
+
+        for stage in self.stages:
+            if run_time < stage["duration"]:
+                tick_data = (stage["users"], stage["spawn_rate"])
+                return tick_data
+
+        return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
+
+
+class Spike(Stages):
+    """A spike shape that adds many users quickly, then cools down after.
+
+    Takes the following parameters from the command line
+    users = target number of users for spike stage
+    spawn_rate = how quickly to add the users during the spike stage
+    runtime = how long to make the *spike* stage, not that the cooldown stage gets
+    added on so the total length of the shape is runtime + cooldown_duration
+    cooldown_duration = how much time to take to get back to 1 user (uses same spawn
+    rate as the spike for now); if omitted, will use the runtime
+
+    """
+
+    stages = [{"duration": 10, "users": 1, "spawn_rate": 1}]  # effectively a no-op
+
+    def __init__(self, *args, **kwargs):
+        users = kwargs.get("users") or 1
+        spike_duration = kwargs.get("runtime") or 600
+        spawn_rate = kwargs.get("spawn_rate") or users / spike_duration
+        # checking kwargs still allows someone to create another shape that extends the
+        # this spike shape but with a different cooldown. if you use this shape
+        # directly, you will always get a 10m cooldown period
+        cooldown_duration = kwargs.get("cooldown_duration") or 600
+        cooldown_spawn_rate = users / cooldown_duration
+        self.stages = [
+            {"duration": spike_duration, "users": users, "spawn_rate": spawn_rate},
+            {
+                "duration": spike_duration + cooldown_duration,
+                "users": 1,
+                "spawn_rate": cooldown_spawn_rate,
+            },
+        ]
+        super().__init__(*args, **kwargs)

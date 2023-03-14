@@ -1,0 +1,8 @@
+[flake8]
+ignore = E203, W503
+max-line-length = 88
+max-complexity = 18
+exclude=data-files,docs,.git,__pycache__,venv
+application_import_names = grasshopper
+import_order_style = pep8
+application-import-names = grasshopper, src
