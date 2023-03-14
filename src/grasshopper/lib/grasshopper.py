@@ -1,13 +1,7 @@
-"""Module: Grasshopper.
-
-The Grasshopper class is the main entry point for accessing
-grasshopper functionality.
-
-"""
 import logging
 import os
 import signal
-from typing import Optional, Type, Union
+from typing import Optional, Type, Union, asdf
 
 import gevent
 import locust
@@ -21,7 +15,7 @@ logger = logging.getLogger()
 
 
 class Grasshopper:
-    """Main entry point to access addins and extensions."""
+    """Main entry point to access addins and extensions.asjkhdbakjsdbkjasbdjhabsdjhbasjdhbajshdbjahsdbjhabsd"""
 
     def __init__(self, global_configuration: dict = {}, **kwargs):
         self.global_configuration = global_configuration
