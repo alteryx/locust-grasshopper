@@ -16,6 +16,7 @@ Here are some key functionalities that this project extends on Locust:
 ## Installation
 This package can be installed via pip: `pip install locust-grasshopper`
 
+
 ## Configuring Grasshopper
 <a id="creating"></a>
 
