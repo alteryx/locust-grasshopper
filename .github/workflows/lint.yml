@@ -1,9 +1,11 @@
-name: Lint
+name: pipeline
 
 on: [push, pull_request]
 
 jobs:
   black-lint:
+    strategy:
+      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -15,6 +17,8 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: black . --check
   flake8-lint:
+    strategy:
+      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -26,6 +30,8 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: flake8 .
   pydocstyle-lint:
+    strategy:
+      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -36,3 +42,4 @@ jobs:
           python-version: "3.10"
       - run: pip install -r requirements-dev.txt
       - run: pydocstyle src
+
