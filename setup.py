@@ -15,7 +15,5 @@ https://packaging.python.org/en/latest/tutorials/packaging-projects/
 from setuptools import setup
 
 setup(
-    version="1.0.32",
     entry_points={"pytest11": ["locust_grasshopper = grasshopper.lib.fixtures"]},
-    classifiers=["Framework :: Pytest"],
 )

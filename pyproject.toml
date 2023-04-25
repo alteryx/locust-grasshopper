@@ -1,3 +1,65 @@
 [build-system]
 requires = ["setuptools>=42", "wheel", "cmake>=3.11.0,<4.0.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "locust-grasshopper"
+version = "1.0.32" # Managed by bump2version
+readme = {file = "README.md", content-type = "text/markdown"}
+description = "a load testing tool extended from locust"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Traffic Generation",
+    "Topic :: System :: Distributed Computing",
+    "Framework :: Pytest"
+]
+
+authors = [
+    {name="Alteryx, Inc.", email="open_source_support@alteryx.com"}
+]
+maintainers = [
+    {name="Alteryx, Inc.", email="open_source_support@alteryx.com"}
+]
+keywords = ["load testing", "performance", "locust", "grasshopper"]
+license = {file = "LICENSE"}
+requires-python = ">=3.9,<4"
+dependencies = [
+    "gevent ~=21.12.0",
+    "influxdb ~= 5.3.1",
+    "locust ~= 2.12.2",
+    "locust-influxdb-listener ~= 0.0.9",
+    "pytest ~= 6.2.5",
+    "termcolor ~= 1.1.0",
+    "pyyaml ~= 5.4",
+    "tag-matcher ~= 0.0.5"
+]
+
+[project.urls]
+"repository" = "https://github.com/alteryx/locust-grasshopper"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.isort]
+profile = "black"
+known_first_party = [
+    "grasshopper"
+]
+multi_line_output = 3
+atomic = "True"
+honor_noqa = "True"
+include_trailing_comma = "True"
+force_grid_wrap = "0"
+use_parentheses = "True"
+ensure_newline_before_comments = "True"
+line_length = "88"
+treat_all_comments_as_code = "True"
+
+[tool.black]
+line-length = 88
