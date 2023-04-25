@@ -4,6 +4,7 @@ on: push
 
 jobs:
   black-lint:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -15,6 +16,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: black . --check
   flake8-lint:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -26,6 +28,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: flake8 .
   pydocstyle-lint:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -37,6 +40,7 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: pydocstyle src
   unit-test:
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     needs: [black-lint, flake8-lint, pydocstyle-lint]
     runs-on: ubuntu-latest
     steps:
