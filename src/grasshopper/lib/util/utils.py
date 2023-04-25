@@ -142,16 +142,17 @@ def check(
 
 def report_thresholds_to_console(trend_dict):
     """Print all the thresholds to the console in a pretty table."""
-    logger.info("----------------------THRESHOLD REPORT-------------------------")
+    length = 32
+    logger.info("-" * length + " THRESHOLD REPORT " + "-" * length)
     logger.info(
-        "{:<30} {:<10} {:<10} {:<10}".format(
+        "{:<45} {:<10} {:<10} {:<10}".format(
             "Trend_Name", "Percentile", "Limit", "Actual"
         )
     )
     for trend_name, trend_values in trend_dict.items():
         if "thresholds" in trend_values:
             for threshold_item in trend_values["thresholds"]:
-                formatted_result_string = "{:<30} {:<10} {:<10} {:<10}".format(
+                formatted_result_string = "{:<45} {:<10} {:<10} {:<10}".format(
                     trend_name,
                     int(threshold_item["percentile"] * 100),
                     f'{threshold_item["less_than_in_ms"]}ms',
@@ -163,6 +164,7 @@ def report_thresholds_to_console(trend_dict):
                     )
                 else:
                     logger.info(colored(formatted_result_string, "red", attrs=["bold"]))
+    logger.info("-" * 82)
 
 
 def report_checks_to_console(checks_dict):
@@ -172,9 +174,10 @@ def report_checks_to_console(checks_dict):
         CheckConstants.VERDICT_PASSED_RATE_OVER_THRESHOLD: "yellow",
         CheckConstants.VERDICT_FAILED: "red",
     }
-    logger.info("------------------------CHECKS REPORT---------------------------")
+    length = 55
+    logger.info("-" * length + " CHECKS REPORT " + "-" * length)
     logger.info(
-        "{:<30} {:<10} {:<10} {:<10} {:<10}".format(
+        "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
             "Check_Name", "Passed", "Failed", "Total", "Percentage"
         )
     )
@@ -185,12 +188,12 @@ def report_checks_to_console(checks_dict):
             check_value["total"],
             check_value["percentage_passed_display"],
         )
-        result_string = "{:<30} {:<10} {:<10} {:<10} {:<10}".format(
+        result_string = "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
             check_key, passed, failed, total, percent
         )
         color_to_print = color_map.get(check_value["verdict"]) or "white"
         logger.info(colored(result_string, color_to_print, attrs=["bold"]))
-    logger.info("----------------------------------------------------------------")
+    logger.info("-" * 125)
 
 
 def epoch_time():

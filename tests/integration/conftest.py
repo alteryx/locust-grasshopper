@@ -1,44 +1,18 @@
-"""A file which is used to establish pytest fixtures, plugins, hooks, etc."""
+"""Module: Contest.py.
 
-import pytest
+Conftest for use with integration tests for Grasshopper.
 
-from grasshopper.lib.util.utils import highlight_print
+"""
+import os
 
+# import pytest
 
-def pytest_addoption(parser):
-    """Append to existing grasshopper options."""
-    parser.addoption(
-        "-H",
-        "--host",
-        action="store",
-        default="http://default.url.org",
-        help="Base url for test",
-    )
+GRASSHOPPER_CONFIG_FILE_PATH = os.path.join(
+    os.path.abspath(os.path.dirname(__file__)), "grasshopper.config"
+)
 
-
-@pytest.fixture(scope="function", autouse=True)
-def custom_args(request, grasshopper_args):
-    # Arguments used by the launch locust code
-    args = {"RUN_TIME_PER_TEST": int(grasshopper_args.get("runtime"))}
-
-    # Arguments passed on to locust User class
-    args.update({"LOCUST_HOST": request.config.getoption("--host")})
-
-    highlight_print(f"\n\nCustom arguments for this journeys are {args}\n\n")
-
-    return args
-
-
-@pytest.fixture(scope="session", autouse=True)
-def add_workspace_token():
-
-    import os
-
-    hard_coded_token = (
-        "eyJ0b2tlbklkIjoiNWVlYWVjZWMtOWE2ZS00OTc1LTlkYjQtNjhmM2Q5Y2Qy"
-        "OWMwIiwic2VjcmV0IjoiZjIzNjc0ZTMyOWE4OWMyNmRjNDExYzk5ODQ5M2ZmNz"
-        "dkY2IyMDRkNDlmN2NhMTYxMjZjMjg1NjI1NzM4Nzk4ZSJ9"
-    )
-    os.environ["TRIFACTA_API_TOKEN"] = hard_coded_token
-
-    return os.environ["TRIFACTA_API_TOKEN"]
+# Leaving this here because sometimes we want to turn it on for testing, but we don't
+# want to use a config file unless the grasshopper consumer supplies one
+# @pytest.fixture(scope="session")
+# def grasshopper_config_file_path():
+#     return GRASSHOPPER_CONFIG_FILE_PATH

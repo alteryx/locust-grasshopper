@@ -1,0 +1,14 @@
+scenario1:
+  test_file_name: 'test__journey1.py'
+  grasshopper_args:
+    users: 1
+    spawn_rate: 1
+    runtime: 600
+  grasshopper_scenario_args:
+    flow_name : 'POC flow'
+    recipe_name: 'Untitled recipe'
+    engine: 'photon'
+    thresholds: '{"{CUSTOM}PX_TREND_google_home": 1000}'
+  tags:
+    - 'smoke'
+    - 'trend'
