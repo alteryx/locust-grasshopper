@@ -27,8 +27,9 @@ jobs:
         run: |
           git config --global user.email "jmfiola21@gmail.com"
           git config --global user.name "jmfiola"
+          git remote add project_origin https://${{ secrets.PERSONAL_ACCESS_TOKEN}}@github.com/alteryx/locust-grasshopper.git
           bumpversion patch
-          git push -u https://${{ secrets.PERSONAL_ACCESS_TOKEN}}@github.com/alteryx/locust-grasshopper.git main --follow-tags
+          git push project_origin HEAD:$CI_COMMIT_REF_NAME --force && git push project_origin -o ci.skip --tags --force
       - name: Build package
         run: python -m build
       - name: Publish package
