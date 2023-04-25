@@ -1,6 +1,6 @@
 name: quality checks
 
-on: [push, pull_request]
+on: push
 
 jobs:
   black-lint:
