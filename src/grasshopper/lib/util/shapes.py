@@ -35,6 +35,16 @@ class Default(LoadTestShape):
     def configured_runtime(self):
         return self._configured_runtime
 
+    def get_shape_overrides(self):
+        """Return a dict of values that this shape would like to override.
+
+        A shape definition takes precedence over the and may provide new values for
+        runtime, spawn_rate and users. Since this is the base implementation, we don't
+        have an overrides to provide.
+
+        """
+        return {}
+
     def tick(self):
         """Tell locust about the new values for users and spawn rate.
 
@@ -49,10 +59,44 @@ class Default(LoadTestShape):
 
 
 class Smoke(Default):
-    """Shape to run for smoke tests, always use default values."""
+    """Shape to run for smoke tests, use set values."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(runtime=60, users=1, spawn_rate=1)
+
+    def get_shape_overrides(self):
+        """Return overrides from this shape.
+
+        Smoke is a shape that has hardcoded values, so we want to override whatever the
+        user might passed for the shape related values. Shape name always takes
+        precedence over the runtime, spawn_rate and users values.
+
+        """
+        return {"runtime": 60, "users": 1, "spawn_rate": 1}
+
+
+class Testingfixturesonly(Default):
+    """Shape for testing fixtures, DO NOT USE!!."""
+
+    testing_values = {
+        "runtime": 10,
+        "users": 20,
+        "spawn_rate": 0.004,
+        "key_that_should_not_override": "some value",
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(**self.testing_values)
+
+    def get_shape_overrides(self):
+        """Return overrides from this shape.
+
+        Smoke is a shape that has hardcoded values, so we want to override whatever the
+        user might have passed for the shape related values. Shape always takes
+        precedence over the runtime, spawn_rate and users values.
+
+        """
+        return self.testing_values
 
 
 class Trend(Default):

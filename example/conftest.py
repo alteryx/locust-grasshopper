@@ -20,12 +20,12 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="function")
-def example_configuration_values(request, grasshopper_args):  # noqa: F811
+def example_configuration_values(request, complete_configuration):  # noqa: F811
     """Load all the configuration values for a test."""
 
     # value defined by this conftest, specific to this particular test
     config_values = {"foo": request.config.getoption("foo")}
 
     # add in the values coming from grasshopper, if they exist
-    config_values.update(grasshopper_args)
+    config_values.update(complete_configuration)
     return config_values

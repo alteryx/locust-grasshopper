@@ -247,27 +247,28 @@ def test_threshold_console_output(mock_logging, example_trends_dict):
     report_thresholds_to_console(example_trends_dict)
 
     call_strings = [
-        "----------------------THRESHOLD REPORT-------------------------",
-        "{:<30} {:<10} {:<10} {:<10}".format(
+        "-------------------------------- THRESHOLD REPORT "
+        "--------------------------------",
+        "{:<45} {:<10} {:<10} {:<10}".format(
             "Trend_Name", "Percentile", "Limit", "Actual"
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "600ms"),
+            "{:<45} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "600ms"),
             "green",
             attrs=["bold"],
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "1200ms"),
+            "{:<45} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "1200ms"),
             "red",
             attrs=["bold"],
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "1400ms"),
+            "{:<45} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "1400ms"),
             "green",
             attrs=["bold"],
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "2800ms"),
+            "{:<45} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "2800ms"),
             "red",
             attrs=["bold"],
         ),
@@ -279,22 +280,23 @@ def test_threshold_console_output(mock_logging, example_trends_dict):
 def test_checks_console_output(mock_logging, example_checks_dict):
     report_checks_to_console(example_checks_dict)
     call_strings = [
-        "------------------------CHECKS REPORT---------------------------",
-        "{:<30} {:<10} {:<10} {:<10} {:<10}".format(
+        "------------------------------------------------------- CHECKS REPORT "
+        "-------------------------------------------------------",
+        "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
             "Check_Name", "Passed", "Failed", "Total", "Percentage"
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10} {:<10}".format("Passing", 3, 0, 3, "100.0%"),
+            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Passing", 3, 0, 3, "100.0%"),
             "green",
             attrs=["bold"],
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10} {:<10}".format("Failing", 0, 3, 3, "0.0%"),
+            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Failing", 0, 3, 3, "0.0%"),
             "red",
             attrs=["bold"],
         ),
         colored(
-            "{:<30} {:<10} {:<10} {:<10} {:<10}".format("Warning", 2, 1, 3, "66.67%"),
+            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Warning", 2, 1, 3, "66.67%"),
             "yellow",
             attrs=["bold"],
         ),
@@ -314,7 +316,7 @@ def test_append_trend_data(mock_logging, example_trends_dict):
     attrs = {"get_response_time_percentile.return_value": 1100}
     env.stats.get = MagicMock(return_value=MagicMock(**attrs))
     listeners._append_trend_data(env)
-    assert mock_logging.call_count == 6
+    assert mock_logging.call_count == 7
 
 
 def test_append_checks_data(mock_logging, example_checks_dict):

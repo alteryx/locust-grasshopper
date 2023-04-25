@@ -1,0 +1,10 @@
+# .coveragerc to control coverage.py
+[run]
+branch = True
+omit =
+    */tests/*
+    */private/*
+
+[paths]
+source =
+    /locust-grasshopper/*

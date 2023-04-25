@@ -1,4 +1,4 @@
-<div id="top"></div>
+x<div id="top"></div>
 
 # Grasshopper
 
@@ -16,12 +16,114 @@ Here are some key functionalities that this project extends on Locust:
 ## Installation
 This package can be installed via pip: `pip install locust-grasshopper`
 
-
-
-## Supported pytest arguments
+## Configuring Grasshopper
 <a id="creating"></a>
-After installing grasshopper, you should automatically be given access to a variety 
-of pytest params:
+
+Grasshopper adds a variety of parameters relating to performance testing along with a
+variety of ways to set these values.
+
+Recent changes (>= 1.1.1) include an expanded set of sources, almost full access to all 
+arguments via every source (some exceptions outlined below), and the addition of some 
+new values that will be used with integrations such as report portal & slack 
+(integrations are NYI). These changes are made in a backwards compatible manner, 
+meaning all existing grasshopper tests should still run without modification. The 
+original fixtures and sources for configuration are deprecated, but still produce the 
+same behavior.
+
+All of the usual [pytest arguments](https://docs.pytest.org/en/6.2.x/usage.html) also remain available.
+
+The rest of the sections on configuration assume you are using `locust-grasshopper>=1.1.1`.
+
+### Sources
+Currently, there are 5 different sources for configuration values and they are, in 
+precedence order 
+
++ command line arguments
++ environment variables
++ scenario values from a scenario yaml file
++ grasshopper configuration file
++ global defaults (currently stored in code, not configurable by consumers)
+
+Obviously, the global defaults defined by Grasshopper are not really a source for
+consumers to modify, but we mention it so values don't seem to appear "out of thin air".
+
+### Categories
+The argument list is getting lengthy, so we've broken it down into categories. These
+categories are entirely for humans: better readability, understanding and ease of use. 
+Once they are all fully loaded by Grasshopper, they will be stored in a single 
+`GHConfiguration` object (`dict`). By definition, every argument is in only one category
+and there is no overlap of keys between the categories. If the same key is supplied in
+multiple categories, they will be merged with the precedence order as they appear in
+the table.
+
+| Name        | Scope              | Description/Usage                                                                                                                                                                                                                                         |
+|-------------| ------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Grasshopper | Session            | Variables that rarely change, may span many test runs.                                                                                                                                                                                                    |
+| Test Run    | Session            | Variables that may change per test run, but are the<br/>same for every scenario in the run                                                                                                                                                                |
+| Scenario    | Session            | Variables that may change per scenario and are often<br/>scenario specific; Includes user defined variables that are<br/>not declared as command line arguments by Grasshopper.<br/>However, you may use pytest's addoptions hook in your <br/>conftest to define them. |
+
+At least one of the sections must be present in the global configuration file and
+eventually this will be the same in the configuration section of a scenario in a scenario 
+yaml file. Categories are not used when specifying environment variables or command line
+options. We recommend that you use these categories in file sources, but if a variable 
+is in the wrong section, it won't actually affect the configuration loading process.
+
+### Using Configuration Values 
+Your test(s) may access the complete merged set of key-value pairs via the session scoped 
+fixture `complete_configuration`. This returns a `GHConfiguration` object (dict) which
+is unique to the current scenario. This value will be re-calculated for each new scenario
+executed.
+
+A few perhaps not obvious notes about configuration:
++ use the environment variable convention of all uppercase key names (e.g. `RUNTIME=10`)
+to _specify_ a key-value pair via an environment value
++ use the lower case key to _access_ a key from the `GHConfiguration` object 
+(e.g. `x = complete_configuration("runtime")`) regardless of the original source(s)
++ use `--` before the key name to specify it on the command line (e.g. `--runtime=10`)
++ configure a grasshopper configuration file by creating a session scoped fixture loaded 
+by your conftest.py called `grasshopper_config_file_path` which returns the full path to a 
+configuration yaml file.
++ grasshopper supports thresholds specified as
+  + a json string - required for environment variable or commandline, but also accepted
+  from other sources
+  + a dict - when passing in via the `scenario_args` method (more details on that below)
+  or via a journey class's `defaults` attr.
+
+```python
+@pytest.fixture(scope="session")
+def grasshopper_config_file_path():
+    return "path/to/your/config/file"
+```
+
+An example grasshopper configuration file:
+```yaml
+grasshopper:
+  influx_host: 1.1.1.1
+test_run:
+  users: 1.0
+  spawn_rate: 1.0
+  runtime: 600
+scenario:
+  key1 : 'value1'
+  key2: 0
+```
+### Additional Extensions to the configuration loading process
+
+If you would like to include other environment variables that might be present in the
+system, you can define a fixture called `extra_env_var_keys` which returns a list of key
+names to load from the `os.environ`. Keys that are missing in the environment will not 
+be included in the `GHConfiguration` object.
+
+Any environment variables that use the prefix `GH_` will also be included in the 
+`GHConfiguration` object. The `GH_` will be stripped before adding and any names that
+become zero length after the strip will be discarded. This is a mechanism to include any
+scenario arguments you might like to pass via an environment variable.
+
+In the unlikely case that you need to use a different prefix to designate scenario
+variables, you can define a fixture called `env_var_prefix_key` which returns a prefix
+string. The same rules apply about which values are included in the configuration.
+
+### Commonly used arguments
 - `--runtime`: Number of seconds to run each test. Set to 120 by default.
 - `--users`: Max number of users that are spawned. Set to 1 by default.
 - `--spawn_rate` : Number of users to spawn per second. Set to 1 by default.
@@ -30,21 +132,24 @@ If you don't specify a shape or shape instance, then the shape `Default` will be
   which just runs with the users, runtime & spawn_rate specified on the command line (or picks up defaults 
 of 1, 1, 120s). See `utils/shapes.py` for available shapes and information on how to add
 your own shapes.
-- `--scenario_file` If you want a yaml file where you pre-define some grasshopper 
-  args or scenario args, this is how you specify that file path. For example, 
-  `scenario_file=example/scenario_example.YAML`. This arg is currently 
-  the only way to provide custom scenario args.
-- `--scenario_name` If `--scenario_file` was specified, this is scenario name that is within that YAML file that corresponds to the scenario you wish to run. Defaults to None.
+- `--scenario_file` If you want a yaml file where you pre-define some args, this is how 
+you specify that file path. For example, 
+  `scenario_file=example/scenario_example.YAML`. 
+- `--scenario_name` If `--scenario_file` was specified, this is the scenario name that is 
+within that YAML file that corresponds to the scenario you wish to run. Defaults to None.
 - `--tags` See below example: `Loop through a collection of scenarios that match some 
   tag`.
 - `--scenario_delay` Adds a delay in seconds between scenarios. Defaults to 0.
-- `--influxdb` If you want to report your performance test metrics to some influxdb, you must specify a host.
+- `--influx_host` If you want to report your performance test metrics to some influxdb, 
+you must specify a host.
     E.g. `1.1.1.1`. Defaults to None.
-- `--influx_port`: Port for your `influxdb` in the case where it is non-default.
-- `--influx_user`: Username for your `influxdb`, if you have one.
-- `--influx_pwd`: Password for your `influxdb`, if you have one.
+- `--influx_port`: Port for your `influx_host` in the case where it is non-default.
+- `--influx_user`: Username for your `influx_host`, if you have one.
+- `--influx_pwd`: Password for your `influx_host`, if you have one.
 
+## Launching tests with a configuration
 All in all, there are a few ways you can actually collect and pass params to a test:
+
 ### Run a test with its defaults
 `cd example`
 `pytest test_example.py ...`
@@ -73,8 +178,8 @@ is called `Grasshopper.launch_test`. This function can be imported like so: `fro
   extend BaseJourney, which is a grasshopper class 
   (`from grasshopper.lib.journeys.base_journey import BaseJourney`). This can be a 
   list of classes or just a single class.
-- `**grasshopper_args`: In order for the test to have the correct configuration, you 
-  must pass in the kwargs provided by the `grasshopper_args` fixture. See example 
+- `**complete_configuration`: In order for the test to have the correct configuration, you 
+  must pass in the kwargs provided by the `complete_configuration` fixture. See example 
   load test on how to do this properly.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -97,7 +202,7 @@ is called `Grasshopper.launch_test`. This function can be imported like so: `fro
 - If you want to parameterize your journey class, you should use the `scenario_args` 
   dict. This is the proper way to pass in values from outside of 
   the journey for access by the journey code. Note that each journey gets a 
-  ***copy*** on start, so the journey itself can safely modify it's own dictionary 
+  ***copy*** on start, so the journey itself can safely modify its own dictionary 
   once the test is running.
   `scenario_args` exists for any journey that extends the grasshopper `base_journey` 
   class. 
@@ -127,12 +232,12 @@ class ExampleJourney(BaseJourney):
         response = self.client.get('https://google.com', name='get google')
 
 # the pytest test which launches the journey class
-def test_run_example_journey(grasshopper_scenario_args, grasshopper_args):
+def test_run_example_journey(complete_configuration):
     # update scenario args before initialization
-    ExampleJourney.update_incoming_scenario_args(grasshopper_scenario_args)
+    ExampleJourney.update_incoming_scenario_args(complete_configuration)
     
     # launch the journey
-    locust_env = Grasshopper.launch_test(ExampleJourney, **grasshopper_args)
+    locust_env = Grasshopper.launch_test(ExampleJourney, **complete_configuration)
     return locust_env
 ```
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -213,8 +318,8 @@ class ExampleJourney(BaseJourney):
 
 # the pytest test which launches the journey class, thresholds could be 
 # parameterized here as well.
-def test_run_example_journey(grasshopper_scenario_args, grasshopper_args):
-    ExampleJourney.update_incoming_scenario_args(grasshopper_scenario_args)
+def test_run_example_journey(complete_configuration):
+    ExampleJourney.update_incoming_scenario_args(complete_configuration)
     ExampleJourney.update_incoming_scenario_args({
         "thresholds": {
             "{GET}get google": 4000, # 4 second HTTP response threshold
@@ -222,7 +327,7 @@ def test_run_example_journey(grasshopper_scenario_args, grasshopper_args):
             }
         }) 
     
-    locust_env = Grasshopper.launch_test(ExampleJourney, **grasshopper_args)
+    locust_env = Grasshopper.launch_test(ExampleJourney, **complete_configuration)
     return locust_env
 ```
 

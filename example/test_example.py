@@ -46,10 +46,20 @@ class ExampleJourney(BaseJourney):
         )
 
 
-def test_run_example_journey(grasshopper_args, grasshopper_scenario_args):
-    ExampleJourney.update_incoming_scenario_args(grasshopper_scenario_args)
+def test_run_example_journey(complete_configuration):
+    ExampleJourney.update_incoming_scenario_args(complete_configuration)
     locust_env = Grasshopper.launch_test(
         ExampleJourney,
-        **grasshopper_args,
+        **complete_configuration,
     )
     return locust_env
+
+
+# Legacy style pytest function, this is still supported by deprecated
+# def test_run_example_journey(grasshopper_args, grasshopper_scenario_args):
+#     ExampleJourney.update_incoming_scenario_args(grasshopper_scenario_args)
+#     locust_env = Grasshopper.launch_test(
+#         ExampleJourney,
+#         **grasshopper_args,
+#     )
+#     return locust_env
