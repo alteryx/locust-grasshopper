@@ -1,0 +1,23 @@
+name: publish to pypi
+
+on:
+  workflow_run:
+    workflows: quality checks
+    branches: main
+    types: completed
+
+jobs:
+  publish:
+    # `if` required because a workflow run is triggered regardless of
+    # the result of the previous workflow (see the documentation page)
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: echo asdf
+
