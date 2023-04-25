@@ -4,8 +4,6 @@ on: [push, pull_request]
 
 jobs:
   black-lint:
-    strategy:
-      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -17,8 +15,6 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: black . --check
   flake8-lint:
-    strategy:
-      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -30,8 +26,6 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: flake8 .
   pydocstyle-lint:
-    strategy:
-      max-parallel: 1
     runs-on: ubuntu-latest
     steps:
       - name: Check out source repository
@@ -42,4 +36,18 @@ jobs:
           python-version: "3.10"
       - run: pip install -r requirements-dev.txt
       - run: pydocstyle src
+  unit-test:
+    needs: [black-lint, flake8-lint, pydocstyle-lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: pip install -r requirements.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pip install -e .
+      - run: coverage run -a -m pytest tests/unit
 
