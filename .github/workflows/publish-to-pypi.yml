@@ -31,9 +31,9 @@ jobs:
           git push -u https://${{ secrets.PERSONAL_ACCESS_TOKEN}}@github.com/alteryx/locust-grasshopper.git main --follow-tags
       - name: Build package
         run: python -m build
-#      - name: Publish package
-#        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-#        with:
-#          user: __token__
-#          password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+        with:
+          user: ${{ secrets.PYPI_USERNAME }}
+          password: ${{ secrets.PYPI_PASSWORD }}
 
