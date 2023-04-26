@@ -19,15 +19,19 @@ jobs:
         persist-credentials: false
     - name: current_version
       run: echo "current_version=$(grep '# version' version.md | cut -d ' ' -f3)" >> $GITHUB_ENV
-    - name: FragileTech/bump-version
-      uses: FragileTech/bump-version@main
-      with:
-        current_version: "${{ env.current_version }}"
-        files: version.md
-        commit_name: jmfiola
-        commit_email: jmfiola21@gmail.com
-        login: jmfiola
-        token: "${{ secrets.PERSONAL_ACCESS_TOKEN}}"
+    - name: bump_version
+      run: |
+        set -x
+        git config --global user.name jmfiola
+        git config --global user.email jmfiola21@gmail.com
+        git config --global pull.rebase false
+        BRANCH=${GITHUB_REF#refs/heads/}
+        pip install --no-cache-dir bump2version
+        git remote add jmfiola https://jmfiola:${{ secrets.PERSONAL_ACCESS_TOKEN}}@github.com/$GITHUB_REPOSITORY
+        git pull --no-edit jmfiola $BRANCH
+        # merge done by git pull does not update submodules changed in $BRANCH
+        for file in version.md; do ~/.local/bin/bumpversion --allow-dirty --current-version ${{ inputs.current_version }} ${{ inputs.part }} --tag --commit --commit-args="-a" $file; done
+        git push --tags jmfiola HEAD:$BRANCH
     - name: Build package
       run: python -m build
     - name: Publish package
