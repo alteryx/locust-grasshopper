@@ -17,8 +17,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         persist-credentials: false
-    - name: current_version
-      run: echo "current_version=$(grep '# version' version.md | cut -d ' ' -f3)" >> $GITHUB_ENV
     - name: bump_version
       run: |
         set -x
@@ -30,7 +28,7 @@ jobs:
         git remote add jmfiola https://jmfiola:${{ secrets.PERSONAL_ACCESS_TOKEN}}@github.com/$GITHUB_REPOSITORY
         git pull --no-edit jmfiola $BRANCH
         # merge done by git pull does not update submodules changed in $BRANCH
-        for file in version.md; do ~/.local/bin/bumpversion --allow-dirty --current-version ${{ inputs.current_version }} ${{ inputs.part }} --tag --commit --commit-args="-a" $file; done
+        bump2version patch --allow-dirty --tag --commit --commit-args="-a"
         git push --tags jmfiola HEAD:$BRANCH
     - name: Build package
       run: python -m build
