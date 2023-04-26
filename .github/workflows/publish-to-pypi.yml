@@ -23,7 +23,7 @@ jobs:
       uses: FragileTech/bump-version@main
       with:
         current_version: "${{ env.current_version }}"
-        files: version.md
+        files: version.md pyproject.toml
         commit_name: jmfiola
         commit_email: jmfiola21@gmail.com
         login: jmfiola
