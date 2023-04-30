@@ -54,4 +54,3 @@ def test_run_example_journey(complete_configuration, example_configuration_value
         **complete_configuration,
     )
     return locust_env
-
