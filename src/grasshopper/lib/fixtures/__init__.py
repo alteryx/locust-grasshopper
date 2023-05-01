@@ -54,7 +54,7 @@ def global_defaults():
         if v.get("default") is not None
     }
     config = GHConfiguration(**defaults)
-    logger.info(f"CONFIG FIXTURE: global_defaults {config}")
+    logger.debug(f"CONFIG FIXTURE: global_defaults {config}")
     return config
 
 
@@ -67,7 +67,8 @@ def grasshopper_config_file_args(request):
         with open(path, "r") as stream:
             raw = yaml.safe_load(stream)
 
-        # transfer each section to GHConfiguration object
+        # transfer each section to GHConfiguration object, any other sections ignored
+        # TODO: should we load any other sections?
         global_vals = raw.get("grasshopper", {})
         config.update(**global_vals)
         test_run_vals = raw.get("test_run", {})
@@ -77,18 +78,22 @@ def grasshopper_config_file_args(request):
 
     except pytest.FixtureLookupError:
         logger.warning(
-            "Skipping loading from grasshopper configuration file because fixture "
-            "'grasshopper_config_file_path` not found. You can safely ignore this "
-            "warning if you were not intending to use a grasshopper configuration file."
+            "CONFIG FIXTURE: Skipping loading from grasshopper configuration file "
+            "because fixture 'grasshopper_config_file_path` not found. You can safely "
+            "ignore this warning if you were not intending to use a grasshopper "
+            "configuration file."
         )
     except FileNotFoundError:
         logger.warning(
-            f"Skipping loading from grasshopper configuration file because {path} not "
-            f"found."
+            f"CONFIG FIXTURE: Skipping loading from grasshopper configuration file "
+            f"because {path} not found."
         )
     except (yaml.YAMLError, AttributeError) as e:
-        logger.warning(f"Unable to parse yaml file {path} with error {e}.")
+        logger.warning(
+            f"CONFIG FIXTURE: Unable to parse yaml file {path} with error " f"{e}."
+        )
 
+    logger.debug(f"CONFIG FIXTURE: grasshopper_config_file {config}")
     return config
 
 
@@ -97,9 +102,16 @@ def env_var_prefix_key(request):
     prefix = "GH_"
     try:
         prefix = request.getfixturevalue("configuration_prefix_key")
+        if type(prefix) != str or (type(prefix) == str and len(prefix) == 0):
+            logger.warning(
+                f"CONFIG FIXTURE: Fixture configuration_prefix_key may only be a non "
+                f"zero length str, returned value {prefix}, ignoring value."
+            )
+            prefix = "GH_"
     except pytest.FixtureLookupError:
-        logger.info(f"Using default environment variable prefix of {prefix}")
         pass
+
+    logger.debug(f"CONFIG FIXTURE: env_var_prefix_key {prefix}")
     return prefix
 
 
@@ -108,8 +120,17 @@ def extra_env_var_keys(request):
     keys = []
     try:
         keys = request.getfixturevalue("configuration_extra_env_var_keys")
+        # only allow a list of strings for env_var_keys
+        if not type_check_list_of_strs(keys):
+            logger.warning(
+                f"CONFIG FIXTURE: Fixture configuration_extra_env_var_keys may only "
+                f"return a list of strings, returned value {keys}, ignoring value."
+            )
+            keys = []
     except pytest.FixtureLookupError:
         pass
+
+    logger.debug(f"CONFIG FIXTURE: extra_env_var_keys {keys}")
     return keys
 
 
@@ -128,6 +149,8 @@ def env_var_args(env_var_prefix_key, extra_env_var_keys):
 
             if len(env_var_name) > 0:
                 config.update_single_key(env_var_name.lower(), env_var_value)
+
+    logger.debug(f"CONFIG FIXTURE: env_var_args {config}")
 
     return config
 
@@ -154,6 +177,8 @@ def cmdln_args(request_config):
     for attr_name, attr_definition in ConfigurationConstants.COMPLETE_ATTRS.items():
         config.update_single_key(attr_name, request_config.getoption(f"--{attr_name}"))
 
+    logger.debug(f"CONFIG FIXTURE: cmdln_args {config}")
+
     return config
 
 
@@ -173,9 +198,7 @@ def pre_processed_args(
             [cmdln_args, env_var_args, grasshopper_config_file_args, global_defaults],
             "scenario_file",
         )
-        logger.info(f"scenario file value = {scenario_file}")
         pre_config.update_single_key("scenario_file", scenario_file)
-        logger.info(f"pre_config = {pre_config}")
 
         scenario_name = fetch_value_from_multiple_sources(
             [cmdln_args, env_var_args, grasshopper_config_file_args, global_defaults],
@@ -185,10 +208,11 @@ def pre_processed_args(
 
     except Exception as e:
         logger.error(
-            f"Uncaught exception in pre_processed_args fixture: "
+            f"CONFIG_FIXTURE: Uncaught exception in pre_processed_args fixture: "
             f"{type(e).__name__} | {e}"
         )
 
+    logger.debug(f"CONFIG FIXTURE: pre_processed_args {pre_config}")
     return pre_config
 
 
@@ -216,9 +240,11 @@ def scenario_file_args(pre_processed_args):
             config.update_single_key("scenario_tags", scenario.get("tags"))
         except Exception as e:
             logger.warning(
-                f"Unexpected error loading scenario {scenario_name} from "
-                f"{scenario_file}: {type(e).__name__} | {e}"
+                f"CONFIG FIXTURE: Unexpected error loading scenario {scenario_name} "
+                f"from {scenario_file}: {type(e).__name__} | {e}"
             )
+
+    logger.debug(f"CONFIG FIXTURE: scenario_file_args {config}")
 
     return config
 
@@ -231,20 +257,25 @@ def merge_sources(
     env_var_args,
     cmdln_args,
 ):
-    complete_config = GHConfiguration()
+    config = GHConfiguration()
 
     # order matters here, this is determining the variable precedence
     try:
-        complete_config.update(global_defaults)
-        complete_config.update(grasshopper_config_file_args)
-        complete_config.update(scenario_file_args)
-        complete_config.update(env_var_args)
-        complete_config.update(cmdln_args)
+        config.update(global_defaults)
+        config.update(grasshopper_config_file_args)
+        config.update(scenario_file_args)
+        config.update(env_var_args)
+        config.update(cmdln_args)
     except Exception as e:
-        logger.error(f"Unexpected error in merge_sources: {type(e).__name__} | {e}")
+        logger.error(
+            f"CONFIG FIXTURE: Unexpected error in merge_sources: "
+            f"{type(e).__name__} | {e}"
+        )
         pass
 
-    return complete_config
+    logger.debug(f"CONFIG FIXTURE: env_var_args {config}")
+
+    return config
 
 
 @pytest.fixture(scope="session")
@@ -262,6 +293,8 @@ def typecast(merge_sources):
     for k, v in attrs.items():
         if config.get(k) is not None:
             config[k] = v["typecast"](config[k])
+
+    logger.debug(f"CONFIG FIXTURE: typecast {config}")
 
     return config
 
@@ -296,7 +329,9 @@ def process_shape(typecast):
         # add the overrides
         config.update(overrides)
     else:
-        logger.error(f"Shape is missing from configuration {config}")
+        logger.error(f"CONFIG FIXTURE: Shape is missing from configuration {config}")
+
+    logger.debug(f"CONFIG FIXTURE: process_shape {config}")
 
     return config
 
@@ -304,11 +339,12 @@ def process_shape(typecast):
 @pytest.fixture(scope="session")
 def complete_configuration(process_shape):
     config = GHConfiguration(process_shape)
-    # TODO-DEPRECATED
-    # Transfer the value from the deprecated arg to the new arg, so that we can
-    # gracefully transfer use to the new arg
+    # TODO-DEPRECATED: Transfer the value from the deprecated arg to the new arg,
+    # TODO: so that we can gracefully transfer use to the new arg
     # influxdb --> influx_host
     config.update_single_key("influx_host", config.get("influxdb"))
+
+    logger.debug(f"CONFIG FIXTURE: complete_configuration {config}")
 
     return config
 
@@ -476,3 +512,14 @@ def fetch_value_from_multiple_sources(sources, key):
     for source in sources:
         value = value or source.get(key)
     return value
+
+
+def type_check_list_of_strs(list_of_strs):
+    """Return True if list of strings or [], false if anything else."""
+    check_passed = False
+    if type(list_of_strs) == list:
+        all_strs = True
+        for s in list_of_strs:
+            all_strs = all_strs and type(s) == str
+        check_passed = all_strs
+    return check_passed
