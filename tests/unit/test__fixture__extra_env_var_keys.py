@@ -4,6 +4,7 @@ from assertpy import assert_that
 
 from tests.unit.conftest import (  # noqa: I202
     CONFTEST_TEMPLATE,
+    message_was_not_logged,
     perform_fixture_test_with_optional_log_capture,
 )
 
@@ -73,7 +74,6 @@ def test__extra_env_var_keys__none(pytester, caplog):
 
 def test__extra_env_var_keys__empty_list(pytester, caplog):
     """Fixture should not error or log message if supplied an empty list."""
-
     patches = """
         @pytest.fixture(scope="session")
         def configuration_extra_env_var_keys():
@@ -93,8 +93,12 @@ def test__extra_env_var_keys__empty_list(pytester, caplog):
             assert_that(extra_env_var_keys).is_equal_to([])
     """
     )
+    target_message_re = (
+        "Fixture configuration_extra_env_var_keys may only return a " "list of strings"
+    )
+
     perform_fixture_test_with_optional_log_capture(pytester)
-    assert_that(len(caplog.get_records())).is_equal_to(0)
+    message_was_not_logged(caplog, target_message_re=target_message_re)
 
 
 def test__extra_env_var_keys__invalid_type_in_list(pytester, caplog):

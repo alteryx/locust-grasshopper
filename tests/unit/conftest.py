@@ -7,7 +7,6 @@ import pytest
 
 pytest_plugins = ["pytester"]
 
-
 CONFTEST_TEMPLATE = """
         import pytest
         from grasshopper.lib.configuration.gh_configuration import GHConfiguration
@@ -120,6 +119,24 @@ def was_message_logged(
             matches.append(record_tuple)
 
     return len(matches) > 0, matches
+
+
+def message_was_not_logged(
+    caplog,
+    target_message_re=None,
+    target_level=None,
+    target_index=None,
+    target_logger=None,
+):
+    """Validate a message was _not_ logged using same matching as was_message_logged."""
+    found, _ = was_message_logged(
+        caplog,
+        target_message_re=target_message_re,
+        target_level=target_level,
+        target_index=target_index,
+        target_logger=target_logger,
+    )
+    return not found
 
 
 def make_re(potential_re):
