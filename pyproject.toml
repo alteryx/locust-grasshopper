@@ -48,7 +48,7 @@ where = ["src"]
 
 [tool.isort]
 profile = "black"
-known_first_party = [
+known_local_folder = [
     "grasshopper"
 ]
 multi_line_output = 3
