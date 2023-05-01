@@ -71,6 +71,32 @@ def test__extra_env_var_keys__none(pytester, caplog):
     )
 
 
+def test__extra_env_var_keys__empty_list(pytester, caplog):
+    """Fixture should not error or log message if supplied an empty list."""
+
+    patches = """
+        @pytest.fixture(scope="session")
+        def configuration_extra_env_var_keys():
+            return []
+        """
+    pytester.makeconftest(
+        CONFTEST_TEMPLATE.format(fixture_name=FIXTURE_UNDER_TEST, patches=patches)
+    )
+
+    # create a temporary pytest test file
+    pytester.makepyfile(
+        """
+        from grasshopper.lib.configuration.gh_configuration import GHConfiguration
+        from assertpy import assert_that
+
+        def test_grasshopper_fixture(extra_env_var_keys):
+            assert_that(extra_env_var_keys).is_equal_to([])
+    """
+    )
+    perform_fixture_test_with_optional_log_capture(pytester)
+    assert_that(len(caplog.get_records())).is_equal_to(0)
+
+
 def test__extra_env_var_keys__invalid_type_in_list(pytester, caplog):
     """Fixture should return the default and log a warning for invalid keys list."""
 
