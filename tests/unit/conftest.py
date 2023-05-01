@@ -129,14 +129,14 @@ def message_was_not_logged(
     target_logger=None,
 ):
     """Validate a message was _not_ logged using same matching as was_message_logged."""
-    found, _ = was_message_logged(
+    found, matches = was_message_logged(
         caplog,
         target_message_re=target_message_re,
         target_level=target_level,
         target_index=target_index,
         target_logger=target_logger,
     )
-    return not found
+    return not found, matches
 
 
 def make_re(potential_re):

@@ -93,12 +93,14 @@ def test__extra_env_var_keys__empty_list(pytester, caplog):
             assert_that(extra_env_var_keys).is_equal_to([])
     """
     )
-    target_message_re = (
-        "Fixture configuration_extra_env_var_keys may only return a " "list of strings"
-    )
-
     perform_fixture_test_with_optional_log_capture(pytester)
-    message_was_not_logged(caplog, target_message_re=target_message_re)
+    target_message_re = (
+        "Fixture configuration_extra_env_var_keys may only return a list of strings"
+    )
+    not_logged, matches = message_was_not_logged(
+        caplog, target_message_re=target_message_re
+    )
+    assert_that(not_logged, f"Matching messages {matches}").is_true()
 
 
 def test__extra_env_var_keys__invalid_type_in_list(pytester, caplog):
