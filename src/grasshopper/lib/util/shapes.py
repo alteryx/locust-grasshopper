@@ -104,13 +104,19 @@ class Trend(Default):
 
     # for the trend shape, override the default to 10m
     DEFAULT_RUNTIME = 600
+    USERS = 10
+    SPAWN_RATE = 0.1
 
     def __init__(self, *args, **kwargs):
-        kwargs["users"] = 10
-        kwargs["spawn_rate"] = 0.1
+        kwargs["users"] = self.USERS
+        kwargs["spawn_rate"] = self.SPAWN_RATE
         # don't specify runtime here because mostly we want it
         # to pick up the runtime from scenario yaml
         super().__init__(*args, **kwargs)
+
+    def get_shape_overrides(self):
+        """Return a dict of values that this shape would like to override."""
+        return {"users": self.USERS, "spawn_rate": self.SPAWN_RATE}
 
 
 class Stages(Default):  # noqa E501

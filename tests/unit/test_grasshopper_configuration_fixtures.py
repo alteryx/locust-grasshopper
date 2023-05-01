@@ -1695,7 +1695,12 @@ def test__typecast_empty_source(pytester):
 
 
 def test__process_shape_happy(pytester):
-    """Test fixture correctly loads the shape into the config."""
+    """Test fixture correctly loads the shape into the config.
+
+    Also, covers the case where a shape is overriding some values, with one key
+    previously existing in the config and one key not existing.
+
+    """
 
     pytester.makeconftest(
         """
@@ -1707,7 +1712,7 @@ def test__process_shape_happy(pytester):
 
         @pytest.fixture(scope="session")
         def typecast():
-            config = GHConfiguration(shape="Trend")
+            config = GHConfiguration(shape="Trend", spawn_rate=20)
             return config
 
         # import the fixture we want to test
@@ -1724,12 +1729,12 @@ def test__process_shape_happy(pytester):
 
         def test_grasshopper_fixture(process_shape):
             assert_that(process_shape).is_instance_of(GHConfiguration)
-            assert_that(process_shape).is_length(2)
-            shape_instance = process_shape["shape_instance"]
-            assert_that(shape_instance).is_instance_of(Trend)
+            assert_that(process_shape).contains_entry({"shape": "Trend"},
+                                                        {"users": 10},
+                                                        {"spawn_rate": .1})
+            assert_that(process_shape["shape_instance"]).is_instance_of(Trend)
     """
     )
-
     # run all tests with pytest
     result = pytester.runpytest()
     result.assert_outcomes(passed=1)
