@@ -3,10 +3,13 @@
 Class to hold all the common functionality that we added on top of Locust's HttpUser
 class.
 """
+import logging
 import signal
 from uuid import uuid4
 
 import gevent
+import pytest
+from locust.exception import StopUser
 from locust import HttpUser
 
 import grasshopper.lib.util.listeners  # noqa: F401
@@ -112,37 +115,58 @@ class BaseJourney(HttpUser):
         self, parameter_key, parameter_value
     ):
         if parameter_key == "thresholds":
-            for raw_trend_name, threshold_less_than_in_ms in parameter_value.items():
-                trend_name, request_type = self._extract_trend_name(raw_trend_name)
-                thresh_object = {
-                    "less_than_in_ms": threshold_less_than_in_ms,
-                    "actual_value_in_ms": None,
-                    "percentile": 0.8,
-                    "succeeded": None,
-                    "http_method": request_type,
-                }
-                if trend_name in self.environment.stats.trends:
-                    self.environment.stats.trends[trend_name]["thresholds"].append(
-                        thresh_object
-                    )
-                else:
-                    self.environment.stats.trends[trend_name] = {
-                        "tags": self.scenario_args.get("tags", {}),
-                        "thresholds": [thresh_object],
+            thresholds_shape = parameter_value
+            if self._verify_thresholds_shape(thresholds_shape):
+                for trend_name, threshold_values in thresholds_shape.items():
+                    thresh_object = {
+                        "less_than_in_ms": int(threshold_values.get("limit")),
+                        "actual_value_in_ms": None,
+                        "percentile": float(threshold_values.get("percentile", 0.9)),
+                        "succeeded": None,
+                        "http_method": str(threshold_values.get("type")).upper(),
                     }
+                    if trend_name in self.environment.stats.trends:
+                        self.environment.stats.trends[trend_name]["thresholds"].append(
+                            thresh_object
+                        )
+                    else:
+                        self.environment.stats.trends[trend_name] = {
+                            "tags": self.scenario_args.get("tags", {}),
+                            "thresholds": [thresh_object],
+                        }
+            else:
+                logging.error("Skipping registering thresholds due to invalid "
+                              "thresholds shape...")
 
     @staticmethod
-    def _extract_trend_name(raw_trend_name: str):
-        if "{" in raw_trend_name and "}" in raw_trend_name:
-            trend_name = raw_trend_name.split("}")[1]
-            request_type = raw_trend_name.split("}")[0].split("{")[1].upper()
-            return trend_name, request_type
+    def _verify_thresholds_shape(thresholds_shape):
+        valid_types = ["GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "CUSTOM"]
+        is_valid_shape = True
+        if type(thresholds_shape) != dict:
+            logging.error(f"Thresholds object is of type {type(thresholds_shape)} "
+                             f"but must be of type dict!")
+            is_valid_shape = False
         else:
-            raise ValueError(
-                "Invalid Trend Name! Please include the request type in curly "
-                + "brackets. E.G: `{POST}post_job_group`, "
-                + "`{CUSTOM}PX_TREND_photon_flow_run`, etc.."
-            )
+            for trend_name, threshold_values in thresholds_shape.items():
+                if type(trend_name) != str:
+                    logging.error(f"Singular threshold trend name is of type {type(trend_name)} "
+                        f"but must be of type str!")
+                    is_valid_shape = False
+                elif threshold_values.get("type") is None or threshold_values.get(
+                    "limit") is None:
+                    logging.error(f"Singular threshold object `{trend_name}` must have `type`" 
+                        f"and `limit` fields defined.")
+                    is_valid_shape = False
+                elif str(threshold_values.get("type")).upper() not in valid_types:
+                    logging.error(f"For threshold object {trend_name}, type "
+                                  f"`{str(threshold_values.get('type')).upper()}` is "
+                                  f"invalid. Must be one of {valid_types}.")
+                    is_valid_shape = False
+                elif not str(threshold_values.get("limit")).isnumeric():
+                    logging.error(f"For threshold object {trend_name}, threshold limit of "
+                                 f"`{threshold_values.get('limit')}` is invalid. Must be numeric.")
+                    is_valid_shape = False
+        return is_valid_shape
 
     def teardown(self, *args, **kwargs):
         """
