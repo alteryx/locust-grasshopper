@@ -40,17 +40,8 @@ def test_set_test_parameters_with_thresholds_and_tags():
     BaseJourney.replace_incoming_scenario_args(
         {
             "thresholds": {
-                "asdf1":
-                    {
-                        "type": "get",
-                        "limit": 1
-                    },
-                "asdf2":
-                    {
-                        "type": "post",
-                        "limit": 2,
-                        "percentile": 0.8
-                    }
+                "asdf1": {"type": "get", "limit": 1},
+                "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
             },
             "tags": {"foo": "bar"},
         }
@@ -87,17 +78,8 @@ def test_set_test_parameters_with_thresholds_and_tags():
 def test_verify_thresholds_shape_successful():
     journey = BaseJourney(MagicMock())
     valid_thresholds_shape = {
-        "asdf1":
-            {
-                "type": "get",
-                "limit": 1
-            },
-        "asdf2":
-            {
-                "type": "post",
-                "limit": 2,
-                "percentile": 0.8
-            }
+        "asdf1": {"type": "get", "limit": 1},
+        "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
     assert journey._verify_thresholds_shape(valid_thresholds_shape)
 
@@ -105,17 +87,8 @@ def test_verify_thresholds_shape_successful():
 def test_verify_thresholds_shape_invalid_limit():
     journey = BaseJourney(MagicMock())
     invalid_thresholds_shape_limit = {
-        "asdf1":
-            {
-                "type": "get",
-                "limit": "invalid_limit"
-            },
-        "asdf2":
-            {
-                "type": "post",
-                "limit": 2,
-                "percentile": 0.8
-            }
+        "asdf1": {"type": "get", "limit": "invalid_limit"},
+        "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
     assert not journey._verify_thresholds_shape(invalid_thresholds_shape_limit)
 
@@ -123,17 +96,8 @@ def test_verify_thresholds_shape_invalid_limit():
 def test_verify_thresholds_shape_invalid_type():
     journey = BaseJourney(MagicMock())
     invalid_thresholds_shape_type = {
-        "asdf1":
-            {
-                "type": "invalid_type",
-                "limit": 1
-            },
-        "asdf2":
-            {
-                "type": "post",
-                "limit": 2,
-                "percentile": 0.8
-            }
+        "asdf1": {"type": "invalid_type", "limit": 1},
+        "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
     assert not journey._verify_thresholds_shape(invalid_thresholds_shape_type)
 

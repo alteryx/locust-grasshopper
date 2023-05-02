@@ -8,8 +8,6 @@ import signal
 from uuid import uuid4
 
 import gevent
-import pytest
-from locust.exception import StopUser
 from locust import HttpUser
 
 import grasshopper.lib.util.listeners  # noqa: F401
@@ -135,36 +133,51 @@ class BaseJourney(HttpUser):
                             "thresholds": [thresh_object],
                         }
             else:
-                logging.error("Skipping registering thresholds due to invalid "
-                              "thresholds shape...")
+                logging.error(
+                    "Skipping registering thresholds due to invalid "
+                    "thresholds shape..."
+                )
 
     @staticmethod
     def _verify_thresholds_shape(thresholds_shape):
         valid_types = ["GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "CUSTOM"]
         is_valid_shape = True
         if type(thresholds_shape) != dict:
-            logging.error(f"Thresholds object is of type {type(thresholds_shape)} "
-                             f"but must be of type dict!")
+            logging.error(
+                f"Thresholds object is of type {type(thresholds_shape)} "
+                f"but must be of type dict!"
+            )
             is_valid_shape = False
         else:
             for trend_name, threshold_values in thresholds_shape.items():
                 if type(trend_name) != str:
-                    logging.error(f"Singular threshold trend name is of type {type(trend_name)} "
-                        f"but must be of type str!")
+                    logging.error(
+                        f"Singular threshold trend name is of type {type(trend_name)} "
+                        f"but must be of type str!"
+                    )
                     is_valid_shape = False
-                elif threshold_values.get("type") is None or threshold_values.get(
-                    "limit") is None:
-                    logging.error(f"Singular threshold object `{trend_name}` must have `type`" 
-                        f"and `limit` fields defined.")
+                elif (
+                    threshold_values.get("type") is None
+                    or threshold_values.get("limit") is None
+                ):
+                    logging.error(
+                        f"Singular threshold object `{trend_name}` must have `type`"
+                        f"and `limit` fields defined."
+                    )
                     is_valid_shape = False
                 elif str(threshold_values.get("type")).upper() not in valid_types:
-                    logging.error(f"For threshold object {trend_name}, type "
-                                  f"`{str(threshold_values.get('type')).upper()}` is "
-                                  f"invalid. Must be one of {valid_types}.")
+                    logging.error(
+                        f"For threshold object {trend_name}, type "
+                        f"`{str(threshold_values.get('type')).upper()}` is "
+                        f"invalid. Must be one of {valid_types}."
+                    )
                     is_valid_shape = False
                 elif not str(threshold_values.get("limit")).isnumeric():
-                    logging.error(f"For threshold object {trend_name}, threshold limit of "
-                                 f"`{threshold_values.get('limit')}` is invalid. Must be numeric.")
+                    logging.error(
+                        f"For threshold object {trend_name}, threshold limit of "
+                        f"`{threshold_values.get('limit')}` is invalid. "
+                        f"Must be numeric."
+                    )
                     is_valid_shape = False
         return is_valid_shape
 
