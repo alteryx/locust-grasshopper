@@ -6,7 +6,10 @@ example_scenario_1:
     runtime: 200
   grasshopper_scenario_args:
     foo : 'bar2'
-    thresholds: '{"{GET}get google images": 2000}'
+    thresholds:
+      get google images:
+        type: get
+        limit: 2000
   tags:
     - 'smoke'
     - 'example1'
@@ -19,7 +22,11 @@ example_scenario_2:
     runtime: 300
   grasshopper_scenario_args:
     foo: 'bar3'
-    thresholds: '{"{GET}get google images": 2500}'
+    thresholds:
+      get google images:
+        type: get
+        limit: 2500
+        percentile: 0.8
   tags:
     - 'smoke'
     - 'example2'

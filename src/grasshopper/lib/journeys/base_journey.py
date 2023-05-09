@@ -3,13 +3,16 @@
 Class to hold all the common functionality that we added on top of Locust's HttpUser
 class.
 """
+import logging
 import signal
+from collections import abc
 from uuid import uuid4
 
 import gevent
 from locust import HttpUser
 
 import grasshopper.lib.util.listeners  # noqa: F401
+from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 
 
 class BaseJourney(HttpUser):
@@ -102,24 +105,28 @@ class BaseJourney(HttpUser):
         self.environment.stats.trends = {}
 
         # If parameters are not passed in that need to be set, set them to the defaults
-        for key, value in self.scenario_args.items():
-            self._check_for_threshold_parameters_and_set_thresholds(
-                parameter_key=key,
-                parameter_value=value,
-            )
+        self._check_for_threshold_parameters_and_set_thresholds(
+            scenario_args=self.scenario_args
+        )
 
-    def _check_for_threshold_parameters_and_set_thresholds(
-        self, parameter_key, parameter_value
-    ):
-        if parameter_key == "thresholds":
-            for raw_trend_name, threshold_less_than_in_ms in parameter_value.items():
-                trend_name, request_type = self._extract_trend_name(raw_trend_name)
+    def _check_for_threshold_parameters_and_set_thresholds(self, scenario_args):
+        thresholds_collection = scenario_args.get("thresholds")
+        if thresholds_collection is None:
+            return
+        elif self._verify_thresholds_collection_shape(thresholds_collection):
+            for trend_name, threshold_values in thresholds_collection.items():
+                trend_name = str(trend_name)
                 thresh_object = {
-                    "less_than_in_ms": threshold_less_than_in_ms,
+                    "less_than_in_ms": int(threshold_values.get("limit")),
                     "actual_value_in_ms": None,
-                    "percentile": 0.8,
+                    "percentile": float(
+                        threshold_values.get(
+                            "percentile",
+                            GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
+                        )
+                    ),
                     "succeeded": None,
-                    "http_method": request_type,
+                    "http_method": str(threshold_values.get("type")).upper(),
                 }
                 if trend_name in self.environment.stats.trends:
                     self.environment.stats.trends[trend_name]["thresholds"].append(
@@ -130,19 +137,45 @@ class BaseJourney(HttpUser):
                         "tags": self.scenario_args.get("tags", {}),
                         "thresholds": [thresh_object],
                     }
+        else:
+            logging.warning(
+                "Skipping registering thresholds due to invalid " "thresholds shape..."
+            )
 
     @staticmethod
-    def _extract_trend_name(raw_trend_name: str):
-        if "{" in raw_trend_name and "}" in raw_trend_name:
-            trend_name = raw_trend_name.split("}")[1]
-            request_type = raw_trend_name.split("}")[0].split("{")[1].upper()
-            return trend_name, request_type
-        else:
-            raise ValueError(
-                "Invalid Trend Name! Please include the request type in curly "
-                + "brackets. E.G: `{POST}post_job_group`, "
-                + "`{CUSTOM}PX_TREND_photon_flow_run`, etc.."
+    def _verify_thresholds_collection_shape(thresholds_collection):
+        valid_types = ["GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "CUSTOM"]
+        if not isinstance(thresholds_collection, abc.Mapping):
+            logging.warning(
+                f"Thresholds object is of type {type(thresholds_collection)} "
+                f"but must be a mapping!"
             )
+            return False
+        for trend_name, threshold_values in thresholds_collection.items():
+            if (
+                threshold_values.get("type") is None
+                or threshold_values.get("limit") is None
+            ):
+                logging.warning(
+                    f"Singular threshold object `{trend_name}` must have `type`"
+                    f"and `limit` fields defined."
+                )
+                return False
+            elif str(threshold_values.get("type")).upper() not in valid_types:
+                logging.warning(
+                    f"For threshold object {trend_name}, type "
+                    f"`{str(threshold_values.get('type')).upper()}` is "
+                    f"invalid. Must be one of {valid_types}."
+                )
+                return False
+            elif not str(threshold_values.get("limit")).isnumeric():
+                logging.warning(
+                    f"For threshold object {trend_name}, threshold limit of "
+                    f"`{threshold_values.get('limit')}` is invalid. "
+                    f"Must be numeric."
+                )
+                return False
+        return True
 
     def teardown(self, *args, **kwargs):
         """
