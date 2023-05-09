@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from termcolor import colored
 
+from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.listeners import GrasshopperListeners
 from grasshopper.lib.util.utils import (
@@ -23,13 +24,13 @@ def example_trends_dict():
         "Trend One": {
             "thresholds": [
                 {
-                    "percentile": 0.9,
+                    "percentile": GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
                     "less_than_in_ms": 1000,
                     "actual_value_in_ms": 600,
                     "http_method": "CUSTOM",
                 },
                 {
-                    "percentile": 0.9,
+                    "percentile": GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
                     "less_than_in_ms": 1000,
                     "actual_value_in_ms": 1200,
                     "http_method": "CUSTOM",
@@ -39,13 +40,13 @@ def example_trends_dict():
         "Trend Two": {
             "thresholds": [
                 {
-                    "percentile": 0.9,
+                    "percentile": GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
                     "less_than_in_ms": 2000,
                     "actual_value_in_ms": 1400,
                     "http_method": "CUSTOM",
                 },
                 {
-                    "percentile": 0.9,
+                    "percentile": GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
                     "less_than_in_ms": 2000,
                     "actual_value_in_ms": 2800,
                     "http_method": "CUSTOM",

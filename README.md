@@ -22,9 +22,13 @@ This package can be installed via pip: `pip install locust-grasshopper`
   example `conftest.py` that will show you how to get basic parameterization working.
 - This test can be invoked by running `pytest example/test_example.py` in the root of 
   this project.
-- This test can also be invoked via a YAML scenario file: (`cd example`, `pytest 
-  example_scenarios.YAML --tags=example1`). In this example scenario file, you can 
-  see how grasshopper_args, grasshopper_scenario_args, and tags are being set.
+- This test can also be invoked via a YAML scenario file:
+```shell
+cd example
+pytest example_scenarios.YAML --tags=example1
+```
+ In this example scenario file, you can see how grasshopper_args, 
+ grasshopper_scenario_args, and tags are being set.
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Creating a load test
@@ -34,7 +38,8 @@ is called `Grasshopper.launch_test`. This function can be imported like so: `fro
 - `user_classes`: User classes that the runner will run. These user classes must 
   extend BaseJourney, which is a grasshopper class 
   (`from grasshopper.lib.journeys.base_journey import BaseJourney`). This can be a 
-  list of classes or just a single class.
+  single class, a list of classes, or a dictionary where the key is the class and 
+  the value is the locust weight to assign to that class.
 - `**complete_configuration`: In order for the test to have the correct configuration, you 
   must pass in the kwargs provided by the `complete_configuration` fixture. See example 
   load test on how to do this properly.

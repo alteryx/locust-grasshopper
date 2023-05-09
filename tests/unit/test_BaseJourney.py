@@ -1,8 +1,10 @@
+import logging
 from unittest.mock import MagicMock
 
 import pytest
 
 from grasshopper.lib.journeys.base_journey import BaseJourney
+from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -54,7 +56,7 @@ def test_set_test_parameters_with_thresholds_and_tags():
             {
                 "less_than_in_ms": 1,
                 "actual_value_in_ms": None,
-                "percentile": 0.9,
+                "percentile": GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
                 "succeeded": None,
                 "http_method": "GET",
             },
@@ -75,34 +77,45 @@ def test_set_test_parameters_with_thresholds_and_tags():
     }
 
 
-def test_verify_thresholds_shape_successful():
+def test_verify_thresholds_collection_shape_successful():
     journey = BaseJourney(MagicMock())
-    valid_thresholds_shape = {
+    valid_thresholds_collection = {
         "asdf1": {"type": "get", "limit": 1},
         "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
-    assert journey._verify_thresholds_shape(valid_thresholds_shape)
+    assert journey._verify_thresholds_collection_shape(valid_thresholds_collection)
 
 
-def test_verify_thresholds_shape_invalid_limit():
+def test_verify_thresholds_collection_shape_invalid_limit(caplog):
     journey = BaseJourney(MagicMock())
-    invalid_thresholds_shape_limit = {
+    invalid_thresholds_collection_limit = {
         "asdf1": {"type": "get", "limit": "invalid_limit"},
         "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
-    assert not journey._verify_thresholds_shape(invalid_thresholds_shape_limit)
+    with caplog.at_level(logging.WARNING):
+        is_valid = journey._verify_thresholds_collection_shape(invalid_thresholds_collection_limit)
+    assert not is_valid
+    assert "limit" in caplog.text
 
 
-def test_verify_thresholds_shape_invalid_type():
+def test_verify_thresholds_collection_shape_invalid_type(caplog):
     journey = BaseJourney(MagicMock())
-    invalid_thresholds_shape_type = {
+    invalid_thresholds_collection_type = {
         "asdf1": {"type": "invalid_type", "limit": 1},
         "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
-    assert not journey._verify_thresholds_shape(invalid_thresholds_shape_type)
+    with caplog.at_level(logging.WARNING):
+        is_valid = journey._verify_thresholds_collection_shape(
+            invalid_thresholds_collection_type)
+    assert not is_valid
+    assert "type `INVALID_TYPE` is invalid" in caplog.text
 
 
-def test_extract_trend_name_is_invalid_shape():
+def test_verify_thresholds_collection_shape_invalid_shape(caplog):
     journey = BaseJourney(MagicMock())
-    invalid_thresholds_shape = []
-    assert not journey._verify_thresholds_shape(invalid_thresholds_shape)
+    invalid_thresholds_collection = []
+    with caplog.at_level(logging.WARNING):
+        is_valid = journey._verify_thresholds_collection_shape(invalid_thresholds_collection)
+    assert not is_valid
+    assert "mapping" in caplog.text
+

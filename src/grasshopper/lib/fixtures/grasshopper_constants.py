@@ -32,3 +32,4 @@ class GrasshopperConstants:
     SPAWN_RATE_DEFAULT = 1.0
     SHAPE_DEFAULT = "Default"
     SCENARIO_DELAY_DEFAULT = 0.0
+    THRESHOLD_PERCENTILE_DEFAULT = 0.9
