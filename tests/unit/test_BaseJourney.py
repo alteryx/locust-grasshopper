@@ -93,7 +93,9 @@ def test_verify_thresholds_collection_shape_invalid_limit(caplog):
         "asdf2": {"type": "post", "limit": 2, "percentile": 0.8},
     }
     with caplog.at_level(logging.WARNING):
-        is_valid = journey._verify_thresholds_collection_shape(invalid_thresholds_collection_limit)
+        is_valid = journey._verify_thresholds_collection_shape(
+            invalid_thresholds_collection_limit
+        )
     assert not is_valid
     assert "limit" in caplog.text
 
@@ -106,7 +108,8 @@ def test_verify_thresholds_collection_shape_invalid_type(caplog):
     }
     with caplog.at_level(logging.WARNING):
         is_valid = journey._verify_thresholds_collection_shape(
-            invalid_thresholds_collection_type)
+            invalid_thresholds_collection_type
+        )
     assert not is_valid
     assert "type `INVALID_TYPE` is invalid" in caplog.text
 
@@ -115,7 +118,8 @@ def test_verify_thresholds_collection_shape_invalid_shape(caplog):
     journey = BaseJourney(MagicMock())
     invalid_thresholds_collection = []
     with caplog.at_level(logging.WARNING):
-        is_valid = journey._verify_thresholds_collection_shape(invalid_thresholds_collection)
+        is_valid = journey._verify_thresholds_collection_shape(
+            invalid_thresholds_collection
+        )
     assert not is_valid
     assert "mapping" in caplog.text
-

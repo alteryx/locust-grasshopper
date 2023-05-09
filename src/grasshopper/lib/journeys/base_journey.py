@@ -105,11 +105,11 @@ class BaseJourney(HttpUser):
         self.environment.stats.trends = {}
 
         # If parameters are not passed in that need to be set, set them to the defaults
-        self._check_for_threshold_parameters_and_set_thresholds(scenario_args=self.scenario_args)
+        self._check_for_threshold_parameters_and_set_thresholds(
+            scenario_args=self.scenario_args
+        )
 
-    def _check_for_threshold_parameters_and_set_thresholds(
-            self, scenario_args
-    ):
+    def _check_for_threshold_parameters_and_set_thresholds(self, scenario_args):
         thresholds_collection = scenario_args.get("thresholds")
         if thresholds_collection is None:
             return
@@ -119,10 +119,12 @@ class BaseJourney(HttpUser):
                 thresh_object = {
                     "less_than_in_ms": int(threshold_values.get("limit")),
                     "actual_value_in_ms": None,
-                    "percentile": float(threshold_values.get(
-                        "percentile",
-                        GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT
-                    )),
+                    "percentile": float(
+                        threshold_values.get(
+                            "percentile",
+                            GrasshopperConstants.THRESHOLD_PERCENTILE_DEFAULT,
+                        )
+                    ),
                     "succeeded": None,
                     "http_method": str(threshold_values.get("type")).upper(),
                 }
@@ -137,8 +139,7 @@ class BaseJourney(HttpUser):
                     }
         else:
             logging.warning(
-                "Skipping registering thresholds due to invalid "
-                "thresholds shape..."
+                "Skipping registering thresholds due to invalid " "thresholds shape..."
             )
 
     @staticmethod
@@ -152,8 +153,8 @@ class BaseJourney(HttpUser):
             return False
         for trend_name, threshold_values in thresholds_collection.items():
             if (
-                    threshold_values.get("type") is None
-                    or threshold_values.get("limit") is None
+                threshold_values.get("type") is None
+                or threshold_values.get("limit") is None
             ):
                 logging.warning(
                     f"Singular threshold object `{trend_name}` must have `type`"
