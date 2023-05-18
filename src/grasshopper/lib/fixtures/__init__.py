@@ -437,8 +437,15 @@ class Scenario(pytest.Item):
         )  # pass down any other params that were supplied when invoking pytest
 
         # remove log-file args to avoid each test overwriting it
-        args = [arg for arg in args if not arg.startswith("--log-file")]
-        pytest.main(args)
+        # remove error message skipping args which is sometimes passed in by the ide
+        ignore_args = ["--log-file", "--no-header", "--no-summary"]
+        args = [
+            arg
+            for arg in args
+            if not any([arg.startswith(ignore_arg) for ignore_arg in ignore_args])
+        ]
+        exit_code = pytest.main(args)
+        assert exit_code == pytest.ExitCode.OK
 
     def repr_failure(self, excinfo):
         """Call this method when self.runtest() raises an exception."""
