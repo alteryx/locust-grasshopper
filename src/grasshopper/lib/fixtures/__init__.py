@@ -438,9 +438,12 @@ class Scenario(pytest.Item):
 
         # remove log-file args to avoid each test overwriting it
         # remove error message skipping args which is sometimes passed in by the ide
-        ignore_args = ['--log-file', '--no-header', '--no-summary']
-        args = [arg for arg in args if not any([arg.startswith(ignore_arg) for
-                                                ignore_arg in ignore_args])]
+        ignore_args = ["--log-file", "--no-header", "--no-summary"]
+        args = [
+            arg
+            for arg in args
+            if not any([arg.startswith(ignore_arg) for ignore_arg in ignore_args])
+        ]
         status = pytest.main(args)
         assert status == 0
 
@@ -461,7 +464,6 @@ class Scenario(pytest.Item):
 
 class YamlError(Exception):
     """Custom exception for error reporting."""
-
 
 
 # ------------------------------------- HELPERS ------------------------------------
