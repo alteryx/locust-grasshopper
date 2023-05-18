@@ -444,8 +444,8 @@ class Scenario(pytest.Item):
             for arg in args
             if not any([arg.startswith(ignore_arg) for ignore_arg in ignore_args])
         ]
-        status = pytest.main(args)
-        assert status == 0
+        exit_code = pytest.main(args)
+        assert exit_code == pytest.ExitCode.OK
 
     def repr_failure(self, excinfo):
         """Call this method when self.runtest() raises an exception."""
