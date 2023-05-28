@@ -7,6 +7,8 @@ import os
 
 # import pytest
 
+pytest_plugins = ["pytester"]
+
 GRASSHOPPER_CONFIG_FILE_PATH = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "grasshopper.config"
 )

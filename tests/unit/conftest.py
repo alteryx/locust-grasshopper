@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 import pytest
+from assertpy import assert_that
 
 pytest_plugins = ["pytester"]
 
@@ -167,7 +168,7 @@ def perform_fixture_test_with_optional_log_capture(
     pytester documentation for more details.
 
     caplog - Simply pass the value of the pytest supplied fixture called `caplog`,
-    which your test will need to put into its signature.bWill only do a log capture if
+    which your test will need to put into its signature. Will only do a log capture if
     caplog is not None.
 
     target_messages - list of messages you expect to see in the captured logging for
@@ -195,7 +196,7 @@ def perform_fixture_test_with_optional_log_capture(
                 caplog,
                 **target_message,
             )
-            assert found
+            assert_that(found, f"Expecting {target_message}").is_true()
 
     # return the result from pytester.runpytest() so that a test
     # may perform additional validations not provided for here
