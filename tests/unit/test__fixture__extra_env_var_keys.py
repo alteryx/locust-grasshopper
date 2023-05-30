@@ -5,7 +5,7 @@ from assertpy import assert_that
 from tests.unit.conftest import (  # noqa: I202
     CONFTEST_TEMPLATE,
     message_was_not_logged,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 FIXTURE_UNDER_TEST = "extra_env_var_keys"
@@ -37,7 +37,7 @@ def test__extra_env_var_keys__couple_defined(pytester):
             assert_that(extra_env_var_keys).is_equal_to(['ENV1', 'ENV2'])
     """
     )
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__extra_env_var_keys__none(pytester, caplog):
@@ -67,7 +67,7 @@ def test__extra_env_var_keys__none(pytester, caplog):
         "target_message_re": "Fixture configuration_extra_env_var_keys may only return "
         "a list of strings",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
 
@@ -93,7 +93,7 @@ def test__extra_env_var_keys__empty_list(pytester, caplog):
             assert_that(extra_env_var_keys).is_equal_to([])
     """
     )
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
     target_message_re = (
         "Fixture configuration_extra_env_var_keys may only return a list of strings"
     )
@@ -130,7 +130,7 @@ def test__extra_env_var_keys__invalid_type_in_list(pytester, caplog):
         "target_message_re": "Fixture configuration_extra_env_var_keys may only return "
         "a list of strings",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
 
@@ -162,6 +162,6 @@ def test__extra_env_var_keys__not_a_list(pytester, caplog):
         "target_message_re": "Fixture configuration_extra_env_var_keys may only return "
         "a list of strings",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )

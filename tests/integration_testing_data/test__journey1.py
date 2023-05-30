@@ -11,10 +11,11 @@ logger = logging.getLogger(__name__)
 class Journey1(BaseJourney):
     wait_time = between(min_wait=1, max_wait=2)
     defaults = {
+        "runtime": 20,
         "thresholds": {
-            "PX_TREND_google_home": {"type": "custom", "limit": 200},
-            "google_home": {"type": "custom", "limit": 200},
-        }
+            "PX_TREND_google_home": {"type": "custom", "limit": 1000},
+            "google_home": {"type": "get", "limit": 200},
+        },
     }
 
     @task
@@ -27,7 +28,6 @@ class Journey1(BaseJourney):
 
 
 def test_journey1(complete_configuration):
-    complete_configuration["runtime"] = 20
     Journey1.update_incoming_scenario_args(complete_configuration)
     locust_env = Grasshopper.launch_test(Journey1, **complete_configuration)
     return locust_env

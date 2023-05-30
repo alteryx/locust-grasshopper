@@ -7,7 +7,7 @@ from tests.unit.conftest import (
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
@@ -83,7 +83,7 @@ def test__env_var_args__happy(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_NON_MATCHING_VALUES, clear=True)
@@ -103,7 +103,7 @@ def test__env_var_args__no_matches(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, clear=True)
@@ -122,7 +122,7 @@ def test__env_var_args__environ_empty(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_KEYS_MATCHING_OTHER_SOURCES, clear=True)
@@ -150,7 +150,7 @@ def test__env_var_args__matching_extra_keys(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_KEYS_MATCHING_OTHER_SOURCES, clear=True)
@@ -179,7 +179,7 @@ def test__env_var_args__matching_custom_prefix(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_KEYS_THAT_WONT_RESOLVE, clear=True)
@@ -204,7 +204,7 @@ def test__env_var_args__skipping_keys_that_dont_resolve_correctly(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_ALL_SOURCES_AND_NON_MATCHING_VALUES, clear=True)
@@ -240,7 +240,7 @@ def test__env_var_args__loading_from_all_sources(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, FAKE_ENVIRON_SOME_MATCHING_VALUES, clear=True)
@@ -260,7 +260,7 @@ def test__env_var_args__empty_attrs(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(os.environ, clear=True)
@@ -280,4 +280,4 @@ def test__env_var_args__empty_attrs_and_empty_env_vars(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)

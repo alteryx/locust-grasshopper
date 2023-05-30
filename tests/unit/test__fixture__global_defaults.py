@@ -9,7 +9,7 @@ from tests.unit.conftest import (  # noqa: I202
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
@@ -90,7 +90,7 @@ def test__global_defaults__finds_defaults_in_arbitrary_attrs(pytester):
         ),
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(CC.COMPLETE_ATTRS, ATTRS_WITH_NO_DEFAULTS, clear=True)
@@ -110,7 +110,7 @@ def test__global_defaults__no_defaults_in_attrs(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(CC.COMPLETE_ATTRS, clear=True)
@@ -129,4 +129,4 @@ def test__global_defaults__empty_attrs(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)

@@ -6,7 +6,7 @@ from tests.unit.conftest import (
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
     calculate_path,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 FIXTURE_UNDER_TEST = "grasshopper_config_file_args"
@@ -42,7 +42,7 @@ def test__grasshopper_config_file_args__happy(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__grasshopper_config_file_args__file_not_found(pytester, caplog):
@@ -70,7 +70,7 @@ def test__grasshopper_config_file_args__file_not_found(pytester, caplog):
         "target_message_re": "Skipping loading from grasshopper configuration file "
         "because (.+) not found",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
 
@@ -102,7 +102,7 @@ def test__grasshopper_config_file_args__missing_section(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__grasshopper_config_file_args__extra_section(pytester):
@@ -132,7 +132,7 @@ def test__grasshopper_config_file_args__extra_section(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__grasshopper_config_file_args__invalid_yaml(pytester, caplog):
@@ -159,7 +159,7 @@ def test__grasshopper_config_file_args__invalid_yaml(pytester, caplog):
         "target_level": logging.WARNING,
         "target_message_re": "Unable to parse yaml file",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
 
@@ -188,6 +188,6 @@ def test__grasshopper_config_file_args__empty_yaml(pytester, caplog):
         "target_level": logging.WARNING,
         "target_message_re": "Unable to parse yaml file",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )

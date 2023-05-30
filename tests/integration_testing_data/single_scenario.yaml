@@ -3,12 +3,15 @@ scenario1:
   grasshopper_args:
     users: 1
     spawn_rate: 1
-    runtime: 600
+    runtime: 120
   grasshopper_scenario_args:
-    flow_name : 'POC flow'
-    recipe_name: 'Untitled recipe'
-    engine: 'photon'
-    thresholds: '{"{CUSTOM}PX_TREND_google_home": 1000}'
+    thresholds:
+      PX_TREND_google_home:
+        type: custom
+        limit: 100
+      google_home:
+        type: get
+        limit: 300
   tags:
     - 'smoke'
     - 'trend'

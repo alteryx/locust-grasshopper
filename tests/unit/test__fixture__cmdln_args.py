@@ -5,7 +5,7 @@ from tests.unit.conftest import (
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
@@ -13,6 +13,7 @@ from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
 )
 
 FIXTURE_UNDER_TEST = "cmdln_args"
+
 
 # Some comments on testing fixture cmdln_args.
 # The source of values for this fixture is pytest's request.config object. We are going
@@ -47,7 +48,7 @@ def test__cmdln_args__happy(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__cmdln_args__empty_cmdln(pytester):
@@ -75,7 +76,7 @@ def test__cmdln_args__empty_cmdln(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__cmdln_args__extra_args_coming_from_cmdln(pytester):
@@ -104,7 +105,7 @@ def test__cmdln_args__extra_args_coming_from_cmdln(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(CC.COMPLETE_ATTRS, clear=True)
@@ -131,7 +132,7 @@ def test__cmdln_args__empty_attrs(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 @patch.dict(CC.COMPLETE_ATTRS, clear=True)
@@ -158,4 +159,4 @@ def test__cmdln_args__empty_attrs_and_empty_cmdln(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
