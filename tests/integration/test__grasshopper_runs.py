@@ -11,7 +11,7 @@ from tests.unit.conftest import (  # noqa: I202
 
 logger = logging.getLogger(__name__)
 
-MIN_NUMBER_OF_REQUESTS = 8
+MIN_NUMBER_OF_REQUESTS = 10
 
 
 def validate_number_of_iterations(

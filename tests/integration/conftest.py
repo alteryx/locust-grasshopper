@@ -52,7 +52,7 @@ def std_gh_out_with_cfg_msgs(std_gh_output_msgs):
 @pytest.fixture
 def gh_out_add_trends_and_checks(std_gh_out_with_cfg_msgs):
     trend_base = r"\s+\d\d\s+(\d+)ms\s+(\d+)ms"
-    check_base = r"\s+\d+\s+\d+\s+\d+"
+    check_base = r"\s+\d+\s+\d+\s+\d+\s+\d+(\.\d+)?"
 
     std_gh_out_with_cfg_msgs.append(construct_msg("PX_TREND_google_home" + trend_base))
     std_gh_out_with_cfg_msgs.append(construct_msg("google_home" + trend_base))
