@@ -24,6 +24,7 @@ def test_get_tagged_scenarios_happy_env_var():
         "scenario2": {"tags": ["foo"]},
     }
     tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, fspath="asdf")
+    del os.environ["TAGS"]
     assert tagged_scenarios == {"scenario2": {"tags": ["foo", "scenario2"]}}
 
 
