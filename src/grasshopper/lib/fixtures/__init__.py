@@ -477,9 +477,7 @@ def _fetch_args(attr_names, config) -> dict:
 
 def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
     valid_scenarios = {}
-    tags_to_query_for = (
-        config.getoption("--tags") or os.getenv("TAGS") or os.getenv("tags")
-    )
+    tags_to_query_for = config.getoption("--tags") or os.getenv("TAGS")
     if tags_to_query_for:
         for scenario_name, scenario_contents in raw_yaml_dict.items():
             tags_list = scenario_contents.get("tags")
