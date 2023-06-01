@@ -3,7 +3,7 @@ from tests.unit.conftest import (
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 from grasshopper.lib.configuration.gh_configuration import GHConfiguration
@@ -57,7 +57,7 @@ def test__pre_processed_args__happy(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__pre_processed_args__empty_sources(pytester):
@@ -97,7 +97,7 @@ def test__pre_processed_args__empty_sources(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__pre_processed_args__with_precedence_applied(pytester):
@@ -156,4 +156,4 @@ def test__pre_processed_args__with_precedence_applied(pytester):
         )
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)

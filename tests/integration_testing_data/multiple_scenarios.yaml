@@ -1,0 +1,35 @@
+scenario1:
+  test_file_name: 'test__journey1.py'
+  grasshopper_args:
+    users: 1
+    spawn_rate: 1
+    runtime: 120
+  grasshopper_scenario_args:
+    thresholds:
+      PX_TREND_google_home:
+        type: custom
+        limit: 100
+      google_home:
+        type: get
+        limit: 300
+  tags:
+    - 'smoke'
+    - 'trend'
+
+scenario2:
+  test_file_name: 'test__journey1.py'
+  grasshopper_args:
+    users: 1
+    spawn_rate: 1
+    runtime: 120
+  grasshopper_scenario_args:
+    thresholds:
+      PX_TREND_google_home:
+        type: custom
+        limit: 1000
+      google_home:
+        type: get
+        limit: 50
+  tags:
+    - 'smoke'
+    - 'trend'
