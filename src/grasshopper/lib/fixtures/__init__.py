@@ -477,7 +477,8 @@ def _fetch_args(attr_names, config) -> dict:
 
 def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
     valid_scenarios = {}
-    if config.getoption("--tags"):
+    tags_to_query_for = config.getoption("--tags") or os.getenv("TAGS")
+    if tags_to_query_for:
         for scenario_name, scenario_contents in raw_yaml_dict.items():
             tags_list = scenario_contents.get("tags")
 
@@ -491,16 +492,16 @@ def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
             # entirely different format of specifying the .py file, yaml file &
             # scenario name, but this makes the script logic much more complex)
             tags_list.append(scenario_name)
-            if tagmatcher.match(query_str=config.getoption("--tags"), tags=tags_list):
+            if tagmatcher.match(query_str=tags_to_query_for, tags=tags_list):
                 valid_scenarios[scenario_name] = scenario_contents
         logging.info(
             f"Scenarios collected that match the specific tag query `"
-            f'{config.getoption("--tags")}`: '
+            f"{tags_to_query_for}`: "
             f"{[scenario_name for scenario_name in valid_scenarios.keys()]}"
         )
     else:
         logging.warning(
-            f"Since no --tags param was specified, ALL scenarios in "
+            f"Since no tags param was specified, ALL scenarios in "
             f"{fspath} will be run!"
         )
         valid_scenarios = raw_yaml_dict
