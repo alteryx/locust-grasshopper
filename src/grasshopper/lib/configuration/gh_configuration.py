@@ -150,6 +150,16 @@ class ConfigurationConstants:
             },
             "default": "Default",
         },
+        "stages_list_args": {
+            "opts": ["--stages_list_args"],
+            "attrs": {
+                "action": "store",
+                "type": str,
+                "help": "Custom Shape - list of stage arguments to create custom load shape",
+            },
+            "default": "{}",
+            "typecast": typecast_dict,
+        },
         "spawn_instance": {
             "opts": ["--spawn_instance"],
             "attrs": {

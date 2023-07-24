@@ -147,7 +147,7 @@ class Stages(Default):  # noqa E501
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._configured_runtime = self.stages[-1].get("duration", 0)
+        self._configured_runtime = self.stages.get("stage")[-1].get("duration", 0)
 
     def tick(self):
         """Tell locust about the new values for users and spawn rate."""
@@ -160,7 +160,7 @@ class Stages(Default):  # noqa E501
                 tick_data = (stage["users"], stage["spawn_rate"])
                 return tick_data
 
-        return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
+        return self.stages.get("stage")[-1]["users"], self.stages.get("stage")[-1]["spawn_rate"]
 
 
 class Spike(Stages):
