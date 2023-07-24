@@ -187,6 +187,16 @@ class ConfigurationConstants:
             "default": 120.0,
             "typecast": typecast_float,
         },
+        "stop_timeout": {
+            "opts": ["--stop-timeout"],
+            "attrs": {
+                "action": "store",
+                "type": float,
+                "help": "Runtime per scenario in milliseconds.",
+            },
+            "default": 300.0,
+            "typecast": typecast_float,
+        },
         "spawn_rate": {
             "opts": ["-R", "--spawn_rate"],
             "attrs": {
