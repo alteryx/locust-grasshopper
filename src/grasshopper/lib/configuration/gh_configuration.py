@@ -155,7 +155,7 @@ class ConfigurationConstants:
             "attrs": {
                 "action": "store",
                 "type": str,
-                "help": "Custom Shape - list of stage arguments to create custom load shape",
+                "help": "list of stage arguments to create custom load shape",
             },
             "default": "{}",
             "typecast": typecast_dict,
@@ -192,7 +192,7 @@ class ConfigurationConstants:
             "attrs": {
                 "action": "store",
                 "type": float,
-                "help": "Runtime per scenario in milliseconds.",
+                "help": "Number of seconds to wait for a simulated user before exiting",
             },
             "default": 300.0,
             "typecast": typecast_float,

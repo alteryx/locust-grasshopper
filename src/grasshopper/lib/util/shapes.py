@@ -160,7 +160,8 @@ class Stages(Default):  # noqa E501
                 tick_data = (stage["users"], stage["spawn_rate"])
                 return tick_data
 
-        return self.stages.get("stage")[-1]["users"], self.stages.get("stage")[-1]["spawn_rate"]
+        return self.stages.get("stage")[-1]["users"], \
+            self.stages.get("stage")[-1]["spawn_rate"]
 
 
 class Spike(Stages):
