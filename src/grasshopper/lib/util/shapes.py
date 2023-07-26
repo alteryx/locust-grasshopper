@@ -7,6 +7,7 @@ classes which extend LoadTestShape, we have full control over the user count and
 rate at all times.
 """
 import logging
+import json
 
 from locust import LoadTestShape
 
@@ -220,11 +221,16 @@ class Customstages(Default):  # noqa E501
               {"duration": 268, "users": 3, "spawn_rate": 1},
               {"duration": 344, "users": 8, "spawn_rate": 0.5},
               {"duration": 408, "users": 4, "spawn_rate": 1},
-              {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True}
+              {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True},
               ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        try:
+            stages = json.loads(kwargs.get("stages"))
+            self.stages = stages
+        except TypeError:
+            pass
         self._configured_runtime = self.stages[-1].get("duration", 0)
 
     def tick(self):
@@ -239,3 +245,4 @@ class Customstages(Default):  # noqa E501
                 return tick_data
 
         return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
+
