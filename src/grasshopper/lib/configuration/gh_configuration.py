@@ -150,16 +150,6 @@ class ConfigurationConstants:
             },
             "default": "Default",
         },
-        "stages_list_args": {
-            "opts": ["--stages_list_args"],
-            "attrs": {
-                "action": "store",
-                "type": str,
-                "help": "list of stage arguments to create custom load shape",
-            },
-            "default": "{}",
-            "typecast": typecast_dict,
-        },
         "spawn_instance": {
             "opts": ["--spawn_instance"],
             "attrs": {
@@ -188,7 +178,7 @@ class ConfigurationConstants:
             "typecast": typecast_float,
         },
         "stop_timeout": {
-            "opts": ["--stop-timeout"],
+            "opts": ["--stop_timeout"],
             "attrs": {
                 "action": "store",
                 "type": float,

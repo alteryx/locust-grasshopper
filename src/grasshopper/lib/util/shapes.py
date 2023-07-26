@@ -6,6 +6,7 @@ generate a load spike or ramp up and down at custom times. By using a one of the
 classes which extend LoadTestShape, we have full control over the user count and spawn
 rate at all times.
 """
+import json
 import logging
 
 from locust import LoadTestShape
@@ -147,7 +148,12 @@ class Stages(Default):  # noqa E501
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._configured_runtime = self.stages.get("stage")[-1].get("duration", 0)
+        try:
+            stages = json.loads(kwargs.get("stages"))
+            self.stages = stages
+        except TypeError:
+            pass
+        self._configured_runtime = self.stages[-1].get("duration", 0)
 
     def tick(self):
         """Tell locust about the new values for users and spawn rate."""
@@ -160,8 +166,7 @@ class Stages(Default):  # noqa E501
                 tick_data = (stage["users"], stage["spawn_rate"])
                 return tick_data
 
-        return self.stages.get("stage")[-1]["users"], \
-            self.stages.get("stage")[-1]["spawn_rate"]
+        return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
 
 
 class Spike(Stages):
