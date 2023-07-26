@@ -127,7 +127,7 @@ class Stages(Default):  # noqa E501
     Keyword arguments:
         stages -- A list of dicts, each representing a stage with the following keys:
             duration -- When this many seconds pass the test is advanced to the next
-            stage
+            stage.
             users -- Total user count
             spawn_rate -- Number of users to start/stop per second
             stop -- A boolean that can stop that test at a specific stage
@@ -196,3 +196,46 @@ class Spike(Stages):
             },
         ]
         super().__init__(*args, **kwargs)
+
+class Customstages(Default):  # noqa E501
+    """
+    Stolen from this set of examples as part of the locust.io documentation.
+    https://github.com/locustio/locust/blob/master/examples/custom_shape/stages.py
+
+    Keyword arguments:
+        stages -- A list of dicts, each representing a stage with the following keys:
+            duration -- When this many seconds pass the test is advanced to the next
+            stage.
+            users -- Total user count
+            spawn_rate -- Number of users to start/stop per second
+            stop -- A boolean that can stop that test at a specific stage
+        stop_at_end -- Can be set to stop once all stages have run.
+
+    Most likely, you'd want to extend this class and only define a new stages attr.
+    """
+
+    stages = [{"duration": 68, "users": 4, "spawn_rate": 0.5},
+              {"duration": 130, "users": 2, "spawn_rate": 1},
+              {"duration": 202, "users": 6, "spawn_rate": 0.5},
+              {"duration": 268, "users": 3, "spawn_rate": 1},
+              {"duration": 344, "users": 8, "spawn_rate": 0.5},
+              {"duration": 408, "users": 4, "spawn_rate": 1},
+              {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True}
+              ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._configured_runtime = self.stages[-1].get("duration", 0)
+
+    def tick(self):
+        """Tell locust about the new values for users and spawn rate."""
+        run_time = self.get_run_time()
+
+        logger.debug(f"Tick: runtime=[{run_time}]")
+
+        for stage in self.stages:
+            if run_time < stage["duration"]:
+                tick_data = (stage["users"], stage["spawn_rate"])
+                return tick_data
+
+        return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
