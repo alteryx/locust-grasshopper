@@ -201,7 +201,7 @@ class Spike(Stages):
 class Customstages(Stages):  # noqa E501
 
     """Keyword arguments:
-        stages -- Sending list of dicts as string using command line"""
+        stages -- Takes keyword argument that is a json string"""
 
     stages = [{"duration": 68, "users": 4, "spawn_rate": 0.5},
               {"duration": 130, "users": 2, "spawn_rate": 1},
