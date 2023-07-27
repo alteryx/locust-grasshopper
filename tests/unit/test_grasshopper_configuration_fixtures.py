@@ -20,7 +20,6 @@ def expected_global_defaults():
         "shape": "Default",
         "users": 1.0,
         "runtime": 120.0,
-        "stop_timeout": 300.0,
         "spawn_rate": 1.0,
         "scenario_delay": 0.0,
         "cleanup_s3": True,

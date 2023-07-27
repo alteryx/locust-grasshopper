@@ -177,16 +177,6 @@ class ConfigurationConstants:
             "default": 120.0,
             "typecast": typecast_float,
         },
-        "stop_timeout": {
-            "opts": ["--stop_timeout"],
-            "attrs": {
-                "action": "store",
-                "type": float,
-                "help": "Number of seconds to wait for a simulated user before exiting",
-            },
-            "default": 300.0,
-            "typecast": typecast_float,
-        },
         "spawn_rate": {
             "opts": ["-R", "--spawn_rate"],
             "attrs": {
