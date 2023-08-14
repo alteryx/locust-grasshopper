@@ -7,6 +7,7 @@ classes which extend LoadTestShape, we have full control over the user count and
 rate at all times.
 """
 import logging
+import json
 
 from locust import LoadTestShape
 
@@ -127,7 +128,7 @@ class Stages(Default):  # noqa E501
     Keyword arguments:
         stages -- A list of dicts, each representing a stage with the following keys:
             duration -- When this many seconds pass the test is advanced to the next
-            stage
+            stage.
             users -- Total user count
             spawn_rate -- Number of users to start/stop per second
             stop -- A boolean that can stop that test at a specific stage
@@ -196,3 +197,27 @@ class Spike(Stages):
             },
         ]
         super().__init__(*args, **kwargs)
+
+class Customstages(Stages):  # noqa E501
+
+    """Keyword arguments:
+        stages -- Takes keyword argument that is a json string"""
+
+    stages = [{"duration": 68, "users": 4, "spawn_rate": 0.5},
+              {"duration": 130, "users": 2, "spawn_rate": 1},
+              {"duration": 202, "users": 6, "spawn_rate": 0.5},
+              {"duration": 268, "users": 3, "spawn_rate": 1},
+              {"duration": 344, "users": 8, "spawn_rate": 0.5},
+              {"duration": 408, "users": 4, "spawn_rate": 1},
+              {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True},
+              ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            stages = json.loads(kwargs.get("stages"))
+            self.stages = stages
+        except TypeError:
+            pass
+        self._configured_runtime = self.stages[-1].get("duration", 0)
+
