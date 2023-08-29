@@ -6,8 +6,8 @@ generate a load spike or ramp up and down at custom times. By using a one of the
 classes which extend LoadTestShape, we have full control over the user count and spawn
 rate at all times.
 """
-import logging
 import json
+import logging
 
 from locust import LoadTestShape
 
@@ -198,26 +198,29 @@ class Spike(Stages):
         ]
         super().__init__(*args, **kwargs)
 
+
 class Customstages(Stages):  # noqa E501
 
     """Keyword arguments:
-        stages -- Takes keyword argument that is a json string"""
+    stages -- Takes keyword argument that is a json string"""
 
-    stages = [{"duration": 68, "users": 4, "spawn_rate": 0.5},
-              {"duration": 130, "users": 2, "spawn_rate": 1},
-              {"duration": 202, "users": 6, "spawn_rate": 0.5},
-              {"duration": 268, "users": 3, "spawn_rate": 1},
-              {"duration": 344, "users": 8, "spawn_rate": 0.5},
-              {"duration": 408, "users": 4, "spawn_rate": 1},
-              {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True},
-              ]
+    stages = [
+        {"duration": 68, "users": 4, "spawn_rate": 0.5},
+        {"duration": 130, "users": 2, "spawn_rate": 1},
+        {"duration": 202, "users": 6, "spawn_rate": 0.5},
+        {"duration": 268, "users": 3, "spawn_rate": 1},
+        {"duration": 344, "users": 8, "spawn_rate": 0.5},
+        {"duration": 408, "users": 4, "spawn_rate": 1},
+        {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True},
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            stages = json.loads(kwargs.get("stages"))
+            stages = kwargs.get("stages")
+            if type(stages) == str:
+                stages = json.loads(stages)
             self.stages = stages
         except TypeError:
             pass
         self._configured_runtime = self.stages[-1].get("duration", 0)
-
