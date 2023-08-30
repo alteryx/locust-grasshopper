@@ -171,9 +171,7 @@ class Grasshopper:
         import grasshopper.lib.util.shapes as shapes
 
         if shape_name in dir(shapes):
-            shape_object = getattr(shapes, shape_name)(**kwargs)
-            kwargs["runtime"] = shape_object._configured_runtime
-            return shape_object
+            return getattr(shapes, shape_name)(**kwargs)
         else:
             raise ValueError(
                 f"Shape {shape_name} does not exist in "
