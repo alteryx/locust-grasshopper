@@ -122,7 +122,8 @@ class Trend(Default):
 
 class Stages(Default):  # noqa E501
     """
-    Stolen from this set of examples as part of the locust.io documentation.
+    Stolen and slightly modified from this set of examples as part of the locust.io
+    documentation.
     https://github.com/locustio/locust/blob/master/examples/custom_shape/stages.py
 
     Keyword arguments:
@@ -131,37 +132,39 @@ class Stages(Default):  # noqa E501
             stage.
             users -- Total user count
             spawn_rate -- Number of users to start/stop per second
-            stop -- A boolean that can stop that test at a specific stage
-        stop_at_end -- Can be set to stop once all stages have run.
 
     Most likely, you'd want to extend this class and only define a new stages attr.
     """
 
     stages = [
         {"duration": 60, "users": 1, "spawn_rate": 1},
-        {"duration": 120, "users": 2, "spawn_rate": 2},
-        {"duration": 240, "users": 3, "spawn_rate": 3},
-        {"duration": 300, "users": 4, "spawn_rate": 4},
-        {"duration": 360, "users": 3, "spawn_rate": 1},
-        {"duration": 420, "users": 1, "spawn_rate": 1, "stop": True},
+        {"duration": 60, "users": 2, "spawn_rate": 2},
+        {"duration": 60, "users": 3, "spawn_rate": 3},
+        {"duration": 60, "users": 4, "spawn_rate": 4},
+        {"duration": 60, "users": 3, "spawn_rate": 1},
+        {"duration": 60, "users": 1, "spawn_rate": 1},
     ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._configured_runtime = self.stages[-1].get("duration", 0)
+        self._configured_runtime = self.sum_duration(self.stages)
 
     def tick(self):
         """Tell locust about the new values for users and spawn rate."""
         run_time = self.get_run_time()
-
-        logger.debug(f"Tick: runtime=[{run_time}]")
-
+        previous_stages_runtimes = 0
         for stage in self.stages:
-            if run_time < stage["duration"]:
+            if run_time < stage["duration"] + previous_stages_runtimes:
                 tick_data = (stage["users"], stage["spawn_rate"])
                 return tick_data
+            previous_stages_runtimes += stage["duration"]
 
-        return self.stages[-1]["users"], self.stages[-1]["spawn_rate"]
+        return None
+
+    @staticmethod
+    def sum_duration(stages):
+        """Sum and return all stage durations."""
+        return sum(int(stage["duration"]) for stage in stages)
 
 
 class Spike(Stages):
@@ -202,20 +205,37 @@ class Spike(Stages):
 class Customstages(Stages):  # noqa E501
 
     """Keyword arguments:
-    stages -- Takes keyword argument that is a json string"""
+    stages -- can be either a json string or a dictionary object
+
+    This can be set by overriding the complete configuration before launching the
+    test, or, setting the following grasshopper_scenario_args in your YAML scenario
+    like so:
+
+
+    grasshopper_args:
+        shape: customstages
+    grasshopper_scenario_args:
+        stages:
+          - duration: 10
+            users: 1
+            spawn_rate: 4
+          - duration: 20
+            users: 2
+            spawn_rate: 2
+
+    """
 
     stages = [
         {"duration": 68, "users": 4, "spawn_rate": 0.5},
-        {"duration": 130, "users": 2, "spawn_rate": 1},
-        {"duration": 202, "users": 6, "spawn_rate": 0.5},
-        {"duration": 268, "users": 3, "spawn_rate": 1},
-        {"duration": 344, "users": 8, "spawn_rate": 0.5},
-        {"duration": 408, "users": 4, "spawn_rate": 1},
-        {"duration": 420, "users": 0, "spawn_rate": 1, "stop": True},
+        {"duration": 62, "users": 2, "spawn_rate": 1},
+        {"duration": 72, "users": 6, "spawn_rate": 0.5},
+        {"duration": 66, "users": 3, "spawn_rate": 1},
+        {"duration": 76, "users": 8, "spawn_rate": 0.5},
+        {"duration": 64, "users": 4, "spawn_rate": 1},
+        {"duration": 12, "users": 0, "spawn_rate": 1},
     ]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         try:
             stages = kwargs.get("stages")
             if type(stages) == str:
@@ -223,4 +243,4 @@ class Customstages(Stages):  # noqa E501
             self.stages = stages
         except TypeError:
             pass
-        self._configured_runtime = self.stages[-1].get("duration", 0)
+        super().__init__(*args, **kwargs)

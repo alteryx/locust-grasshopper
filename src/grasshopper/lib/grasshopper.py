@@ -145,6 +145,7 @@ class Grasshopper:
         # env.shape_class is actually supplied a shape *instance*
         # despite the attr name
         env.shape_class = kwargs.get("shape_instance")
+        kwargs["runtime"] = env.shape_class.configured_runtime
 
         # assign the weights to the individual user classes __after__ the shape has been
         # processed because eventually, we will need to consult the shape to get the max
@@ -170,7 +171,9 @@ class Grasshopper:
         import grasshopper.lib.util.shapes as shapes
 
         if shape_name in dir(shapes):
-            return getattr(shapes, shape_name)(**kwargs)
+            shape_object = getattr(shapes, shape_name)(**kwargs)
+            kwargs["runtime"] = shape_object._configured_runtime
+            return shape_object
         else:
             raise ValueError(
                 f"Shape {shape_name} does not exist in "
