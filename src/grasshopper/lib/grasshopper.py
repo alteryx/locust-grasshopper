@@ -145,6 +145,7 @@ class Grasshopper:
         # env.shape_class is actually supplied a shape *instance*
         # despite the attr name
         env.shape_class = kwargs.get("shape_instance")
+        kwargs["runtime"] = env.shape_class.configured_runtime
 
         # assign the weights to the individual user classes __after__ the shape has been
         # processed because eventually, we will need to consult the shape to get the max
