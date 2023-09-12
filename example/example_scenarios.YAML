@@ -30,3 +30,18 @@ example_scenario_2:
   tags:
     - 'smoke'
     - 'example2'
+
+example_scenario_composite:
+  grasshopper_args:
+    users: 10
+    spawn_rate: 1
+    runtime: 200
+  child_scenarios:
+    - example_scenario_1:
+        workflow_name: a
+        weight: 2
+    - example_scenario_2:
+        workflow_name: b
+        weight: 1
+  tags:
+    - 'composite'

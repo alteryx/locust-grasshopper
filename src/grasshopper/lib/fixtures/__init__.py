@@ -385,20 +385,31 @@ class YamlScenarioFile(pytest.File):
         # Third Party
         import yaml
 
-        raw = yaml.safe_load(self.fspath.open())
+        full_scenarios_list = yaml.safe_load(self.fspath.open())
         valid_scenarios = _get_tagged_scenarios(
-            raw_yaml_dict=raw, config=self.config, fspath=self.fspath
+            full_scenarios_list=full_scenarios_list,
+            config=self.config,
+            fspath=self.fspath,
         )  # tag filter
         for scenario_name, scenario_contents in valid_scenarios.items():
             test_file_name = scenario_contents.get("test_file_name")
+            child_scenarios = scenario_contents.get("child_scenarios")
             if test_file_name:
                 yield Scenario.from_parent(
                     self, name=scenario_name, spec=scenario_contents
                 )
+            elif child_scenarios:
+                composite_scenario_spec = {
+                    "test_file_name": "../src/grasshopper/lib/journeys"
+                    "/composite_journey.py "
+                }
+                yield Scenario.from_parent(
+                    self, name=scenario_name, spec=composite_scenario_spec
+                )
             else:
                 raise AttributeError(
                     f"The YAML scenario `{scenario_name}` "
-                    f"is missing the required `test_file_name` parameter"
+                    f"needs to specify either `test_file_name` or `child_scenarios`"
                 )
 
 
@@ -475,11 +486,11 @@ def _fetch_args(attr_names, config) -> dict:
     return args
 
 
-def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
+def _get_tagged_scenarios(full_scenarios_list, config, fspath) -> dict:
     valid_scenarios = {}
     tags_to_query_for = config.getoption("--tags") or os.getenv("TAGS")
     if tags_to_query_for:
-        for scenario_name, scenario_contents in raw_yaml_dict.items():
+        for scenario_name, scenario_contents in full_scenarios_list.items():
             tags_list = scenario_contents.get("tags")
 
             # protecting for the case where tags is specified as a key in the
@@ -504,7 +515,7 @@ def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
             f"Since no tags param was specified, ALL scenarios in "
             f"{fspath} will be run!"
         )
-        valid_scenarios = raw_yaml_dict
+        valid_scenarios = full_scenarios_list
 
     return valid_scenarios
 
