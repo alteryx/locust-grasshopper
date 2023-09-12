@@ -23,7 +23,8 @@ class BaseJourney(HttpUser):
     _incoming_test_parameters = {}
     abstract = True
     base_torn_down = False
-    defaults = {"tags": {}, "thresholds": {}}
+    tags = {}
+    defaults = {"tags": tags, "thresholds": {}}
 
     @classmethod
     @property
@@ -51,6 +52,11 @@ class BaseJourney(HttpUser):
         new_args.update(cls._incoming_test_parameters)
         cls.replace_incoming_scenario_args(new_args)
 
+    def update_tags(self, new_tags: dict):
+        """Update the tags for the influxdb listener."""
+        self.environment.grasshopper_listeners.influxdb_listener.tags.update(new_tags)
+        self.tags.update(new_tags)
+
     @classmethod
     def reset_class_attributes(cls):
         """Reset the class level attributes to their starting state.
@@ -64,6 +70,7 @@ class BaseJourney(HttpUser):
         is provided as a way to reset to the starting state.
         """
         cls._incoming_test_parameters = {}
+        cls.tags = {}
         cls.defaults = {"tags": {}}
         cls.host = ""
         cls.abstract = True
@@ -85,6 +92,7 @@ class BaseJourney(HttpUser):
         self._register_new_vu()
         self._set_thresholds()
         self.environment.host = self.scenario_args.get("target_url", "") or self.host
+        self.update_tags({"environment": self.environment.host})
 
         # TODO: currently global iterations is stored in the environment stats object
         # TODO: poke around to see if we can move it to a class attribute here
