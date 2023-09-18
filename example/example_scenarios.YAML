@@ -37,11 +37,13 @@ example_scenario_composite:
     spawn_rate: 1
     runtime: 200
   child_scenarios:
-    - example_scenario_1:
-        workflow_name: a
-        weight: 2
-    - example_scenario_2:
-        workflow_name: b
-        weight: 1
+    - scenario_name: example_scenario_1
+      weight: 1
+      grasshopper_scenario_arg_overrides:
+        foo: bar3
+    - scenario_name: example_scenario_2
+      weight: 3
+      grasshopper_scenario_arg_overrides:
+        foo: bar4
   tags:
     - 'composite'

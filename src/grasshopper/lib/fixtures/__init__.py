@@ -1,7 +1,9 @@
 """Contents of the locust_grasshopper plugin which gets automatically loaded."""
+import importlib
 import logging
 import os
 import time
+import uuid
 
 import pytest
 import tagmatcher
@@ -349,6 +351,11 @@ def complete_configuration(process_shape):
     return config
 
 
+@pytest.fixture(scope="session")
+def composite_weighted_user_classes():
+    return YamlScenarioFile.composite_weighted_user_classes
+
+
 # -------------------------------- OTHER FIXTURES ------------------------------
 @pytest.fixture(scope="function", autouse=True)
 def do_scenario_delay(grasshopper_args):
@@ -380,6 +387,8 @@ def pytest_collect_file(parent, path):
 class YamlScenarioFile(pytest.File):
     """The logic behind what to do when a Yaml file is specified in pytest."""
 
+    composite_weighted_user_classes = {}
+
     def collect(self):
         """Collect the file, knowing the path via self.fspath."""
         # Third Party
@@ -399,9 +408,22 @@ class YamlScenarioFile(pytest.File):
                     self, name=scenario_name, spec=scenario_contents
                 )
             elif child_scenarios:
+                import pathlib
+
+                parent_path = pathlib.Path(__file__).parent.resolve()
+                YamlScenarioFile.composite_weighted_user_classes = (
+                    _get_composite_weighted_user_classes(
+                        full_scenarios_list, scenario_contents
+                    )
+                )
+                import shutil
+
+                shutil.copy2(
+                    f"{parent_path}/../journeys/composite_journey.py",
+                    f"{os.getcwd()}/composite_journey.py",
+                )
                 composite_scenario_spec = {
-                    "test_file_name": "../src/grasshopper/lib/journeys"
-                    "/composite_journey.py "
+                    "test_file_name": f"{os.getcwd()}/composite_journey.py"
                 }
                 yield Scenario.from_parent(
                     self, name=scenario_name, spec=composite_scenario_spec
@@ -542,3 +564,82 @@ def type_check_list_of_strs(list_of_strs):
             all_strs = all_strs and type(s) == str
         check_passed = all_strs
     return check_passed
+
+
+def _get_composite_weighted_user_classes(
+    full_scenarios_list, composite_scenario_contents
+):
+    """Generate a dictionary of journey classes with their associated weights."""
+    weighted_user_classes = {}
+    child_scenario_specs = _get_child_scenario_specs(
+        full_scenarios_list, composite_scenario_contents
+    )
+    for child_scenario_spec in child_scenario_specs:
+        base_journey_class = _import_class_with_journey(
+            absolute_file_path=f"{os.getcwd()}/"
+            f'{child_scenario_spec.get("test_file_name")}'
+        )
+        base_class_name = base_journey_class.__name__
+        composite_class_name = (
+            f"composite_journey_class_{base_class_name}_{uuid.uuid4()}"
+        )
+
+        # dynamically create a child class which inherits from the base class,
+        # required for having separate scenario args
+        child_journey_class = type(
+            composite_class_name,
+            (base_journey_class,),
+            {
+                "_incoming_test_parameters": child_scenario_spec.get(
+                    "grasshopper_scenario_args"
+                )
+            },
+        )
+        weighted_user_classes[child_journey_class] = child_scenario_spec.get("weight")
+    return weighted_user_classes
+
+
+def _import_class_with_journey(absolute_file_path):
+    """Import and return a class with 'journey' in its name from a module file."""
+    try:
+        module_name = os.path.splitext(absolute_file_path)[0]
+        spec = importlib.util.spec_from_file_location(module_name, absolute_file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Now, inspect the module's attributes to find the class with "journey" in
+        # its name
+        for name, obj in vars(module).items():
+            if (
+                isinstance(obj, type)
+                and "journey" in name.lower()
+                and "base" not in name.lower()
+            ):
+                return obj
+
+        # If no class with "journey" in its name is found, return None or raise an
+        # exception
+        raise ImportError("No class with 'journey' in its name")
+
+    except ImportError as e:
+        # Handle import errors, e.g., file not found
+        print(f"Import error: {e}")
+        return None
+
+
+def _get_child_scenario_specs(full_scenarios_list, composite_scenario_contents):
+    """Extract and prepare child scenario specs given composite scenario contents."""
+    child_scenarios = composite_scenario_contents.get("child_scenarios")
+    child_scenario_specs = []
+    for child_scenario in child_scenarios:
+        child_scenario_name = child_scenario.get("scenario_name")
+        child_scenario_overrides = child_scenario.get(
+            "grasshopper_scenario_arg_overrides", {}
+        )
+        child_scenario_spec = full_scenarios_list.get(child_scenario_name)
+        child_scenario_spec.setdefault("grasshopper_scenario_args", {}).update(
+            child_scenario_overrides
+        )
+        child_scenario_spec["weight"] = child_scenario.get("weight", 1)
+        child_scenario_specs.append(child_scenario_spec)
+    return child_scenario_specs
