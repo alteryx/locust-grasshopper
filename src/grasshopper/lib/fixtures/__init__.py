@@ -2,6 +2,7 @@
 import importlib
 import logging
 import os
+import shutil
 import time
 import uuid
 
@@ -416,18 +417,18 @@ class YamlScenarioFile(pytest.File):
                         full_scenarios_list, scenario_contents
                     )
                 )
-                import shutil
 
                 shutil.copy2(
-                    f"{parent_path}/../journeys/composite_journey.py",
-                    f"{os.getcwd()}/composite_journey.py",
+                    f"{parent_path}/../journeys/temp_gh_composite.py",
+                    f"{os.getcwd()}/temp_gh_composite.py",
                 )
                 composite_scenario_spec = {
-                    "test_file_name": f"{os.getcwd()}/composite_journey.py"
+                    "test_file_name": f"{os.getcwd()}/temp_gh_composite.py"
                 }
                 yield Scenario.from_parent(
                     self, name=scenario_name, spec=composite_scenario_spec
                 )
+                shutil.rmtree(f"{os.getcwd()}/temp_gh_composite.py", ignore_errors=True)
             else:
                 raise AttributeError(
                     f"The YAML scenario `{scenario_name}` "

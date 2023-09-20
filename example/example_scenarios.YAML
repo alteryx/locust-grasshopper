@@ -1,35 +1,35 @@
 example_scenario_1:
-  test_file_name: 'test_example.py'
+  test_file_name: test_example.py
   grasshopper_args:
     users: 1
     spawn_rate: 1
     runtime: 200
   grasshopper_scenario_args:
-    foo : 'bar2'
+    foo : bar1
     thresholds:
       get google images:
         type: get
         limit: 2000
   tags:
-    - 'smoke'
-    - 'example1'
+    - smoke
+    - example1
 
 example_scenario_2:
-  test_file_name: 'test_example.py'
+  test_file_name: test_example.py
   grasshopper_args:
     users: 2
     spawn_rate: 1
     runtime: 300
   grasshopper_scenario_args:
-    foo: 'bar3'
+    foo: bar2
     thresholds:
       get google images:
         type: get
         limit: 2500
         percentile: 0.8
   tags:
-    - 'smoke'
-    - 'example2'
+    - smoke
+    - example2
 
 example_scenario_composite:
   grasshopper_args:
@@ -45,5 +45,10 @@ example_scenario_composite:
       weight: 3
       grasshopper_scenario_arg_overrides:
         foo: bar4
+        thresholds:
+          get google images:
+            type: get
+            limit: 4000
+            percentile: 0.7
   tags:
-    - 'composite'
+    - composite
