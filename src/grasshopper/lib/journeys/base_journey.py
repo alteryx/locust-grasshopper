@@ -74,7 +74,7 @@ class BaseJourney(HttpUser):
         """
         cls._incoming_test_parameters = {}
         cls.tags = {}
-        cls.defaults = {"tags": {}}
+        cls.defaults = {"tags": cls.tags}
         cls.host = ""
         cls.abstract = True
         cls.base_torn_down = False
