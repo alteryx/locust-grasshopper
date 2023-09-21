@@ -631,30 +631,25 @@ def _get_composite_weighted_user_classes(
 
 def _import_class_with_journey(absolute_file_path):
     """Import and return a class with 'journey' in its name from a module file."""
-    try:
-        module_name = os.path.splitext(absolute_file_path)[0]
-        spec = importlib.util.spec_from_file_location(module_name, absolute_file_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+    module_name = os.path.splitext(absolute_file_path)[0]
+    spec = importlib.util.spec_from_file_location(module_name, absolute_file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-        # Now, inspect the module's attributes to find the class with "journey" in
-        # its name
-        for name, obj in vars(module).items():
-            if (
-                isinstance(obj, type)
-                and "journey" in name.lower()
-                and "base" not in name.lower()
-            ):
-                return obj
+    # Now, inspect the module's attributes to find the class with "journey" in
+    # its name
+    for name, obj in vars(module).items():
+        if (
+            isinstance(obj, type)
+            and "journey" in name.lower()
+            and "base" not in name.lower()
+        ):
+            return obj
 
-        # If no class with "journey" in its name is found, return None or raise an
-        # exception
-        raise ImportError("No class with 'journey' in its name")
-
-    except ImportError as e:
-        # Handle import errors, e.g., file not found
-        logger.error(f"Import error: {e}")
-        return None
+    # If no class with "journey" in its name is found, return None or raise an
+    # exception
+    logger.error("Import error: No class with 'journey' in its name found.")
+    return None
 
 
 def _get_child_scenario_specs(full_scenarios_list, composite_scenario_contents):

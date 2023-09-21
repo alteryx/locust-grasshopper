@@ -1,7 +1,6 @@
-"""Module: BaseJourney.
+"""Module: test_gh_composite.
 
-Class to hold all the common functionality that we added on top of Locust's HttpUser
-class.
+The generalized test function for running composite journeys in Grasshopper.
 """
 import os
 
