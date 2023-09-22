@@ -646,8 +646,7 @@ def _import_class_with_journey(absolute_file_path):
         ):
             return obj
 
-    # If no class with "journey" in its name is found, return None or raise an
-    # exception
+    # If no class with "journey" in its name is found, return None
     logger.error("Import error: No class with 'journey' in its name found.")
     return None
 
