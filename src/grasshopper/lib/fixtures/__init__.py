@@ -1,7 +1,12 @@
 """Contents of the locust_grasshopper plugin which gets automatically loaded."""
+import atexit
+import importlib
 import logging
 import os
+import pathlib
+import shutil
 import time
+import uuid
 
 import pytest
 import tagmatcher
@@ -349,6 +354,11 @@ def complete_configuration(process_shape):
     return config
 
 
+@pytest.fixture(scope="session")
+def composite_weighted_user_classes():
+    return YamlScenarioFile.composite_weighted_user_classes
+
+
 # -------------------------------- OTHER FIXTURES ------------------------------
 @pytest.fixture(scope="function", autouse=True)
 def do_scenario_delay(grasshopper_args):
@@ -380,26 +390,77 @@ def pytest_collect_file(parent, path):
 class YamlScenarioFile(pytest.File):
     """The logic behind what to do when a Yaml file is specified in pytest."""
 
+    composite_weighted_user_classes = {}
+    full_scenarios_list = []
+
+    temp_gh_file = None
+
+    # ^If a composite scenario is run, this will be the path to
+    # the temp file. This file will be deleted after the test run via
+    # the `cleanup_temp_file` fixture
+
     def collect(self):
         """Collect the file, knowing the path via self.fspath."""
-        # Third Party
-        import yaml
-
-        raw = yaml.safe_load(self.fspath.open())
-        valid_scenarios = _get_tagged_scenarios(
-            raw_yaml_dict=raw, config=self.config, fspath=self.fspath
-        )  # tag filter
+        atexit.register(self._cleanup_temp_file)
+        self.full_scenarios_list = yaml.safe_load(self.fspath.open())
+        valid_scenarios = self._get_valid_scenarios(self.full_scenarios_list)
         for scenario_name, scenario_contents in valid_scenarios.items():
-            test_file_name = scenario_contents.get("test_file_name")
-            if test_file_name:
-                yield Scenario.from_parent(
-                    self, name=scenario_name, spec=scenario_contents
-                )
-            else:
-                raise AttributeError(
-                    f"The YAML scenario `{scenario_name}` "
-                    f"is missing the required `test_file_name` parameter"
-                )
+            yield self._create_scenario(scenario_name, scenario_contents)
+
+    def _get_valid_scenarios(self, full_scenarios_list):
+        """Filter and return valid scenarios."""
+        valid_scenarios = _get_tagged_scenarios(
+            full_scenarios_list=full_scenarios_list,
+            config=self.config,
+            fspath=self.fspath,
+        )  # tag filter
+
+        return valid_scenarios
+
+    def _create_scenario(self, scenario_name, scenario_contents):
+        """Create and yield a scenario based on scenario_contents."""
+        test_file_name = scenario_contents.get("test_file_name")
+        child_scenarios = scenario_contents.get("child_scenarios")
+
+        if test_file_name:
+            return Scenario.from_parent(
+                self, name=scenario_name, spec=scenario_contents
+            )
+        elif child_scenarios:
+            return self._create_composite_scenario(scenario_name, scenario_contents)
+        else:
+            raise AttributeError(
+                f"The YAML scenario `{scenario_name}` "
+                f"needs to specify either `test_file_name` or `child_scenarios`"
+            )
+
+    def _create_composite_scenario(self, scenario_name, scenario_contents):
+        """Create and yield a composite scenario."""
+        parent_path = pathlib.Path(__file__).parent.resolve()
+        YamlScenarioFile.composite_weighted_user_classes = (
+            _get_composite_weighted_user_classes(
+                self.full_scenarios_list, scenario_contents
+            )
+        )
+
+        source_gh_file_path = f"{parent_path}/../journeys/temp_gh_composite.py"
+        YamlScenarioFile.temp_gh_file = f"{os.getcwd()}/temp_gh_composite.py"
+
+        shutil.copy2(
+            source_gh_file_path,
+            YamlScenarioFile.temp_gh_file,
+        )
+        composite_scenario_spec = {"test_file_name": YamlScenarioFile.temp_gh_file}
+
+        return Scenario.from_parent(
+            self, name=scenario_name, spec=composite_scenario_spec
+        )
+
+    def _cleanup_temp_file(self):
+        """Clean up the temp file."""
+        if self.temp_gh_file and os.path.exists(self.temp_gh_file):
+            logger.debug(f"Cleaning up temp file {self.temp_gh_file}")
+            os.remove(self.temp_gh_file)
 
 
 class Scenario(pytest.Item):
@@ -475,11 +536,11 @@ def _fetch_args(attr_names, config) -> dict:
     return args
 
 
-def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
+def _get_tagged_scenarios(full_scenarios_list, config, fspath) -> dict:
     valid_scenarios = {}
     tags_to_query_for = config.getoption("--tags") or os.getenv("TAGS")
     if tags_to_query_for:
-        for scenario_name, scenario_contents in raw_yaml_dict.items():
+        for scenario_name, scenario_contents in full_scenarios_list.items():
             tags_list = scenario_contents.get("tags")
 
             # protecting for the case where tags is specified as a key in the
@@ -504,7 +565,7 @@ def _get_tagged_scenarios(raw_yaml_dict, config, fspath) -> dict:
             f"Since no tags param was specified, ALL scenarios in "
             f"{fspath} will be run!"
         )
-        valid_scenarios = raw_yaml_dict
+        valid_scenarios = full_scenarios_list
 
     return valid_scenarios
 
@@ -531,3 +592,93 @@ def type_check_list_of_strs(list_of_strs):
             all_strs = all_strs and type(s) == str
         check_passed = all_strs
     return check_passed
+
+
+def _get_composite_weighted_user_classes(
+    full_scenarios_list, composite_scenario_contents
+):
+    """Generate a dictionary of journey classes with their associated weights."""
+    weighted_user_classes = {}
+    child_scenario_specs = _get_child_scenario_specs(
+        full_scenarios_list, composite_scenario_contents
+    )
+    for child_scenario_spec in child_scenario_specs:
+        file_dir = os.getcwd()
+        test_file_name = child_scenario_spec.get("test_file_name")
+        test_file_path = os.path.join(file_dir, test_file_name)
+        base_journey_class = _import_class_with_journey(
+            absolute_file_path=test_file_path
+        )
+        base_class_name = base_journey_class.__name__
+        composite_class_name = (
+            f"composite_journey_class_{base_class_name}_{uuid.uuid4()}"
+        )
+
+        # dynamically create a child class which inherits from the base class,
+        # required for having separate scenario args
+        child_journey_class = type(
+            composite_class_name,
+            (base_journey_class,),
+            {
+                "_incoming_test_parameters": child_scenario_spec.get(
+                    "grasshopper_scenario_args"
+                )
+            },
+        )
+        weighted_user_classes[child_journey_class] = child_scenario_spec.get("weight")
+    return weighted_user_classes
+
+
+def _import_class_with_journey(absolute_file_path):
+    """Import and return a class with 'journey' in its name from a module file."""
+    module_name = os.path.splitext(absolute_file_path)[0]
+    spec = importlib.util.spec_from_file_location(module_name, absolute_file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # Now, inspect the module's attributes to find the class with "journey" in
+    # its name
+    for name, obj in vars(module).items():
+        if (
+            isinstance(obj, type)
+            and "journey" in name.lower()
+            and "base" not in name.lower()
+        ):
+            return obj
+
+    # If no class with "journey" in its name is found, return None
+    logger.error("Import error: No class with 'journey' in its name found.")
+    return None
+
+
+def _get_child_scenario_specs(full_scenarios_list, composite_scenario_contents):
+    """Extract and prepare child scenario specs given composite scenario contents."""
+    child_scenarios = composite_scenario_contents.get("child_scenarios")
+    child_scenario_specs = []
+    for child_scenario in child_scenarios:
+        child_scenario_name = child_scenario.get("scenario_name")
+        child_scenario_overrides = child_scenario.get(
+            "grasshopper_scenario_arg_overrides", {}
+        )
+        child_scenario_spec = full_scenarios_list.get(child_scenario_name)
+        if child_scenario_spec is None:
+            raise YamlError(
+                f"Child scenario `{child_scenario_name}` not found in "
+                f"the specified YAML scenario file."
+            )
+        _check_for_recursion(child_scenario_name, child_scenario_spec)
+        child_scenario_spec.setdefault("grasshopper_scenario_args", {}).update(
+            child_scenario_overrides
+        )
+        child_scenario_spec["weight"] = child_scenario.get("weight", 1)
+        child_scenario_specs.append(child_scenario_spec)
+    return child_scenario_specs
+
+
+def _check_for_recursion(child_scenario_name, child_scenario_spec):
+    if child_scenario_spec.get("child_scenarios"):
+        raise YamlError(
+            f"Child scenario `{child_scenario_name}` "
+            f"cannot have child scenarios. Recursive child scenarios are not "
+            f"supported at this time."
+        )
