@@ -150,7 +150,7 @@ def env_var_args(env_var_prefix_key, extra_env_var_keys):
             or env_var_name in extra_env_var_keys
         ):
             if env_var_name.startswith(env_var_prefix_key):
-                env_var_name = env_var_name.lstrip(env_var_prefix_key)
+                env_var_name = env_var_name.replace(env_var_prefix_key, "")
 
             if len(env_var_name) > 0:
                 config.update_single_key(env_var_name.lower(), env_var_value)

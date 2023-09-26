@@ -79,17 +79,12 @@ class GrasshopperListeners:
         tags.update(extra_tags)
         fields = {"check_passed": int(check_passed)}
         time = datetime.utcnow()
-        points = [
-            {
-                "measurement": "locust_checks",
-                "tags": tags,
-                "time": time,
-                "fields": fields,
-            }
-        ]
 
         if getattr(self, "influxdb_listener") is not None:
-            self.influxdb_listener.influxdb_client.write_points(points)
+            point = self.influxdb_listener._InfluxDBListener__make_data_point(
+                "locust_checks", fields, time, tags=tags
+            )
+            self.influxdb_listener.cache.append(point)
 
     @staticmethod
     def _append_trend_data(environment):
