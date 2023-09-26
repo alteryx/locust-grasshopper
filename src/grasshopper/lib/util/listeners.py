@@ -82,7 +82,7 @@ class GrasshopperListeners:
 
         if getattr(self, "influxdb_listener") is not None:
             point = self.influxdb_listener._InfluxDBListener__make_data_point(
-                "locust_checks", tags, fields, time
+                "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
 
