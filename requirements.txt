@@ -3,7 +3,7 @@ influxdb==5.3.1
 locust==2.12.2
 locust-influxdb-listener==1.0.2
 pytest>=6.2.5
-pyyaml==5.3.1
+pyyaml>=5.4.1
 tag-matcher==0.0.5
 termcolor==1.1.0
 
