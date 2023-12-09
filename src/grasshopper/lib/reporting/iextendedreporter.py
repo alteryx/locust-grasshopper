@@ -31,7 +31,7 @@ class IExtendedReporter(ABC):
         start_epoch: float,
         end_epoch: float,
         suite_args: dict = {},
-        **kwargs
+        **kwargs,
     ):
         """Call by ReporterExtensions when a post-test event occurs."""
 
@@ -49,6 +49,6 @@ class IExtendedReporter(ABC):
         end_epoch: float,
         locust_env: locust_environment = None,
         test_args: dict = {},
-        **kwargs
+        **kwargs,
     ):
         """Call by ReporterExtensions when a post-test event occurs."""
