@@ -6,6 +6,7 @@ grasshopper functionality.
 """
 import logging
 import os
+import resource
 import signal
 from typing import Dict, List, Optional, Type, Union
 
@@ -116,6 +117,7 @@ class Grasshopper:
         TODO: the test - primarily, it's getting a little long and complex but also
         TODO: to have better separation of concerns
         """
+        Grasshopper.set_ulimit()
         if isinstance(weighted_user_classes, type):  # if it's a class
             weighted_user_classes = {weighted_user_classes: 1}
         elif isinstance(weighted_user_classes, list):
@@ -176,4 +178,28 @@ class Grasshopper:
             raise ValueError(
                 f"Shape {shape_name} does not exist in "
                 f"grasshopper.lib.util.shapes! Please check the spelling."
+            )
+
+    @staticmethod
+    def set_ulimit():
+        """Increase the maximum number of open files allowed."""
+        # Adapted from locust source code, main function in locust.main.
+        try:
+            minimum_open_file_limit = 10000
+            current_open_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+            if current_open_file_limit < minimum_open_file_limit:
+                # Increasing the limit to 10000 within a running process
+                # should work on at least MacOS. It does not work on all OS:es,
+                # but we should be no worse off for trying.
+                resource.setrlimit(
+                    resource.RLIMIT_NOFILE,
+                    [minimum_open_file_limit, resource.RLIM_INFINITY],
+                )
+        except BaseException:
+            logger.warning(
+                f"""System open file limit '{current_open_file_limit}' is below minimum
+                setting '{minimum_open_file_limit}'. It's not high enough for load
+                testing, and the OS didn't allow locust to increase it by itself. See
+                https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit
+                for more info."""
             )
