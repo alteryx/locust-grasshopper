@@ -23,6 +23,8 @@ class GrasshopperConstants:
         "slack_report_failures_only",
         "cleanup_s3",
         "rp_token",
+        "rp_uuid",
+        "rp_launch",
         "rp_launch_name",
         "rp_project",
         "rp_endpoint",
