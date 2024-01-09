@@ -117,6 +117,15 @@ class ConfigurationConstants:
             "opts": ["--rp_token"],
             "attrs": {
                 "action": "store",
+                "help": "LEGACY FOR RP_UUID: API token for accessing report portal "
+                "server. NYI. "
+                "programmatically.",
+            },
+        },
+        "rp_uuid": {
+            "opts": ["--rp_uuid"],
+            "attrs": {
+                "action": "store",
                 "help": "API token for accessing report portal server. NYI. "
                 "programmatically.",
             },
@@ -261,6 +270,15 @@ class ConfigurationConstants:
             },
             "typecast": typecast_bool,
             "default": False,
+        },
+        "rp_launch": {
+            "opts": ["--rp_launch"],
+            "attrs": {
+                "action": "store",
+                "help": "LEGACY FOR RP_LAUNCH: Base launch name to use when posting to "
+                "report portal. NYI",
+            },
+            "default": "Grasshopper Performance Test Run | Launch name unknown",
         },
         "rp_launch_name": {
             "opts": ["--rp_launch_name"],

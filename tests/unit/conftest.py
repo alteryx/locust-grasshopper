@@ -53,6 +53,7 @@ def current_global_defaults():
         "influx": False,
         "report_portal": False,
         "rp_launch_name": "Grasshopper Performance Test Run | Launch name unknown",
+        "rp_launch": "Grasshopper Performance Test Run | Launch name unknown",
     }
     return defaults
 
