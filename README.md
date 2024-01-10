@@ -115,7 +115,8 @@ you must specify a host.
 - `--influx_pwd`: Password for your `influx_host`, if you have one.
 - `--grafana_host`: If you want to report your performance test metrics to some 
   grafana, and it is a separate URL from the influxdb, you can specify it here. If you don't,
-  then the grafana URL will be the same as the influxdb URL.
+  then the grafana URL will be the same as the influxdb URL when the grasshopper 
+  object generates grafana links. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
