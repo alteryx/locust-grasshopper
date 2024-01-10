@@ -94,6 +94,14 @@ class ConfigurationConstants:
                 "help": "Password to connect to the influx host.",
             },
         },
+        "grafana_host": {
+            "opts": ["--grafana_host"],
+            "attrs": {
+                "action": "store",
+                "help": "The base grafana url. If not specified, will default to the "
+                "url that the influxdb/influx_host is set to.",
+            },
+        },
         "slack_webhook": {
             "opts": ["--slack_webhook"],
             "attrs": {
