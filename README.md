@@ -113,6 +113,9 @@ you must specify a host.
 - `--influx_port`: Port for your `influx_host` in the case where it is non-default.
 - `--influx_user`: Username for your `influx_host`, if you have one.
 - `--influx_pwd`: Password for your `influx_host`, if you have one.
+- `--grafana_host`: If your grafana is a separate URL from the influxdb, you can 
+  specify it here. If you don't, then the grafana URL will be the same as the 
+  influxdb URL when the grasshopper object generates grafana links. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

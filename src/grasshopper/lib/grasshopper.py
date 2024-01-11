@@ -67,6 +67,20 @@ class Grasshopper:
 
         return configuration
 
+    @property
+    def grafana_configuration(self) -> dict[str, Optional[str]]:
+        """Extract the grafana related configuration items.
+
+        # TODO-DEPRECATED: move this code to the GHConfiguration object
+        """
+        configuration = {}
+
+        host = self.global_configuration.get(
+            "grafana_host", self.global_configuration.get("influx_host")
+        )
+        configuration["grafana_host"] = host
+        return configuration
+
     @staticmethod
     def launch_test(
         weighted_user_classes: Union[

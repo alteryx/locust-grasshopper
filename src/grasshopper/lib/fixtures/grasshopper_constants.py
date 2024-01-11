@@ -17,6 +17,7 @@ class GrasshopperConstants:
         "influx_port",
         "influx_user",
         "influx_pwd",
+        "grafana_host",
         "shape_instance",
         "scenario_delay",
         "slack_webhook",
