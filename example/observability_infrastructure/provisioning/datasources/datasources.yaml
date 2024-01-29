@@ -1,0 +1,9 @@
+apiVersion: 1
+datasources:
+  - name: influxdb
+    type: influxdb
+    access: server
+    url: http://influxdb:8086
+    database: locust
+    uid: influxdb_locust
+    isDefault: true

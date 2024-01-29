@@ -1,0 +1,29 @@
+version: '3'
+services:
+  influxdb:
+    image: influxdb:1.8
+    environment:
+      - INFLUXDB_DB=locust
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "80:3000"
+      - "443:3000"
+      - "3000:3000"
+    environment:
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./provisioning:/etc/grafana/provisioning
+
+volumes:
+  influxdb-data:
+  grafana-data:
