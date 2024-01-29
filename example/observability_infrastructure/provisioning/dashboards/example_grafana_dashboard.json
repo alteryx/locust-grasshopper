@@ -4,7 +4,10 @@
       {
         "$$hashKey": "object:10",
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -22,13 +25,15 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 10,
-  "iteration": 1678226744476,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "collapsed": false,
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb_locust"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -37,13 +42,23 @@
       },
       "id": 58,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb_locust"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "Custom Trends and Checks",
       "type": "row"
     },
     {
       "datasource": {
+        "name": "influxdb",
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -51,6 +66,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -62,6 +80,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 4,
@@ -89,7 +108,8 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -108,7 +128,8 @@
             "max"
           ],
           "displayMode": "table",
-          "placement": "right"
+          "placement": "right",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -121,7 +142,7 @@
           "alias": " $tag_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT DISTINCT \"response_time\"\nFROM \"locust_requests\"\nWHERE $timeFilter and \"request_type\"='CUSTOM'\nGROUP BY \"name\"",
           "rawQuery": true,
@@ -135,7 +156,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -162,7 +183,8 @@
               }
             ]
           },
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -175,6 +197,10 @@
       "id": 59,
       "options": {
         "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
@@ -184,15 +210,17 @@
           "values": false
         },
         "showUnfilled": true,
-        "text": {}
+        "sizing": "auto",
+        "text": {},
+        "valueMode": "color"
       },
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "10.3.1",
       "targets": [
         {
           "alias": "$tag_check_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT mean(\"check_passed\") FROM \"locust_checks\" WHERE $timeFilter GROUP BY \"check_name\"\n",
           "rawQuery": true,
@@ -206,7 +234,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -236,7 +264,8 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -257,16 +286,18 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "text": {},
-        "textMode": "auto"
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "10.3.1",
       "targets": [
         {
           "alias": "$tag_check_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT count(\"check_passed\") FROM \"locust_checks\" WHERE \"check_passed\" = 1 and $timeFilter GROUP BY \"check_name\"\n",
           "rawQuery": true,
@@ -280,7 +311,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -289,6 +320,9 @@
             "mode": "fixed"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -300,6 +334,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineStyle": {
               "fill": "solid"
@@ -333,7 +368,8 @@
               }
             ]
           },
-          "unit": "none"
+          "unit": "none",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -348,7 +384,8 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -361,7 +398,7 @@
           "alias": "FAILED: $tag_check_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT count(\"check_passed\") FROM \"locust_checks\" WHERE (check_passed = 0) and $timeFilter GROUP BY time($__interval), \"check_name\"\n",
           "rawQuery": true,
@@ -374,6 +411,10 @@
     },
     {
       "collapsed": false,
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb_locust"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -382,13 +423,22 @@
       },
       "id": 56,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb_locust"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "HTTP requests",
       "type": "row"
     },
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -396,6 +446,9 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -407,6 +460,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineStyle": {
               "fill": "solid"
@@ -442,7 +496,8 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "ms",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -462,6 +517,7 @@
           ],
           "displayMode": "table",
           "placement": "bottom",
+          "showLegend": true,
           "sortBy": "Mean",
           "sortDesc": true
         },
@@ -475,7 +531,7 @@
           "alias": "$tag_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT DISTINCT \"response_time\"\nFROM \"locust_requests\"\nWHERE $timeFilter AND (\"success\"='True') AND (\"request_type\"!='custom') AND (\"request_type\"!='CUSTOM')\nGROUP BY  time(1ms), \"name\"",
           "rawQuery": true,
@@ -489,7 +545,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "description": "",
       "fieldConfig": {
@@ -518,7 +574,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -541,15 +598,17 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "8.4.4",
+      "pluginVersion": "10.3.1",
       "targets": [
         {
           "alias": "$tag_exception",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT count(\"response_time\")  FROM \"locust_requests\" WHERE $timeFilter\n",
           "rawQuery": true,
@@ -563,7 +622,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -587,8 +646,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "dark-red",
@@ -626,7 +684,7 @@
           "alias": "$tag_exception",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT count(\"response_time\")  FROM \"locust_requests\" WHERE $timeFilter and \"code\"=~/[45]\\d\\d/\n",
           "rawQuery": true,
@@ -640,7 +698,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "uzwl2Msnk"
+        "uid": "influxdb_locust"
       },
       "fieldConfig": {
         "defaults": {
@@ -685,8 +743,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -714,6 +771,7 @@
           ],
           "displayMode": "table",
           "placement": "bottom",
+          "showLegend": true,
           "sortBy": "Mean",
           "sortDesc": true
         },
@@ -727,7 +785,7 @@
           "alias": "user count",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "query": "SELECT \"user_count\"\nFROM \"locust_requests\"\nWHERE $timeFilter",
           "rawQuery": true,
@@ -741,7 +799,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "$DB_SOURCE"
+        "uid": "influxdb_locust"
       },
       "description": "Requests Per Second over time",
       "fieldConfig": {
@@ -783,8 +841,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -810,7 +867,8 @@
             "mean"
           ],
           "displayMode": "table",
-          "placement": "right"
+          "placement": "right",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -823,7 +881,7 @@
           "alias": "RPS",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "groupBy": [
             {
@@ -873,7 +931,7 @@
       "dashes": false,
       "datasource": {
         "type": "influxdb",
-        "uid": "$DB_SOURCE"
+        "uid": "influxdb_locust"
       },
       "description": "Number of requests per second over time.",
       "fieldConfig": {
@@ -929,7 +987,7 @@
           "alias": "$tag_name",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "groupBy": [
             {
@@ -1009,7 +1067,7 @@
       "columns": [],
       "datasource": {
         "type": "influxdb",
-        "uid": "$DB_SOURCE"
+        "uid": "influxdb_locust"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -1074,7 +1132,7 @@
           "alias": "$tag_request_type $tag_name: $tag_exception",
           "datasource": {
             "type": "influxdb",
-            "uid": "uzwl2Msnk"
+            "uid": "influxdb_locust"
           },
           "groupBy": [
             {
@@ -1119,6 +1177,10 @@
     },
     {
       "collapsed": false,
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb_locust"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1127,13 +1189,22 @@
       },
       "id": 54,
       "panels": [],
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb_locust"
+          },
+          "refId": "A"
+        }
+      ],
       "title": "Locust events and errors",
       "type": "row"
     },
     {
       "columns": [],
       "datasource": {
-        "uid": "$DB_SOURCE"
+        "uid": "influxdb_locust"
       },
       "description": "Hatching Events",
       "fontSize": "100%",
@@ -1221,6 +1292,9 @@
       "targets": [
         {
           "alias": "",
+          "datasource": {
+            "uid": "influxdb_locust"
+          },
           "groupBy": [
             {
               "params": [
@@ -1265,7 +1339,7 @@
     {
       "columns": [],
       "datasource": {
-        "uid": "$DB_SOURCE"
+        "uid": "influxdb_locust"
       },
       "fontSize": "100%",
       "gridPos": {
@@ -1326,6 +1400,9 @@
       ],
       "targets": [
         {
+          "datasource": {
+            "uid": "influxdb_locust"
+          },
           "groupBy": [
             {
               "params": [
@@ -1369,31 +1446,10 @@
     }
   ],
   "refresh": "",
-  "schemaVersion": 35,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "selected": false,
-          "text": "InfluxDB locust",
-          "value": "InfluxDB locust"
-        },
-        "hide": 1,
-        "includeAll": false,
-        "label": "DB_SOURCE",
-        "multi": false,
-        "name": "DB_SOURCE",
-        "options": [],
-        "query": "influxdb",
-        "queryValue": "",
-        "refresh": 1,
-        "regex": "/.*locust*/",
-        "skipUrlSync": false,
-        "type": "datasource"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-30m",

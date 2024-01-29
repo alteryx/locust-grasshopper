@@ -366,6 +366,7 @@ This data is also reported to the console at the end of each test.
 
 ## Time Series DB Reporting and Tagging
 <a id="db-reporting"></a>
+
 When you specify a time series database URL param to `launch_test`, such as 
 `influx_host`, all metrics will be automatically reported to tables within the `locust` 
 timeseries database via the specified URL. These tables include:
@@ -374,8 +375,14 @@ timeseries database via the specified URL. These tables include:
 - `locust_exceptions`: error messages
 - `locust_requests`: HTTP requests and custom trends
 
-An example grafana dashboard which queries these tables can be found in 
-`example/grafana_dashboards`
+To run the influxdb/grafana locally, you can use the docker-compose file in the example directory:
+```shell
+cd example/observability_infrastructure
+docker-compose up -d
+```
+and then you can access the grafana UI at `localhost`. The default username/password is `admin/admin`.
+To then run a test which reports to this influxdb just add the `--influx_host=localhost` handle. 
+
 
 There are a few ways you can pass in extra tags which 
 will be reported to the time series DB:
@@ -435,6 +442,7 @@ will be reported to the time series DB:
 - [X] Thresholds
 - [X] Tagging
 - [X] InfluxDB metric reporting
+- [X] docker-compose template for influxdb/grafana
 - [ ] PrometheusDB metric reporting
 - [ ] Slack reporting
 - [ ] ReportPortal reporting

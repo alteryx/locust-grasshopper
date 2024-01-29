@@ -14,6 +14,7 @@ services:
     ports:
       - "80:3000"
       - "443:3000"
+      - "3000:3000"
     environment:
       GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
