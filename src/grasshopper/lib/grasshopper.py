@@ -6,8 +6,9 @@ grasshopper functionality.
 """
 import logging
 import os
-import resource
 import signal
+if os.name == "posix":
+    import resource  # pylint: disable=import-error
 from typing import Dict, List, Optional, Type, Union
 
 import gevent
@@ -198,22 +199,23 @@ class Grasshopper:
     def set_ulimit():
         """Increase the maximum number of open files allowed."""
         # Adapted from locust source code, main function in locust.main.
-        try:
-            minimum_open_file_limit = 10000
-            current_open_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
-            if current_open_file_limit < minimum_open_file_limit:
-                # Increasing the limit to 10000 within a running process
-                # should work on at least MacOS. It does not work on all OS:es,
-                # but we should be no worse off for trying.
-                resource.setrlimit(
-                    resource.RLIMIT_NOFILE,
-                    [minimum_open_file_limit, resource.RLIM_INFINITY],
+        if os.name == "posix":
+            try:
+                minimum_open_file_limit = 10000
+                current_open_file_limit = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+                if current_open_file_limit < minimum_open_file_limit:
+                    # Increasing the limit to 10000 within a running process
+                    # should work on at least MacOS. It does not work on all OS:es,
+                    # but we should be no worse off for trying.
+                    resource.setrlimit(
+                        resource.RLIMIT_NOFILE,
+                        [minimum_open_file_limit, resource.RLIM_INFINITY],
+                    )
+            except BaseException:
+                logger.warning(
+                    f"""System open file limit '{current_open_file_limit}' is below minimum
+                    setting '{minimum_open_file_limit}'. It's not high enough for load
+                    testing, and the OS didn't allow locust to increase it by itself. See
+                    https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit
+                    for more info."""
                 )
-        except BaseException:
-            logger.warning(
-                f"""System open file limit '{current_open_file_limit}' is below minimum
-                setting '{minimum_open_file_limit}'. It's not high enough for load
-                testing, and the OS didn't allow locust to increase it by itself. See
-                https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit
-                for more info."""
-            )
