@@ -4,7 +4,7 @@ from assertpy import assert_that
 
 from tests.unit.conftest import (  # noqa: I202
     CONFTEST_TEMPLATE,
-    perform_fixture_test_with_optional_log_capture,
+    perform_pytester_test_with_optional_log_capture,
 )
 
 FIXTURE_UNDER_TEST = "env_var_prefix_key"
@@ -35,7 +35,7 @@ def test__env_var_prefix_key__with_diff_prefix(pytester):
     """
     )
 
-    perform_fixture_test_with_optional_log_capture(pytester)
+    perform_pytester_test_with_optional_log_capture(pytester)
 
 
 def test__env_var_prefix_key__with_empty_prefix_str(pytester, caplog):
@@ -63,7 +63,7 @@ def test__env_var_prefix_key__with_empty_prefix_str(pytester, caplog):
         "target_message_re": "Fixture configuration_prefix_key may only be a non zero "
         "length str",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
 
@@ -93,6 +93,6 @@ def test__env_var_prefix_key__prefix_is_none(pytester, caplog):
         "target_message_re": "Fixture configuration_prefix_key may only be a non zero "
         "length str",
     }
-    perform_fixture_test_with_optional_log_capture(
+    perform_pytester_test_with_optional_log_capture(
         pytester, caplog=caplog, target_messages=msg
     )
