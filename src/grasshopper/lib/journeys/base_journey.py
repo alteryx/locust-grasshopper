@@ -23,8 +23,7 @@ class BaseJourney(HttpUser):
     _incoming_test_parameters = {}
     abstract = True
     base_torn_down = False
-    tags = {}
-    defaults = {"tags": tags, "thresholds": {}}
+    defaults = {"thresholds": {}}
 
     @classmethod
     @property
@@ -72,8 +71,7 @@ class BaseJourney(HttpUser):
         is provided as a way to reset to the starting state.
         """
         cls._incoming_test_parameters = {}
-        cls.tags = {}
-        cls.defaults = {"tags": cls.tags}
+        cls.defaults = {"thresholds": {}, "tags": {}}
         cls.host = ""
         cls.abstract = True
         cls.base_torn_down = False
@@ -94,6 +92,9 @@ class BaseJourney(HttpUser):
         self._register_new_vu()
         self._set_thresholds()
         self.environment.host = self.scenario_args.get("target_url", "") or self.host
+
+        self.tags = {}
+        self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})
 
         # TODO: currently global iterations is stored in the environment stats object
