@@ -1,7 +1,6 @@
-```plantuml
+```mermaid
 # Grasshopper (Locust) Database Listeners
-
-@startuml
+sequenceDiagram
 actor GrasshopperTest
 control LaunchTest
 boundary Grasshopper
@@ -44,5 +43,4 @@ Locust ->> LocustDBListener : call listener on request event
 LocustDBListener ->> DbClient : add metric for the request
 DbClient ->> Database : post data point 
 
-@enduml
 ```
