@@ -1,15 +1,15 @@
 from unittest.mock import patch
 
+from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
+    ConfigurationConstants as CC,
+)
+
 from tests.unit.conftest import (
     CONFTEST_TEMPLATE,
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
     perform_fixture_test_with_optional_log_capture,
-)
-
-from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
-    ConfigurationConstants as CC,
 )
 
 FIXTURE_UNDER_TEST = "cmdln_args"

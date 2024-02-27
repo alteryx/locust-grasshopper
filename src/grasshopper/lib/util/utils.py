@@ -9,9 +9,8 @@ import sys
 import time
 from datetime import datetime
 
-from termcolor import colored
-
 from grasshopper.lib.util.check_constants import CheckConstants
+from termcolor import colored
 
 logger = logging.getLogger()
 
@@ -115,7 +114,7 @@ def check(
         "warning_threshold": flexible_warning,
     }
 
-    if hasattr(env.stats, "checks") and type(env.stats.checks) is dict:
+    if hasattr(env.stats, "checks") and isinstance(env.stats.checks, dict):
         if check_name not in env.stats.checks.keys():
             env.stats.checks[check_name] = check_object
     else:

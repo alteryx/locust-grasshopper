@@ -2,11 +2,10 @@ from unittest.mock import MagicMock, create_autospec
 from uuid import uuid4
 
 import pytest
-from locust.env import Environment
-from locust.stats import RequestStats
-
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.metrics import count_iterations, task
+from locust.env import Environment
+from locust.stats import RequestStats
 
 
 @pytest.fixture(scope="session")

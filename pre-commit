@@ -1,14 +1,13 @@
 #!/bin/sh
 
-# Verify that paths in index (i.e. files being committed) comply 
-# with the pipeline codestyle checks and create a commit 
+# Verify that paths in index (i.e. files being committed) comply
+# with the pipeline codestyle checks and create a commit
 # only if all checks pass
 # https://git-scm.com/docs/git-diff#Documentation/git-diff.txt---diff-filterACDMRTUXB82308203
-files_changed=$(git diff --diff-filter=ACM --cached --name-only -- "*.py" "requirements*.txt")
+files_changed=$(git diff --diff-filter=ACM --cached --name-only -- "*.py")
 files_change_py=$(git diff --diff-filter=ACM --cached --name-only -- "*.py")
 files_changed_no_tests=$(git diff --diff-filter=ACM --cached --name-only -- "*.py" |
     grep -ve "test_[^\\\/]\+\.py")
-files_change_requirements=$(git diff --diff-filter=ACM --cached --name-only -- "requirements*.txt")
 
 exit_on_error() {
     exit_code=$1
@@ -22,32 +21,14 @@ exit_on_error() {
 [ -z "$files_changed" ] && exit 0
 
 if [ -n "$files_change_py" ]; then
-  echo "Sorting imports with isort..."
-  isort $files_change_py
+  echo "Checking ruff..."
+  ruff check --fix $files_change_py
   exit_on_error $?
 fi
 
 if [ -n "$files_change_py" ]; then
-  echo "Formatting with black..."
-  black $files_change_py
-  exit_on_error $?
-fi
-
-if [ -n "$files_change_py" ]; then
-  echo "Checking flake8..."
-  flake8 $files_change_py
-  exit_on_error $?
-fi
-
-if [ -n "$files_change_requirements" ]; then
-  echo "Sorting requirements files..."
-  sort-requirements $files_change_requirements
-  exit_on_error $?
-fi
-
-if [ -n "$files_changed_no_tests" ]; then
-  echo "Checking pydocstyle..."
-  pydocstyle $files_changed_no_tests
+  echo "Formatting with ruff..."
+  ruff format $files_change_py
   exit_on_error $?
 fi
 

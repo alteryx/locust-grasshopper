@@ -2,9 +2,8 @@ import logging
 from unittest.mock import MagicMock
 
 import pytest
-
-from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.journeys.base_journey import BaseJourney
 
 
 @pytest.fixture(scope="function", autouse=True)

@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 def typecast_dict(value):
     """Ensure that value is a dict (supports json strings) or log a warning."""
     new_value = value
-    if type(value) == str:
+    if isinstance(value, str):
         new_value = json.loads(value)
-    elif type(value) != dict:
+    elif not isinstance(value, dict):
         logger.warning(
             f"Configuration value [{value}] of type [{type(value)}] not able to be "
             f"cast to dictionary."
@@ -40,7 +40,7 @@ def typecast_float(value):
 
 def typecast_bool(value):
     """Ensure value is a bool or raise an error."""
-    if type(value) == str:
+    if isinstance(value, str):
         new_value = value.lower() in ["true"]
     else:
         new_value = bool(value)

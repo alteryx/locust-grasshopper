@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from assertpy import assert_that
-
 from grasshopper.lib.reporting.er_basic_console_reporter import ERBasicConsoleReporter
 from grasshopper.lib.util.utils import epoch_time
 

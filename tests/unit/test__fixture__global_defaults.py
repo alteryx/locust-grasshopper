@@ -1,6 +1,10 @@
 from unittest.mock import patch
 
 from assertpy import assert_that
+from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
+    ConfigurationConstants as CC,
+)
+from grasshopper.lib.configuration.gh_configuration import GHConfiguration
 
 # Alteryx Packages
 # alias to make patches easier to read
@@ -11,11 +15,6 @@ from tests.unit.conftest import (  # noqa: I202
     PYFILE_TEMPLATE,
     perform_fixture_test_with_optional_log_capture,
 )
-
-from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
-    ConfigurationConstants as CC,
-)
-from grasshopper.lib.configuration.gh_configuration import GHConfiguration
 
 FIXTURE_UNDER_TEST = "global_defaults"
 

@@ -11,7 +11,6 @@ import uuid
 import pytest
 import tagmatcher
 import yaml
-
 from grasshopper.lib.configuration.gh_configuration import (
     ConfigurationConstants,
     GHConfiguration,
@@ -107,7 +106,7 @@ def env_var_prefix_key(request):
     prefix = "GH_"
     try:
         prefix = request.getfixturevalue("configuration_prefix_key")
-        if type(prefix) != str or (type(prefix) == str and len(prefix) == 0):
+        if isinstance(prefix, str) or (isinstance(prefix, str) and len(prefix) == 0):
             logger.warning(
                 f"CONFIG FIXTURE: Fixture configuration_prefix_key may only be a non "
                 f"zero length str, returned value {prefix}, ignoring value."
@@ -586,10 +585,10 @@ def fetch_value_from_multiple_sources(sources, key):
 def type_check_list_of_strs(list_of_strs):
     """Return True if list of strings or [], false if anything else."""
     check_passed = False
-    if type(list_of_strs) == list:
+    if isinstance(list_of_strs, list):
         all_strs = True
         for s in list_of_strs:
-            all_strs = all_strs and type(s) == str
+            all_strs = all_strs and isinstance(s, str)
         check_passed = all_strs
     return check_passed
 

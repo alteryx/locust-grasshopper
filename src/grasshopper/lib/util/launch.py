@@ -5,10 +5,9 @@ another place to live.
 """
 import logging
 
-from locust.env import Environment
-
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.util.decorators import deprecate
+from locust.env import Environment
 
 logger = logging.getLogger()
 
