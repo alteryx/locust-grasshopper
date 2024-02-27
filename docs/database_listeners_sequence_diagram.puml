@@ -2,9 +2,11 @@
 
 @startuml
 actor GrasshopperTest
-control LaunchTest
-boundary Grasshopper
+box "Grasshopper" #LightBlue
+boundary LaunchTest
+entity Grasshopper
 entity GrasshopperListeners
+end box
 entity LocustDBListener
 boundary DbClient
 database Database
@@ -41,6 +43,6 @@ deactivate LaunchTest
 GrasshopperTest -> Locust : send http request (via API library, wich calls the Locust request method)
 Locust ->> LocustDBListener : call listener on request event
 LocustDBListener ->> DbClient : add metric for the request
-DbClient ->> Database : post data point 
+DbClient ->> Database : post data point
 
 @enduml
