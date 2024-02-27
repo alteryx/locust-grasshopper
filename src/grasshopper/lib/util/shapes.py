@@ -238,7 +238,7 @@ class Customstages(Stages):  # noqa E501
     def __init__(self, *args, **kwargs):
         try:
             stages = kwargs.get("stages")
-            if isinstance(stages, str):
+            if type(stages) == str:
                 stages = json.loads(stages)
             self.stages = stages
         except TypeError:

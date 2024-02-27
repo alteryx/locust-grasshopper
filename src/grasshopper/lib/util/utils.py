@@ -114,7 +114,7 @@ def check(
         "warning_threshold": flexible_warning,
     }
 
-    if hasattr(env.stats, "checks") and isinstance(env.stats.checks, dict):
+    if hasattr(env.stats, "checks") and type(env.stats.checks) is dict:
         if check_name not in env.stats.checks.keys():
             env.stats.checks[check_name] = check_object
     else:

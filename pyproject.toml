@@ -100,7 +100,7 @@ line-length = 88
 
 # Adds Pyflakes, Mccabe, Pydocstyle, etc. run `ruff linter` to see all available linters
 extend-select = ["F", "C90", "I", "N", "ICN"]
-ignore = [ "N801", "N803", "N806", "N815", "N818"]
+ignore = [ "N801", "N803", "N806", "N815", "N818", "E721"]
 
 # Allows a single underscore to be an unused variable
 dummy-variable-rgx = "^_$"

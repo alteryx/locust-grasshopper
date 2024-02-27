@@ -87,8 +87,9 @@ class GrasshopperListeners:
 
     @staticmethod
     def _append_trend_data(environment):
-        if hasattr(environment.stats, "trends") and isinstance(
-            environment.stats.trends, dict
+        if (
+            hasattr(environment.stats, "trends")
+            and type(environment.stats.trends) is dict
         ):
             for trend_name, trend_values in environment.stats.trends.items():
                 for threshold_object in trend_values.get("thresholds", []):
@@ -111,8 +112,9 @@ class GrasshopperListeners:
 
     @staticmethod
     def _append_checks_data(environment):
-        if hasattr(environment.stats, "checks") and isinstance(
-            environment.stats.checks, dict
+        if (
+            hasattr(environment.stats, "checks")
+            and type(environment.stats.checks) is dict
         ):
             # mark all checks as passed or failed based on multiple criteria
             for check_key, check_item in environment.stats.checks.items():

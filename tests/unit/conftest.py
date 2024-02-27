@@ -142,7 +142,7 @@ def message_was_not_logged(
 
 def make_re(potential_re):
     """Convert a string to a compiled re, otherwise return the value unaltered."""
-    if isinstance(potential_re, str):
+    if type(potential_re) == str:
         potential_re = re.compile(potential_re, re.IGNORECASE)
     return potential_re
 
@@ -210,7 +210,7 @@ def convert_dict_to_list(target_messages):
     therefore only one message dict) less wordy and easier.
 
     """
-    if isinstance(target_messages, dict):
+    if type(target_messages) == dict:
         target_messages = [target_messages]
 
     return target_messages
