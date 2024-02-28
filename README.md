@@ -367,6 +367,9 @@ This data is also reported to the console at the end of each test.
 ## Time Series DB Reporting and Tagging
 <a id="db-reporting"></a>
 
+Additional design details about how a database listener works with grasshopper/locust can be 
+found in the [Database Listener Design Documentation](./docs/database_listener_design_documentation.md).
+
 When you specify a time series database URL param to `launch_test`, such as 
 `influx_host`, all metrics will be automatically reported to tables within the `locust` 
 timeseries database via the specified URL. These tables include:
