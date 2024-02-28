@@ -7,10 +7,9 @@ Serves as an example implementation of the IExtendedReporter interface.
 import logging
 from typing import Any, Dict
 
-from locust import env as locust_environment
-
 from grasshopper.lib.reporting.iextendedreporter import IExtendedReporter
 from grasshopper.lib.reporting.shared_reporting import SharedReporting
+from locust import env as locust_environment
 
 logger = logging.getLogger()
 logger.propagate = True

@@ -5,15 +5,14 @@ The listeners module contains all the custom listeners that we have defined for 
 import logging
 from datetime import datetime
 
-from locust import events
-from locust.env import Environment
-from locust_influxdb_listener import InfluxDBListener, InfluxDBSettings
-
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
 )
+from locust import events
+from locust.env import Environment
+from locust_influxdb_listener import InfluxDBListener, InfluxDBSettings
 
 logger = logging.getLogger()
 

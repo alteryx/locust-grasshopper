@@ -9,10 +9,9 @@ from collections import abc
 from uuid import uuid4
 
 import gevent
-from locust import HttpUser
-
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from locust import HttpUser
 
 
 class BaseJourney(HttpUser):

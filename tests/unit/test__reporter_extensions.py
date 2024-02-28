@@ -2,13 +2,12 @@ from unittest.mock import MagicMock, call
 
 import pytest
 from assertpy import assert_that
-from locust import env as locust_environment
-
 from grasshopper.lib.reporting.reporter_extensions import (
     IExtendedReporter,
     ReporterExtensions,
 )
 from grasshopper.lib.util.utils import epoch_time
+from locust import env as locust_environment
 
 
 @pytest.fixture(scope="function", autouse=True)

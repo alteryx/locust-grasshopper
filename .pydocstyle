@@ -1,3 +1,0 @@
-[pydocstyle]
-convention = numpy
-ignore-decorators= (property|pytest.fixture|locator)

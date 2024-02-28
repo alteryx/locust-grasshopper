@@ -1,9 +1,8 @@
 import logging
 
-from locust import between, task
-
 from grasshopper.lib.grasshopper import BaseJourney, Grasshopper
 from grasshopper.lib.util.utils import custom_trend
+from locust import between, task
 
 logger = logging.getLogger(__name__)
 

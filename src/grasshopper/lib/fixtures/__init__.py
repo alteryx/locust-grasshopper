@@ -11,7 +11,6 @@ import uuid
 import pytest
 import tagmatcher
 import yaml
-
 from grasshopper.lib.configuration.gh_configuration import (
     ConfigurationConstants,
     GHConfiguration,
@@ -586,7 +585,7 @@ def fetch_value_from_multiple_sources(sources, key):
 def type_check_list_of_strs(list_of_strs):
     """Return True if list of strings or [], false if anything else."""
     check_passed = False
-    if type(list_of_strs) == list:
+    if type(list_of_strs) == (list):
         all_strs = True
         for s in list_of_strs:
             all_strs = all_strs and type(s) == str

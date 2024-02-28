@@ -1,6 +1,10 @@
 import os
 from unittest.mock import patch
 
+from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
+    ConfigurationConstants as CC,
+)
+
 # Alteryx Packages
 from tests.unit.conftest import (
     CONFTEST_TEMPLATE,
@@ -8,10 +12,6 @@ from tests.unit.conftest import (
     PYFILE_ASSERT_EXPECTED_CONFIG,
     PYFILE_TEMPLATE,
     perform_fixture_test_with_optional_log_capture,
-)
-
-from grasshopper.lib.configuration.gh_configuration import (  # noqa: N817
-    ConfigurationConstants as CC,
 )
 
 FIXTURE_UNDER_TEST = "env_var_args"

@@ -1,3 +1,5 @@
+from grasshopper.lib.configuration.gh_configuration import GHConfiguration
+
 from tests.unit.conftest import (
     CONFTEST_TEMPLATE,
     PYFILE_ASSERT_EMPTY_CONFIG,
@@ -5,8 +7,6 @@ from tests.unit.conftest import (
     PYFILE_TEMPLATE,
     perform_fixture_test_with_optional_log_capture,
 )
-
-from grasshopper.lib.configuration.gh_configuration import GHConfiguration
 
 FIXTURE_UNDER_TEST = "pre_processed_args"
 

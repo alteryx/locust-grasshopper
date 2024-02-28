@@ -1,6 +1,5 @@
 import pytest
 from assertpy import assert_that
-
 from grasshopper.lib.reporting.shared_reporting import SharedReporting
 
 

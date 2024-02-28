@@ -1,10 +1,9 @@
 import logging
 
-from locust import between, task
-
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.utils import check
+from locust import between, task
 
 logger = logging.getLogger(__name__)
 

@@ -9,9 +9,8 @@ import sys
 import time
 from datetime import datetime
 
-from termcolor import colored
-
 from grasshopper.lib.util.check_constants import CheckConstants
+from termcolor import colored
 
 logger = logging.getLogger()
 

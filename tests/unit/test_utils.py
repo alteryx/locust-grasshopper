@@ -2,8 +2,6 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
-from termcolor import colored
-
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.listeners import GrasshopperListeners
@@ -16,6 +14,7 @@ from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
 )
+from termcolor import colored
 
 
 @pytest.fixture
