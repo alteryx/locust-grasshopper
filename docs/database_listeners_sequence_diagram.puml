@@ -1,0 +1,48 @@
+# Grasshopper (Locust) Database Listeners
+
+@startuml
+actor GrasshopperTest
+box "Grasshopper" #LightBlue
+boundary LaunchTest
+entity Grasshopper
+entity GrasshopperListeners
+end box
+entity LocustDBListener
+boundary DbClient
+database Database
+boundary Locust
+
+GrasshopperTest -> LaunchTest : run test
+activate LaunchTest
+
+LaunchTest -> Grasshopper : create new grasshopper object
+activate Grasshopper
+Grasshopper --> LaunchTest : grasshopper object
+
+LaunchTest -> GrasshopperListeners : create new listeners object
+activate GrasshopperListeners
+
+GrasshopperListeners -> LocustDBListener : create new listener object
+activate LocustDBListener
+LocustDBListener -> DbClient : create new client object
+activate DbClient
+DbClient -> Database : connect
+DbClient --> LocustDBListener : new client object
+deactivate DbClient
+LocustDBListener ->> Locust : register listeners on locust events
+LocustDBListener --> GrasshopperListeners : new listener object
+deactivate LocustDBListener
+
+GrasshopperListeners --> LaunchTest : new listeners object
+deactivate GrasshopperListeners
+
+
+deactivate Grasshopper
+deactivate LaunchTest
+
+GrasshopperTest -> Locust : send http request (via API library, wich calls the Locust request method)
+Locust ->> LocustDBListener : call listener on request event
+LocustDBListener ->> DbClient : add metric for the request
+DbClient ->> Database : post data point
+
+@enduml
