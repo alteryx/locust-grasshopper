@@ -30,14 +30,14 @@ keywords = ["load testing", "performance", "locust", "grasshopper"]
 license = {file = "LICENSE"}
 requires-python = ">=3.10,<4"
 dependencies = [
-    "gevent ~=24.2.1",
-    "influxdb ~= 5.3.1",
+    "gevent >=24.2.1",
+    "influxdb >= 5.3.1",
     "locust ~= 2.23.1",
     "locust-influxdb-listener ~= 1.0.2",
-    "pytest ~= 6.2.5",
+    "pytest >= 6.2.5",
     "pyyaml >= 5.4.1",
-    "tag-matcher ~= 0.0.5",
-    "termcolor ~= 1.1.0",
+    "tag-matcher >= 0.0.5",
+    "termcolor >= 1.1.0",
 ]
 
 [project.optional-dependencies]
