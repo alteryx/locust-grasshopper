@@ -20,13 +20,8 @@ def custom_trend(trend_name: str, extra_tag_keys=[]):
 
     def calc_time_delta_and_report_metric(func):
         def wrapper(journey_object, *args, **kwargs):
-            tags = {}
             try:
                 environment = journey_object.environment
-                host = environment.host
-                test_parameters = journey_object.scenario_args
-                if hasattr(journey_object.environment, "extra_context"):
-                    tags.update(journey_object.environment.extra_context)
             except AttributeError:
                 raise ReferenceError(
                     "The custom_trend decorator must be placed on a journey function "
@@ -37,20 +32,13 @@ def custom_trend(trend_name: str, extra_tag_keys=[]):
             result = func(journey_object, *args, **kwargs)
             end_time = datetime.now()
             time_delta = end_time - start_time
-            tags.update(
-                {
-                    extra_tag_key: test_parameters.get(extra_tag_key)
-                    for extra_tag_key in extra_tag_keys
-                }
-            )
-            tags["environment"] = host
             environment.events.request.fire(
                 request_type="CUSTOM",
                 name=trend_name,
                 response_time=round(time_delta.total_seconds() * 1000, 3),
                 response_length=0,
                 response=None,
-                context=tags,
+                context=journey_object.tags,
                 exception=None,
             )
             return result
