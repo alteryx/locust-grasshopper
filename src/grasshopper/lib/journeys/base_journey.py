@@ -53,9 +53,6 @@ class BaseJourney(HttpUser):
     def update_tags(self, new_tags: dict):
         """Update the tags for the influxdb listener."""
         self.tags.update(new_tags)
-        db_listener = self.environment.grasshopper_listeners.influxdb_listener
-        if db_listener is not None:
-            db_listener.additional_tags.update(new_tags)
 
     @classmethod
     def reset_class_attributes(cls):

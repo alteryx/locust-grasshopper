@@ -15,6 +15,7 @@ jobs:
           python-version: "3.10"
       - run: pip install -e ".[dev]"
       - run: ruff check .
+      - run: ruff format --check .
   unit-test:
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
     needs: [ruff-lint]
