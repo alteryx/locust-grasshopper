@@ -28,6 +28,7 @@ def expected_global_defaults():
         "report_portal": False,
         "rp_launch_name": "Grasshopper Performance Test Run | Launch name unknown",
         "rp_launch": "Grasshopper Performance Test Run | Launch name unknown",
+        "rp_launch_attributes": '{"test_type":"load"}',
     }
     return defaults
 

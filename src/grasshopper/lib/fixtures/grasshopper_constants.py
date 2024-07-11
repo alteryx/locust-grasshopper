@@ -29,6 +29,7 @@ class GrasshopperConstants:
         "rp_launch_name",
         "rp_project",
         "rp_endpoint",
+        "rp_launch_attributes"
     ]
     RUNTIME_DEFAULT = 120.0
     USERS_DEFAULT = 1

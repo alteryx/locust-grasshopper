@@ -296,6 +296,14 @@ class ConfigurationConstants:
             },
             "default": "Grasshopper Performance Test Run | Launch name unknown",
         },
+        "rp_launch_attributes": {
+            "opts": ["--rp_launch_attributes"],
+            "attrs": {
+                "action": "store",
+                "help": "Launch attributes to use when posting to report portal. NYI",
+            },
+            "default": '{"test_type":"load"}',
+        },
     }
 
     # Scenario attrs are typically set per scenario and usually are loaded from the
