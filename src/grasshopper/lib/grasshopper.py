@@ -40,7 +40,8 @@ class Grasshopper:
         logger.info("--- /Grasshopper configuration ---")
 
     @property
-    def influx_configuration(self) -> dict[str, Optional[str]]:
+    def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
+
         """Extract the influx related configuration items.
 
         The InfluxDbSettings object should only get keys if there is a
@@ -67,7 +68,17 @@ class Grasshopper:
         if pwd:
             configuration["pwd"] = pwd
 
+        configuration["ssl"] = self.to_bool(self.global_configuration.get("influx_ssl", "False"))
+        configuration["verify_ssl"] = self.to_bool(self.global_configuration.get("influx_verify_ssl", "False"))
+
         return configuration
+
+    @staticmethod
+    def to_bool(value: Union[str, bool]) -> bool:
+        """Convert a string to a boolean."""
+        if isinstance(value, bool):
+            return value
+        return str(value).lower() in ["true", "1", "t"]
 
     @property
     def grafana_configuration(self) -> dict[str, Optional[str]]:
