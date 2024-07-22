@@ -102,6 +102,7 @@ class ConfigurationConstants:
                 "help": "Enable SSL for InfluxDB connection.",
             },
             "typecast": typecast_bool,
+            "default": False,
         },
 
         "influx_verify_ssl": {
@@ -112,6 +113,7 @@ class ConfigurationConstants:
                 "help": "Enable SSL certificate verification for InfluxDB connection.",
             },
             "typecast": typecast_bool,
+            "default": False,
         },
         "grafana_host": {
             "opts": ["--grafana_host"],
