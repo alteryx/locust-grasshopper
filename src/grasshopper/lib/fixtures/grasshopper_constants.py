@@ -17,6 +17,8 @@ class GrasshopperConstants:
         "influx_port",
         "influx_user",
         "influx_pwd",
+        "influx_ssl",
+        "influx_verify_ssl",
         "grafana_host",
         "shape_instance",
         "scenario_delay",

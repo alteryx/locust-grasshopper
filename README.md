@@ -111,6 +111,9 @@ within that YAML file that corresponds to the scenario you wish to run. Defaults
 you must specify a host.
     E.g. `1.1.1.1`. Defaults to None.
 - `--influx_port`: Port for your `influx_host` in the case where it is non-default.
+- `--influx_ssl`: If your influxdb is using SSL, set this to True. Defaults to False.
+- `--influx_verify_ssl`: If your influxdb is using SSL, set this to True. Defaults to 
+    False.
 - `--influx_user`: Username for your `influx_host`, if you have one.
 - `--influx_pwd`: Password for your `influx_host`, if you have one.
 - `--grafana_host`: If your grafana is a separate URL from the influxdb, you can 

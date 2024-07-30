@@ -40,7 +40,8 @@ class Grasshopper:
         logger.info("--- /Grasshopper configuration ---")
 
     @property
-    def influx_configuration(self) -> dict[str, Optional[str]]:
+    def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
+
         """Extract the influx related configuration items.
 
         The InfluxDbSettings object should only get keys if there is a
@@ -66,6 +67,10 @@ class Grasshopper:
         pwd = self.global_configuration.get("influx_pwd")
         if pwd:
             configuration["pwd"] = pwd
+
+        configuration["ssl"] = self.global_configuration.get("influx_ssl", False)
+
+        configuration["verify_ssl"] = self.global_configuration.get("influx_verify_ssl", False)
 
         return configuration
 

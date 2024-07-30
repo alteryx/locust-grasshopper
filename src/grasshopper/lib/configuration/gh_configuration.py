@@ -94,6 +94,27 @@ class ConfigurationConstants:
                 "help": "Password to connect to the influx host.",
             },
         },
+        "influx_ssl": {
+            "opts": ["--influx_ssl"],
+            "attrs": {
+                "action": "store",
+                "type": bool,
+                "help": "Enable SSL for InfluxDB connection.",
+            },
+            "typecast": typecast_bool,
+            "default": False,
+        },
+
+        "influx_verify_ssl": {
+            "opts": ["--influx_verify_ssl"],
+            "attrs": {
+                "action": "store",
+                "type": bool,
+                "help": "Enable SSL certificate verification for InfluxDB connection.",
+            },
+            "typecast": typecast_bool,
+            "default": False,
+        },
         "grafana_host": {
             "opts": ["--grafana_host"],
             "attrs": {
