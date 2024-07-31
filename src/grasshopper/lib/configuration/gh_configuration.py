@@ -104,7 +104,6 @@ class ConfigurationConstants:
             "typecast": typecast_bool,
             "default": False,
         },
-
         "influx_verify_ssl": {
             "opts": ["--influx_verify_ssl"],
             "attrs": {

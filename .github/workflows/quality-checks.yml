@@ -1,6 +1,8 @@
 name: quality checks
 
-on: push
+on: 
+  push:
+  pull_request:
 
 jobs:
   ruff-lint:
