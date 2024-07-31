@@ -25,6 +25,8 @@ def expected_global_defaults():
         "cleanup_s3": True,
         "slack": False,
         "influx": False,
+        "influx_ssl": False,
+        "influx_verify_ssl": False,
         "report_portal": False,
         "rp_launch_name": "Grasshopper Performance Test Run | Launch name unknown",
         "rp_launch": "Grasshopper Performance Test Run | Launch name unknown",
