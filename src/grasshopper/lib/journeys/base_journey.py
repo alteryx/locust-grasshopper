@@ -3,15 +3,27 @@
 Class to hold all the common functionality that we added on top of Locust's HttpUser
 class.
 """
+
 import logging
 import signal
 from collections import abc
+from enum import Enum
 from uuid import uuid4
 
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from locust import HttpUser
+
+
+class LogLevel(Enum):
+    """Enum for standard Python logging levels."""
+
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARNING = logging.WARNING
+    ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
 
 
 class BaseJourney(HttpUser):
@@ -23,6 +35,14 @@ class BaseJourney(HttpUser):
     abstract = True
     base_torn_down = False
     defaults = {"thresholds": {}}
+
+    def log_vu(self, message: str, level: LogLevel = LogLevel.INFO, use_vu_prefix=True):
+        """
+        Logs a message with an optional Virtual User ID (VU ID) prefix.
+        """
+        if use_vu_prefix:
+            message = f"VU {getattr(self, 'vu_number', 'Unknown')}: {message}"
+        logging.log(level.value, message)
 
     @classmethod
     @property
@@ -85,6 +105,9 @@ class BaseJourney(HttpUser):
         self._test_parameters = self._incoming_test_parameters.copy()
         self._set_base_teardown_listeners()
         self.client_id = str(uuid4())
+        self.vu_number = (
+            len(BaseJourney.VUS_DICT) + 1
+        )  # Ensure vu_number is assigned before logging
         self._register_new_vu()
         self._set_thresholds()
         self.environment.host = self.scenario_args.get("target_url", "") or self.host
@@ -99,7 +122,6 @@ class BaseJourney(HttpUser):
 
     def _register_new_vu(self):
         """Increment the user count and return the new vu's number."""
-        self.vu_number = len(BaseJourney.VUS_DICT) + 1
         BaseJourney.VUS_DICT[self.vu_number] = self
 
     def _set_base_teardown_listeners(self):
@@ -145,8 +167,10 @@ class BaseJourney(HttpUser):
                         "thresholds": [thresh_object],
                     }
         else:
-            logging.warning(
-                "Skipping registering thresholds due to invalid " "thresholds shape..."
+            self.log_vu(
+                "Skipping registering thresholds due to invalid thresholds shape...",
+                LogLevel.WARNING,
+                use_vu_prefix=False,
             )
 
     @staticmethod
