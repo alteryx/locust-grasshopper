@@ -1,4 +1,5 @@
 """Module: ReporterExtensions."""
+
 # Standard Library
 import logging
 from typing import Any, Dict, List

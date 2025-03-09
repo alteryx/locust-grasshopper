@@ -142,8 +142,8 @@ def report_thresholds_to_console(trend_dict):
                 formatted_result_string = "{:<45} {:<10} {:<10} {:<10}".format(
                     trend_name,
                     int(threshold_item["percentile"] * 100),
-                    f'{threshold_item["less_than_in_ms"]}ms',
-                    f'{int(threshold_item["actual_value_in_ms"])}ms',
+                    f"{threshold_item['less_than_in_ms']}ms",
+                    f"{int(threshold_item['actual_value_in_ms'])}ms",
                 )
                 if threshold_item["succeeded"]:
                     logger.info(

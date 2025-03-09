@@ -1,4 +1,5 @@
 """Contents of the locust_grasshopper plugin which gets automatically loaded."""
+
 import atexit
 import importlib
 import logging
@@ -94,7 +95,7 @@ def grasshopper_config_file_args(request):
         )
     except (yaml.YAMLError, AttributeError) as e:
         logger.warning(
-            f"CONFIG FIXTURE: Unable to parse yaml file {path} with error " f"{e}."
+            f"CONFIG FIXTURE: Unable to parse yaml file {path} with error {e}."
         )
 
     logger.debug(f"CONFIG FIXTURE: grasshopper_config_file {config}")
@@ -561,8 +562,7 @@ def _get_tagged_scenarios(full_scenarios_list, config, fspath) -> dict:
         )
     else:
         logging.warning(
-            f"Since no tags param was specified, ALL scenarios in "
-            f"{fspath} will be run!"
+            f"Since no tags param was specified, ALL scenarios in {fspath} will be run!"
         )
         valid_scenarios = full_scenarios_list
 

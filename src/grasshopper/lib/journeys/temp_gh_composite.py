@@ -2,6 +2,7 @@
 
 The generalized test function for running composite journeys in Grasshopper.
 """
+
 import os
 
 import grasshopper.lib.util.listeners  # noqa: F401

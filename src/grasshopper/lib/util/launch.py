@@ -3,6 +3,7 @@
 These are the miscellaneous launch functions for the project that couldn't find
 another place to live.
 """
+
 import logging
 
 from grasshopper.lib.grasshopper import Grasshopper

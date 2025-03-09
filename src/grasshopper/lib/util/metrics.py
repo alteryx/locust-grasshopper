@@ -5,6 +5,7 @@ The task decorator is meant to replace the existing locust @task decorator in or
 increment vu_iteration counters every time locust picks a task.
 
 """
+
 import functools
 import logging
 

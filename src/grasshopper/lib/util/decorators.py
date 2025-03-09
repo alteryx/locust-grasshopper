@@ -1,4 +1,5 @@
 """Module: Decorators."""
+
 import functools
 import logging
 

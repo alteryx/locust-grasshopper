@@ -2,6 +2,7 @@
 
 The listeners module contains all the custom listeners that we have defined for Locust.
 """
+
 import logging
 from datetime import datetime
 

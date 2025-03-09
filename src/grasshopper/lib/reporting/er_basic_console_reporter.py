@@ -4,6 +4,7 @@ Can be used by any grasshopper tests by having a fixture that registers this rep
 Serves as an example implementation of the IExtendedReporter interface.
 
 """
+
 import logging
 from typing import Any, Dict
 

@@ -4,6 +4,7 @@ Contains a variety of methods that are used by grasshopper provided extended rep
 Also intended to be optionally used by ers that grasshopper consumers create.
 
 """
+
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from termcolor import colored
@@ -54,8 +55,8 @@ class SharedReporting:
             formatted = format_string.format(
                 trend_name,
                 int(threshold["percentile"] * 100),
-                f'{threshold["less_than_in_ms"]}ms',
-                f'{int(threshold["actual_value_in_ms"])}ms',
+                f"{threshold['less_than_in_ms']}ms",
+                f"{int(threshold['actual_value_in_ms'])}ms",
             )
         except Exception as e:
             # catch any kind of error (structural) and replace with a meaningful error
