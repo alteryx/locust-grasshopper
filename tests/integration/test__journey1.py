@@ -14,9 +14,9 @@ class Journey1(BaseJourney):
     @task
     @custom_trend("PX_TREND_google_home")
     def journey1_task(self):
-        self.log_vu("Starting journey1_task")
+        self.log_message("Starting journey1_task")
         response = self.client.get("https://google.com", name="google_home")
-        self.log_vu(f"Google result: {response.status_code}")
+        self.log_message(f"Google result: {response.status_code}")
 
 
 def test_journey1(complete_configuration):

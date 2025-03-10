@@ -7,23 +7,12 @@ class.
 import logging
 import signal
 from collections import abc
-from enum import Enum
 from uuid import uuid4
 
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from locust import HttpUser
-
-
-class LogLevel(Enum):
-    """Enum for standard Python logging levels."""
-
-    DEBUG = logging.DEBUG
-    INFO = logging.INFO
-    WARNING = logging.WARNING
-    ERROR = logging.ERROR
-    CRITICAL = logging.CRITICAL
 
 
 class BaseJourney(HttpUser):
@@ -36,7 +25,7 @@ class BaseJourney(HttpUser):
     base_torn_down = False
     defaults = {"thresholds": {}}
 
-    def log_vu(self, message: str, level: LogLevel = LogLevel.INFO, use_vu_prefix=True):
+    def log_message(self, message: str, level: int = logging.INFO, use_vu_prefix=True):
         """
         Logs a message with an optional Virtual User (VU) prefix for tracking in performance tests.
         Standardizes logs for easy tracing of specific VUs in distributed test environments.
@@ -45,14 +34,14 @@ class BaseJourney(HttpUser):
             message (str):
                 The log message describing the event or action.
 
-            level (LogLevel, optional):
-                The severity level of the log message. Defaults to `LogLevel.INFO`.
+            level (int, optional):
+                The severity level of the log message. Defaults to `logging.INFO`.
                 Available levels:
-                    - `LogLevel.DEBUG` (Detailed debugging information)
-                    - `LogLevel.INFO` (General execution logs)
-                    - `LogLevel.WARNING` (Potential issues to be aware of)
-                    - `LogLevel.ERROR` (Critical errors affecting test execution)
-                    - `LogLevel.CRITICAL` (Severe issues requiring immediate attention)
+                    - `logging.DEBUG` (Detailed debugging information)
+                    - `logging.INFO` (General execution logs)
+                    - `logging.WARNING` (Potential issues to be aware of)
+                    - `logging.ERROR` (Critical errors affecting test execution)
+                    - `logging.CRITICAL` (Severe issues requiring immediate attention)
 
             use_vu_prefix (bool, optional):
                 Whether to prefix the message with "VU {vu_number}:". Defaults to `True`.
@@ -61,7 +50,7 @@ class BaseJourney(HttpUser):
         """
         if use_vu_prefix:
             message = f"VU {getattr(self, 'vu_number', 'Unknown')}: {message}"
-        logging.log(level.value, message)
+        logging.log(level, message)
 
     @classmethod
     @property
@@ -186,9 +175,9 @@ class BaseJourney(HttpUser):
                         "thresholds": [thresh_object],
                     }
         else:
-            self.log_vu(
+            self.log_message(
                 "Skipping registering thresholds due to invalid thresholds shape...",
-                LogLevel.WARNING,
+                logging.WARNING,
                 use_vu_prefix=False,
             )
 

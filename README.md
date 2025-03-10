@@ -73,7 +73,7 @@ class ExampleJourney(BaseJourney):
     
     @task
     def example_task:
-        self.log_vu(f'foo is `{self.scenario_args.get("foo")}`.', use_vu_prefix=False)
+        self.log_message(f'foo is `{self.scenario_args.get("foo")}`.', use_vu_prefix=False)
         
         # aggregate all metrics for the below request under the name "get google"
         # if name is not specified, then the full url will be the name of the metric
