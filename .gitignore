@@ -6,6 +6,7 @@ __pycache__
 .eggs/
 *.egg-info
 /dist/
+/build/
 
 # pycharm project
 .idea
@@ -15,6 +16,7 @@ __pycache__
 
 # virtual environment (dependent packages)
 /venv/
+/.env/
 
 # OS X related file that shouldn't be checked in
 .DS_Store
