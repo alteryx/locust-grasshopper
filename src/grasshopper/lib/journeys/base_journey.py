@@ -38,7 +38,26 @@ class BaseJourney(HttpUser):
 
     def log_vu(self, message: str, level: LogLevel = LogLevel.INFO, use_vu_prefix=True):
         """
-        Logs a message with an optional Virtual User ID (VU ID) prefix.
+        Logs a message with an optional Virtual User (VU) prefix for tracking in performance tests.
+        Standardizes logs for easy tracing of specific VUs in distributed test environments.
+
+        Args:
+            message (str):
+                The log message describing the event or action.
+
+            level (LogLevel, optional):
+                The severity level of the log message. Defaults to `LogLevel.INFO`.
+                Available levels:
+                    - `LogLevel.DEBUG` (Detailed debugging information)
+                    - `LogLevel.INFO` (General execution logs)
+                    - `LogLevel.WARNING` (Potential issues to be aware of)
+                    - `LogLevel.ERROR` (Critical errors affecting test execution)
+                    - `LogLevel.CRITICAL` (Severe issues requiring immediate attention)
+
+            use_vu_prefix (bool, optional):
+                Whether to prefix the message with "VU {vu_number}:". Defaults to `True`.
+                - Set to `True` when logging VU-specific messages to track which virtual user generated the log.
+                - Set to `False` for system-wide, global, or aggregated logs.
         """
         if use_vu_prefix:
             message = f"VU {getattr(self, 'vu_number', 'Unknown')}: {message}"
