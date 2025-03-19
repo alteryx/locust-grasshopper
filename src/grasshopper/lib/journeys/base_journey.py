@@ -15,6 +15,14 @@ from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from locust import HttpUser
 
 
+class VULoggingAdapter(logging.LoggerAdapter):
+    """LoggerAdapter to prepend VU number to log messages."""
+
+    def process(self, msg, kwargs):
+        vu_number = self.extra.get("vu_number", "Unknown")
+        return f"VU {vu_number}: {msg}", kwargs
+
+
 class BaseJourney(HttpUser):
     """The base journey class for all other journey classes."""
 
@@ -25,32 +33,12 @@ class BaseJourney(HttpUser):
     base_torn_down = False
     defaults = {"thresholds": {}}
 
-    def log_message(self, message: str, level: int = logging.INFO, use_vu_prefix=True):
-        """
-        Logs a message with an optional Virtual User (VU) prefix for tracking in performance tests.
-        Standardizes logs for easy tracing of specific VUs in distributed test environments.
-
-        Args:
-            message (str):
-                The log message describing the event or action.
-
-            level (int, optional):
-                The severity level of the log message. Defaults to `logging.INFO`.
-                Available levels:
-                    - `logging.DEBUG` (Detailed debugging information)
-                    - `logging.INFO` (General execution logs)
-                    - `logging.WARNING` (Potential issues to be aware of)
-                    - `logging.ERROR` (Critical errors affecting test execution)
-                    - `logging.CRITICAL` (Severe issues requiring immediate attention)
-
-            use_vu_prefix (bool, optional):
-                Whether to prefix the message with "VU {vu_number}:". Defaults to `True`.
-                - Set to `True` when logging VU-specific messages to track which virtual user generated the log.
-                - Set to `False` for system-wide, global, or aggregated logs.
-        """
-        if use_vu_prefix:
-            message = f"VU {getattr(self, 'vu_number', 'Unknown')}: {message}"
-        logging.log(level, message)
+    def __init__(self, *args, **kwargs):
+        """Initialize the BaseJourney instance and configure logging."""
+        super().__init__(*args, **kwargs)
+        self.log_prefix = VULoggingAdapter(
+            logging.getLogger(__name__), {"vu_number": "Unknown"}
+        )
 
     @classmethod
     @property
@@ -113,9 +101,9 @@ class BaseJourney(HttpUser):
         self._test_parameters = self._incoming_test_parameters.copy()
         self._set_base_teardown_listeners()
         self.client_id = str(uuid4())
-        self.vu_number = (
-            len(BaseJourney.VUS_DICT) + 1
-        )  # Ensure vu_number is assigned before logging
+        self.vu_number = len(BaseJourney.VUS_DICT) + 1
+        self.logger.extra["vu_number"] = self.vu_number
+
         self._register_new_vu()
         self._set_thresholds()
         self.environment.host = self.scenario_args.get("target_url", "") or self.host
@@ -175,10 +163,8 @@ class BaseJourney(HttpUser):
                         "thresholds": [thresh_object],
                     }
         else:
-            self.log_message(
-                "Skipping registering thresholds due to invalid thresholds shape...",
-                logging.WARNING,
-                use_vu_prefix=False,
+            logging.warning(
+                "Skipping registering thresholds due to invalid thresholds shape..."
             )
 
     @staticmethod
