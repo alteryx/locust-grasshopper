@@ -14,12 +14,29 @@ import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from locust import HttpUser
 
+# This is an inbuilt logger, renamed for clarity of purpose.
+# It logs messages without prefixing them with the virtual user (VU) number.
+log_no_prefix = logging.getLogger(__name__)
+
 
 class VULoggingAdapter(logging.LoggerAdapter):
-    """LoggerAdapter to prepend VU number to log messages."""
+    """
+    A logging adapter that prefixes log messages with the virtual user (VU) number.
+
+    This adapter retrieves the `vu_number` from the `instance` provided in the `extra`
+    dictionary and includes it in the log message. If the `instance` or `vu_number`
+    is not available, it defaults to "Unknown".
+
+    Example log message:
+        "VU 1: This is a log message."
+
+    Attributes:
+        extra (dict): A dictionary containing additional context, such as the `instance`.
+    """
 
     def process(self, msg, kwargs):
-        vu_number = self.extra.get("vu_number", "Unknown")
+        instance = self.extra.get("instance", None)
+        vu_number = getattr(instance, "vu_number", "Unknown") if instance else "Unknown"
         return f"VU {vu_number}: {msg}", kwargs
 
 
@@ -34,10 +51,10 @@ class BaseJourney(HttpUser):
     defaults = {"thresholds": {}}
 
     def __init__(self, *args, **kwargs):
-        """Initialize the BaseJourney instance and configure logging."""
         super().__init__(*args, **kwargs)
+        self.vu_number = len(BaseJourney.VUS_DICT) + 1
         self.log_prefix = VULoggingAdapter(
-            logging.getLogger(__name__), {"vu_number": "Unknown"}
+            logging.getLogger(__name__), {"instance": self}
         )
 
     @classmethod
@@ -101,8 +118,6 @@ class BaseJourney(HttpUser):
         self._test_parameters = self._incoming_test_parameters.copy()
         self._set_base_teardown_listeners()
         self.client_id = str(uuid4())
-        self.vu_number = len(BaseJourney.VUS_DICT) + 1
-        self.logger.extra["vu_number"] = self.vu_number
 
         self._register_new_vu()
         self._set_thresholds()
@@ -163,7 +178,7 @@ class BaseJourney(HttpUser):
                         "thresholds": [thresh_object],
                     }
         else:
-            logging.warning(
+            log_no_prefix.warning(
                 "Skipping registering thresholds due to invalid thresholds shape..."
             )
 
@@ -171,7 +186,7 @@ class BaseJourney(HttpUser):
     def _verify_thresholds_collection_shape(thresholds_collection):
         valid_types = ["GET", "POST", "PUT", "DELETE", "HEAD", "PATCH", "CUSTOM"]
         if not isinstance(thresholds_collection, abc.Mapping):
-            logging.warning(
+            log_no_prefix.warning(
                 f"Thresholds object is of type {type(thresholds_collection)} "
                 f"but must be a mapping!"
             )
@@ -181,20 +196,20 @@ class BaseJourney(HttpUser):
                 threshold_values.get("type") is None
                 or threshold_values.get("limit") is None
             ):
-                logging.warning(
+                log_no_prefix.warning(
                     f"Singular threshold object `{trend_name}` must have `type`"
                     f"and `limit` fields defined."
                 )
                 return False
             elif str(threshold_values.get("type")).upper() not in valid_types:
-                logging.warning(
+                log_no_prefix.warning(
                     f"For threshold object {trend_name}, type "
                     f"`{str(threshold_values.get('type')).upper()}` is "
                     f"invalid. Must be one of {valid_types}."
                 )
                 return False
             elif not str(threshold_values.get("limit")).isnumeric():
-                logging.warning(
+                log_no_prefix.warning(
                     f"For threshold object {trend_name}, threshold limit of "
                     f"`{threshold_values.get('limit')}` is invalid. "
                     f"Must be numeric."

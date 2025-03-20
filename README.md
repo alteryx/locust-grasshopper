@@ -56,9 +56,11 @@ is called `Grasshopper.launch_test`. This function can be imported like so: `fro
   class. 
   `scenario_args` also grabs from `self.defaults` on initialization. For example:
 ```python
+import logging
 from locust import between, task
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.grasshopper import Grasshopper
+log_no_prefix = logging.getLogger(__name__)
 
 # a journey class with an example task
 class ExampleJourney(BaseJourney):
