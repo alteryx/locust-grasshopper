@@ -14,11 +14,10 @@ if os.name == "posix":
 
 import gevent
 import locust
-from locust import LoadTestShape
-from locust.env import Environment
-
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.listeners import GrasshopperListeners
+from locust import LoadTestShape
+from locust.env import Environment
 
 logger = logging.getLogger()
 
