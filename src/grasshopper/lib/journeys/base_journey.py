@@ -178,7 +178,7 @@ class BaseJourney(HttpUser):
                         "thresholds": [thresh_object],
                     }
         else:
-            log_no_prefix.warning(
+            self.log_prefix.warning(
                 "Skipping registering thresholds due to invalid thresholds shape..."
             )
 

@@ -1,10 +1,6 @@
-import logging
-
 from grasshopper.lib.grasshopper import BaseJourney, Grasshopper
 from grasshopper.lib.util.utils import custom_trend
 from locust import between, task
-
-log_no_prefix = logging.getLogger(__name__)
 
 
 class Journey1(BaseJourney):
@@ -14,9 +10,9 @@ class Journey1(BaseJourney):
     @task
     @custom_trend("PX_TREND_google_home")
     def journey1_task(self):
-        log_no_prefix.info("Starting journey1_task")
+        self.log_prefix.info("Starting journey1_task")
         response = self.client.get("https://google.com", name="google_home")
-        log_no_prefix.info(f"Google result: {response.status_code}")
+        self.log_prefix.info(f"Google result: {response.status_code}")
 
 
 def test_journey1(complete_configuration):

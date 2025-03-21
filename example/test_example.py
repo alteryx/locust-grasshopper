@@ -1,11 +1,7 @@
-import logging
-
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.utils import check
 from locust import between, task
-
-log_no_prefix = logging.getLogger(__name__)
 
 
 class ExampleJourney(BaseJourney):
@@ -36,7 +32,7 @@ class ExampleJourney(BaseJourney):
         response = self.client.get(
             "/imghp", name="get google images", context={"extra": "tag"}
         )
-        log_no_prefix.info(f"google images responded with a {response.status_code}.")
+        self.log_prefix.info(f"google images responded with a {response.status_code}.")
         check(
             "google images responded with a 200",
             response.status_code == 200,

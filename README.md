@@ -60,7 +60,6 @@ import logging
 from locust import between, task
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.grasshopper import Grasshopper
-log_no_prefix = logging.getLogger(__name__)
 
 # a journey class with an example task
 class ExampleJourney(BaseJourney):
@@ -75,7 +74,9 @@ class ExampleJourney(BaseJourney):
     
     @task
     def example_task:
-        log_no_prefix.info(f'foo is `{self.scenario_args.get("foo")}`.')
+        # log_prefix is a logger instance (LoggingAdapter)  used for logging with VU_number as a prefix.
+        # For more details, refer to the full implementation in base_journey.py
+        self.log_prefix.info(f'foo is `{self.scenario_args.get("foo")}`.')
         
         # aggregate all metrics for the below request under the name "get google"
         # if name is not specified, then the full url will be the name of the metric
