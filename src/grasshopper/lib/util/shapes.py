@@ -6,6 +6,7 @@ generate a load spike or ramp up and down at custom times. By using a one of the
 classes which extend LoadTestShape, we have full control over the user count and spawn
 rate at all times.
 """
+
 import json
 import logging
 
@@ -203,7 +204,6 @@ class Spike(Stages):
 
 
 class Customstages(Stages):  # noqa E501
-
     """Keyword arguments:
     stages -- can be either a json string or a dictionary object
 

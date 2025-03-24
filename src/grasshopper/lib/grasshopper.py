@@ -2,8 +2,8 @@
 
 The Grasshopper class is the main entry point for accessing
 grasshopper functionality.
-
 """
+
 import logging
 import os
 import signal
@@ -11,7 +11,6 @@ from typing import Dict, List, Optional, Type, Union
 
 if os.name == "posix":
     import resource  # pylint: disable=import-error
-
 
 import gevent
 import locust
@@ -33,10 +32,8 @@ class Grasshopper:
     def log(self) -> None:
         """Log all the configuration values."""
         logger.info("--- Grasshopper configuration ---")
-
         for k, v in self.global_configuration.items():
             logger.info(f"{k}: [{v}]")
-
         logger.info("--- /Grasshopper configuration ---")
 
     @property
@@ -68,7 +65,6 @@ class Grasshopper:
             configuration["pwd"] = pwd
 
         configuration["ssl"] = self.global_configuration.get("influx_ssl", False)
-
         configuration["verify_ssl"] = self.global_configuration.get(
             "influx_verify_ssl", False
         )
@@ -92,7 +88,9 @@ class Grasshopper:
     @staticmethod
     def launch_test(
         weighted_user_classes: Union[
-            Type[BaseJourney], List[Type[BaseJourney]], Dict[Type[BaseJourney], float]
+            Type[BaseJourney],
+            List[Type[BaseJourney]],
+            Dict[Type[BaseJourney], float],
         ],
         **kwargs,
     ) -> Environment:

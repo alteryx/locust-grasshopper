@@ -1,11 +1,7 @@
-import logging
-
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.utils import check
 from locust import between, task
-
-logger = logging.getLogger(__name__)
 
 
 class ExampleJourney(BaseJourney):
@@ -28,16 +24,15 @@ class ExampleJourney(BaseJourney):
     @task
     def example_task(self):
         """a simple get google images HTTP request"""
-        logger.info(
-            f"Beginning example task for VU {self.vu_number} with param `foo`="
-            f'`{self.scenario_args.get("foo")}`'
+        self.log_prefix.info(
+            f"Beginning example task with param `foo`= `{self.scenario_args.get('foo')}`"
         )
         # aggregate all metrics for this request under the name "get google images"
         # if name is not specified, then the full url will be the name of the metric
         response = self.client.get(
             "/imghp", name="get google images", context={"extra": "tag"}
         )
-        logger.info(f"google images responded with a {response.status_code}.")
+        self.log_prefix.info(f"google images responded with a {response.status_code}.")
         check(
             "google images responded with a 200",
             response.status_code == 200,
