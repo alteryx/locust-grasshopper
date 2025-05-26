@@ -3,9 +3,11 @@
 Class to hold all the common functionality that we added on top of Locust's HttpUser
 class.
 """
+
 import logging
 import signal
 from collections import abc
+from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 import gevent
@@ -87,8 +89,9 @@ class BaseJourney(HttpUser):
         self.client_id = str(uuid4())
         self._register_new_vu()
         self._set_thresholds()
-        self.environment.host = self.scenario_args.get("target_url", "") or self.host
-
+        self.environment.host = self._normalize_url(
+            self.scenario_args.get("target_url") or self.host
+        )
         self.tags = {}
         self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})
@@ -146,7 +149,7 @@ class BaseJourney(HttpUser):
                     }
         else:
             logging.warning(
-                "Skipping registering thresholds due to invalid " "thresholds shape..."
+                "Skipping registering thresholds due to invalid thresholds shape..."
             )
 
     @staticmethod
@@ -183,6 +186,19 @@ class BaseJourney(HttpUser):
                 )
                 return False
         return True
+
+    @staticmethod
+    def _normalize_url(url: str) -> str:
+        """
+        Strip trailing slashes and whitespace from the URL.
+        """
+        if not url or not isinstance(url, str):
+            raise TypeError("Expected a non-empty string for URL")
+
+        url = url.strip()
+        parsed = urlparse(url)
+
+        return urlunparse(parsed._replace(path=""))
 
     def teardown(self, *args, **kwargs):
         """

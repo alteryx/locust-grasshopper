@@ -122,3 +122,24 @@ def test_verify_thresholds_collection_shape_invalid_shape(caplog):
         )
     assert not is_valid
     assert "mapping" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "input_url,expected_output",
+    [
+        ("https://test_url.com/", "https://test_url.com"),
+        ("  https://test_url.com/path  ", "https://test_url.com"),
+        ("http://test_url.com/some/path/", "http://test_url.com"),
+        ("https://test_url.com//", "https://test_url.com"),
+        ("https://test_url.com/ ", "https://test_url.com"),
+    ],
+)
+def test_normalize_url_valid(input_url, expected_output):
+    assert BaseJourney._normalize_url(input_url) == expected_output
+
+
+def test_normalize_url_invalid():
+    with pytest.raises(TypeError):
+        BaseJourney._normalize_url(None)
+    with pytest.raises(TypeError):
+        BaseJourney._normalize_url(123)
