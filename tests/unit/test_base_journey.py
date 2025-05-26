@@ -122,3 +122,22 @@ def test_verify_thresholds_collection_shape_invalid_shape(caplog):
         )
     assert not is_valid
     assert "mapping" in caplog.text
+
+
+def test_normalize_url_trailing_slash():
+    assert (
+        BaseJourney.normalize_url("http://target_url.com/") == "http://target_url.com"
+    )
+
+
+def test_normalize_url_raises_type_error_on_non_string():
+    with pytest.raises(TypeError, match="Expected a non-empty string for URL"):
+        BaseJourney.normalize_url(None)
+    with pytest.raises(TypeError, match="Expected a non-empty string for URL"):
+        BaseJourney.normalize_url(123)
+    with pytest.raises(TypeError, match="Expected a non-empty string for URL"):
+        BaseJourney.normalize_url("")
+
+
+def test_normalize_url_no_trailing_slash():
+    assert BaseJourney.normalize_url("http://target_url.com") == "http://target_url.com"

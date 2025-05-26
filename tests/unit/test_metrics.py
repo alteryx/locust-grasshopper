@@ -38,12 +38,12 @@ def mock_journey():
 
 
 def check_iteration_count(journey, count):
-    assert (
-        journey.environment.stats.num_iterations == count
-    ), "Decorator did not actually increment the environment iterations count"
-    assert (
-        journey.vu_iteration == count
-    ), "Decorator did not actually increment the vu_iteration count on the journey"
+    assert journey.environment.stats.num_iterations == count, (
+        "Decorator did not actually increment the environment iterations count"
+    )
+    assert journey.vu_iteration == count, (
+        "Decorator did not actually increment the vu_iteration count on the journey"
+    )
 
 
 def test__count_iterations(sample_func, mock_journey):
