@@ -155,9 +155,9 @@ class Grasshopper:
         logger.debug(f"Launch received kwargs: {kwargs}")
 
         env = Environment(user_classes=user_classes)
-        kwargs["user_classes"] = (
-            weighted_user_classes  # pass on the user classes as well
-        )
+        kwargs[
+            "user_classes"
+        ] = weighted_user_classes  # pass on the user classes as well
 
         env.grasshopper = Grasshopper(global_configuration=kwargs)
         env.create_local_runner()
