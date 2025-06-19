@@ -222,10 +222,10 @@ def test_verify_thresholds_collection_shape_invalid_shape(caplog):
     assert "mapping" in caplog.text
 
 
-def test_normalize_url_trailing_slash():
+def test_normalize_url_trailing_slash_and_space():
     assert (
-        BaseJourney.normalize_url("http://mytarget_url.com/")
-        == "http://mytarget_url.com"
+        BaseJourney.normalize_url("http://mytarget_url.com/ ")
+        == "http://mytarget_url.com/"
     )
 
 
@@ -241,5 +241,5 @@ def test_normalize_url_raises_type_error_on_non_string():
 def test_normalize_url_no_trailing_slash():
     assert (
         BaseJourney.normalize_url("http://mytarget_url.com")
-        == "http://mytarget_url.com"
+        == "http://mytarget_url.com/"
     )
