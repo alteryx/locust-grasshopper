@@ -71,7 +71,7 @@ def test_on_start_uses_host_when_target_url_missing():
     journey.host = "http://myhost.com/"
     journey.environment.host = ""
     journey.on_start()
-    assert journey.environment.host == "http://myhost.com"
+    assert journey.environment.host == "http://myhost.com/"
 
 
 def test_on_start_uses_target_url_when_present():
@@ -86,7 +86,7 @@ def test_on_start_uses_target_url_when_present():
     journey.host = "http://myhost.com/"
     journey.environment.host = ""
     journey.on_start()
-    assert journey.environment.host == "http://mytarget_url.com"
+    assert journey.environment.host == "http://mytarget_url.com/"
 
 
 def test_update_tags_merges_tags():
