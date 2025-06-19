@@ -69,12 +69,15 @@ class BaseJourney(HttpUser):
     @staticmethod
     def normalize_url(url: str) -> str:
         """
-        Strip trailing slashes from the URL.
+        Add a trailing slash to the URL if not present.
         """
         if not url or not isinstance(url, str):
             raise TypeError("Expected a non-empty string for URL")
 
-        return url.strip().removesuffix("/")
+        if url.strip()[-1:] == "/":
+            return url.strip()
+        else:
+            return url.strip() + "/"
 
     @classmethod
     def replace_incoming_scenario_args(cls, brand_new_args={}):
