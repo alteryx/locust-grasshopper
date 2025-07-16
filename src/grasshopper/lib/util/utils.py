@@ -8,11 +8,46 @@ import logging
 import sys
 import time
 from datetime import datetime
+from enum import Enum
 
 from grasshopper.lib.util.check_constants import CheckConstants
 from termcolor import colored
 
 logger = logging.getLogger()
+
+
+class TraceHeaders(Enum):
+    TRACE_ID = "x-datadog-trace-id"
+    REQUEST_ID = "x-request-id"
+    TRIFACTA_REQUEST_ID = "x-trifacta-request-id"
+    AYX_REQUEST_ID = "ayx-request-id"
+
+
+def get_trace_headers(response):
+    """
+    Extract trace context from HTTP response headers.
+
+    Args:
+        response: HTTP response object
+
+    Returns:
+        dict: Dictionary containing trace context with keys:
+             trace_id, request_id, trifacta_request_id, ayx_request_id
+        Returns None if response is None
+    """
+    if response is None:
+        return None
+
+    headers_dict = dict(response.headers)
+
+    return {
+        "trace_id": headers_dict.get(TraceHeaders.TRACE_ID.value, ""),
+        "request_id": headers_dict.get(TraceHeaders.REQUEST_ID.value, ""),
+        "trifacta_request_id": headers_dict.get(
+            TraceHeaders.TRIFACTA_REQUEST_ID.value, ""
+        ),
+        "ayx_request_id": headers_dict.get(TraceHeaders.AYX_REQUEST_ID.value, ""),
+    }
 
 
 def custom_trend(trend_name: str, extra_tag_keys=[]):

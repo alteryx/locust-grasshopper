@@ -12,6 +12,7 @@ from uuid import uuid4
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.util.utils import TraceHeaders, get_trace_headers
 from locust import HttpUser
 
 # This is an inbuilt logger, renamed for clarity of purpose.
@@ -61,6 +62,30 @@ class BaseJourney(HttpUser):
     @property
     def incoming_scenario_args(cls):
         return cls._incoming_test_parameters
+
+    def context(self):
+        """Return the stored trace headers with fallback defaults."""
+        stored_context = getattr(self, "_trace_headers", {}) or {}
+        return {
+            header.name.lower(): stored_context.get(header.name.lower(), "")
+            for header in TraceHeaders
+        }
+
+    def capture_trace_headers(self, response):
+        """
+        Capture and store trace headers from an HTTP response.
+
+        Returns:
+            dict: The captured trace headers or None.
+        """
+        trace_headers = get_trace_headers(response)
+        if not trace_headers:
+            self.log_prefix.warning("No trace headers found in response.")
+            return None
+
+        self._trace_headers = trace_headers
+        self.log_prefix.info(f"Captured trace headers: {trace_headers}")
+        return trace_headers
 
     @property
     def scenario_args(self):
