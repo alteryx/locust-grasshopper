@@ -91,6 +91,19 @@ class BaseJourney(HttpUser):
     def scenario_args(self):
         return self._test_parameters
 
+    @staticmethod
+    def normalize_url(url: str) -> str:
+        """
+        Add a trailing slash to the URL if not present.
+        """
+        if not url or not isinstance(url, str):
+            raise TypeError("Expected a non-empty string for URL")
+
+        if url.strip()[-1:] == "/":
+            return url.strip()
+        else:
+            return url.strip() + "/"
+
     @classmethod
     def replace_incoming_scenario_args(cls, brand_new_args={}):
         """Replace the existing set of scenario_args with a new collection."""
@@ -146,8 +159,9 @@ class BaseJourney(HttpUser):
 
         self._register_new_vu()
         self._set_thresholds()
-        self.environment.host = self.scenario_args.get("target_url", "") or self.host
-
+        self.environment.host = self.normalize_url(
+            self.scenario_args.get("target_url") or self.host
+        )
         self.tags = {}
         self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})
