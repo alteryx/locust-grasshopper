@@ -33,6 +33,7 @@ class Grasshopper:
         """Log all the configuration values."""
         logger.info("--- Grasshopper configuration ---")
         for k, v in self.global_configuration.items():
+            v = BaseJourney.normalize_url(v) if k == "target_url" else v
             logger.info(f"{k}: [{v}]")
         logger.info("--- /Grasshopper configuration ---")
 
