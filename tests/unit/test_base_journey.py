@@ -128,9 +128,9 @@ def test_verify_thresholds_collection_shape_invalid_shape(caplog):
 def test_context_with_no_trace_headers():
     """Test context() method when no trace headers are stored."""
     journey = BaseJourney(MagicMock())
-    
+
     result = journey.context()
-    
+
     # Should return all trace header keys with empty string values
     expected = {
         "trace_id": "",
@@ -144,16 +144,16 @@ def test_context_with_no_trace_headers():
 def test_context_with_stored_trace_headers():
     """Test context() method when trace headers are stored."""
     journey = BaseJourney(MagicMock())
-    
+
     # Store some trace headers (using the same keys as get_trace_headers returns)
     journey._trace_headers = {
         "trace_id": "123456",
         "request_id": "req-789",
         "ayx_request_id": "ayx-123",
     }
-    
+
     result = journey.context()
-    
+
     expected = {
         "trace_id": "123456",
         "request_id": "req-789",
@@ -167,9 +167,9 @@ def test_context_with_none_trace_headers():
     """Test context() method when _trace_headers is None."""
     journey = BaseJourney(MagicMock())
     journey._trace_headers = None
-    
+
     result = journey.context()
-    
+
     # Should return all trace header keys with empty string values
     expected = {
         "trace_id": "",
