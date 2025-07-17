@@ -433,6 +433,7 @@ def test_integration_capture_and_context(mock_get_trace_headers):
     }
     assert context == expected_context
 
+
 def test_normalize_url_trailing_slash_and_space():
     assert (
         BaseJourney.normalize_url("http://mytarget_url.com/ ")
