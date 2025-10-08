@@ -14,10 +14,13 @@ if os.name == "posix":
 
 import gevent
 import locust
+from functools import wraps
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.listeners import GrasshopperListeners
 from locust import LoadTestShape
 from locust.env import Environment
+from locust.exception import StopUser
+from locust.user.task import DefaultTaskSet, TaskSet
 
 logger = logging.getLogger()
 
@@ -174,10 +177,20 @@ class Grasshopper:
         # processed because eventually, we will need to consult the shape to get the max
         # number of virtual users
         Grasshopper._assign_weights_to_user_classes(weighted_user_classes)
+        
+        # Set up iteration limit if specified
+        iterations = kwargs.get("iterations", 0)
+        if iterations > 0:
+            Grasshopper._setup_iteration_limit(env, iterations)
+        
         env.runner.start_shape()
-        gevent.spawn_later(
-            kwargs.get("runtime"), lambda: os.kill(os.getpid(), signal.SIGINT)
-        )
+        
+        # Only set runtime-based termination if iterations is not set or is 0
+        if iterations == 0:
+            gevent.spawn_later(
+                kwargs.get("runtime"), lambda: os.kill(os.getpid(), signal.SIGINT)
+            )
+        
         env.runner.greenlet.join()
 
         return env
@@ -186,6 +199,46 @@ class Grasshopper:
     def _assign_weights_to_user_classes(weighted_user_classes):
         for user_class, weight in weighted_user_classes.items():
             user_class.weight = weight
+
+    @staticmethod
+    def _setup_iteration_limit(env: Environment, iterations: int):
+        """Set up iteration limiting for the test.
+        
+        This method patches TaskSet.execute_task to track iterations and stop
+        the test when the iteration limit is reached.
+        
+        Args:
+            env: The Locust Environment object
+            iterations: Maximum number of iterations to run
+        """
+        runner = env.runner
+        runner.iterations_started = 0
+        runner.iteration_target_reached = False
+        logger.info(f"Iteration limit set to {iterations}")
+        
+        def iteration_limit_wrapper(method):
+            @wraps(method)
+            def wrapped(self, task):
+                if runner.iterations_started >= iterations:
+                    if not runner.iteration_target_reached:
+                        runner.iteration_target_reached = True
+                        logger.info(
+                            f"Iteration limit reached ({iterations}), stopping users "
+                            f"at the start of their next task run"
+                        )
+                    if runner.user_count == 1:
+                        logger.info("Last user stopped, quitting runner")
+                        # Send final stats and quit
+                        gevent.spawn_later(0.1, lambda: os.kill(os.getpid(), signal.SIGINT))
+                    raise StopUser()
+                runner.iterations_started = runner.iterations_started + 1
+                method(self, task)
+            
+            return wrapped
+        
+        # Patch TaskSet methods to add iteration limiting
+        TaskSet.execute_task = iteration_limit_wrapper(TaskSet.execute_task)
+        DefaultTaskSet.execute_task = iteration_limit_wrapper(DefaultTaskSet.execute_task)
 
     @staticmethod
     def load_shape(shape_name: str, **kwargs) -> LoadTestShape:
