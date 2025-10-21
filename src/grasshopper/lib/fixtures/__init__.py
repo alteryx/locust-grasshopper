@@ -659,6 +659,7 @@ def _get_child_scenario_specs(full_scenarios_list, composite_scenario_contents):
         child_scenario_overrides = child_scenario.get(
             "grasshopper_scenario_arg_overrides", {}
         )
+        child_scenario_overrides["scenario_name"] = child_scenario_name
         child_scenario_spec = full_scenarios_list.get(child_scenario_name)
         if child_scenario_spec is None:
             raise YamlError(

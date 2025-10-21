@@ -16,16 +16,14 @@ class ExampleJourney(BaseJourney):
     host = "https://google.com"
 
     # lower precedence scenario_args dict, merged in on startup
-    defaults = {
-        "foo": "bar",
-    }
+    defaults = {"foo": "bar", "scenario_name": "default_example_scenario"}
 
     # a locust task, repeated over and over again until the test finishes
     @task
     def example_task(self):
         """a simple get google images HTTP request"""
         self.log_prefix.info(
-            f"Beginning example task with param `foo`= `{self.scenario_args.get('foo')}`"
+            f"Beginning example task with scenario_name: {self.scenario_args.get('scenario_name')} param `foo`= `{self.scenario_args.get('foo')}`"
         )
         # aggregate all metrics for this request under the name "get google images"
         # if name is not specified, then the full url will be the name of the metric
