@@ -5,7 +5,7 @@ example_scenario_1:
     spawn_rate: 1
     runtime: 200
   grasshopper_scenario_args:
-    foo : bar1
+    foo: bar1
     thresholds:
       get google images:
         type: get
@@ -39,8 +39,8 @@ example_scenario_composite:
   child_scenarios:
     - scenario_name: example_scenario_1
       weight: 1
-      grasshopper_scenario_arg_overrides:
-        foo: bar3
+      # grasshopper_scenario_arg_overrides:
+      #   foo: bar3
     - scenario_name: example_scenario_2
       weight: 3
       grasshopper_scenario_arg_overrides:
@@ -50,5 +50,7 @@ example_scenario_composite:
             type: get
             limit: 4000
             percentile: 0.7
+  grasshopper_scenario_args:
+    foo: bar_composite
   tags:
     - composite
