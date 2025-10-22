@@ -26,3 +26,6 @@ __pycache__
 .coverage
 coverage.*
 reports/junit_test_results.xml
+
+# vscode
+.vscode/**
