@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locust-grasshopper"
-version = "2.1.2" # Managed by bump2version
-readme = {file = "README.md", content-type = "text/markdown"}
+version = "1.4.0" # Managed by bump2version
+readme = { file = "README.md", content-type = "text/markdown" }
 description = "a load testing tool extended from locust"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
@@ -17,17 +17,17 @@ classifiers = [
     "Topic :: Software Development :: Testing",
     "Topic :: Software Development :: Testing :: Traffic Generation",
     "Topic :: System :: Distributed Computing",
-    "Framework :: Pytest"
+    "Framework :: Pytest",
 ]
 
 authors = [
-    {name="Alteryx, Inc.", email="open_source_support@alteryx.com"}
+    { name = "Alteryx, Inc.", email = "open_source_support@alteryx.com" },
 ]
 maintainers = [
-    {name="Alteryx, Inc.", email="open_source_support@alteryx.com"}
+    { name = "Alteryx, Inc.", email = "open_source_support@alteryx.com" },
 ]
 keywords = ["load testing", "performance", "locust", "grasshopper"]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.10,<4"
 dependencies = [
     "gevent >=24.2.1",
@@ -42,14 +42,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-	# Testing stuff	
-	"assertpy==1.1",
+    # Testing stuff	
+    "assertpy==1.1",
     "pytest-cov==4.0.0",
-	"pytest-mock==3.10.0",
-	"requests-mock==1.11.0",
-	"tox==4.13.0",
+    "pytest-mock==3.10.0",
+    "requests-mock==1.11.0",
+    "tox==4.13.0",
 
-	# Linting and formatting
+    # Linting and formatting
     "ruff==0.2.2",
 ]
 
@@ -62,9 +62,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-rap --junitxml=reports/junit_test_results.xml --cov=src --cov-report=html --cov-report=xml --cov-report=term"
-testpaths = [
-    "tests/unit",
-]
+testpaths = ["tests/unit"]
 junit_suite_name = "locust-grasshopper"
 log_level = "INFO"
 xfail_strict = "True"
@@ -100,7 +98,7 @@ line-length = 88
 
 # Adds Pyflakes, Mccabe, Pydocstyle, etc. run `ruff linter` to see all available linters
 extend-select = ["F", "C90", "I", "N", "ICN"]
-ignore = [ "N801", "N803", "N806", "N815", "N818", "E721"]
+ignore = ["N801", "N803", "N806", "N815", "N818", "E721"]
 
 # Allows a single underscore to be an unused variable
 dummy-variable-rgx = "^_$"
@@ -112,11 +110,14 @@ max-complexity = 18
 
 [tool.ruff.lint.isort]
 # order-by-type = false
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 ignore-decorators = ["property", "pytest.fixture", "locator"]
-
-
-
