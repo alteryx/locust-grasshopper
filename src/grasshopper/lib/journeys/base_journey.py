@@ -56,6 +56,7 @@ class BaseJourney(HttpUser):
         self.log_prefix = VULoggingAdapter(
             logging.getLogger(__name__), {"instance": self}
         )
+        self.tags = {}
 
     @classmethod
     @property
@@ -137,7 +138,6 @@ class BaseJourney(HttpUser):
         self.environment.host = self.normalize_url(
             self.scenario_args.get("target_url") or self.host
         )
-        self.tags = {}
         self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})
 
