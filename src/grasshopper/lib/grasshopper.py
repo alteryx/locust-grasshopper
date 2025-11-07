@@ -180,16 +180,33 @@ class Grasshopper:
         
         # Set up iteration limit if specified
         iterations = kwargs.get("iterations", 0)
+        runtime = kwargs.get("runtime")
+        
+        logger.info(f"Test run limits: {runtime} seconds and {iterations} iterations.")
+        # Log test limits at the start
+        if runtime and iterations > 0:
+            logger.info("Test will stop when either limit is reached first.")
+        elif runtime:
+            logger.info(f"Test will stop when runtime limit of {runtime} seconds will be reached.")
+        elif iterations > 0:
+            logger.info(f"Test will stop when ietration limit of {iterations} will be reached.")
+        
         if iterations > 0:
             Grasshopper._setup_iteration_limit(env, iterations)
         
         env.runner.start_shape()
         
-        # Only set runtime-based termination if iterations is not set or is 0
-        if iterations == 0:
-            gevent.spawn_later(
-                kwargs.get("runtime"), lambda: os.kill(os.getpid(), signal.SIGINT)
-            )
+        # Always set runtime-based termination if runtime is specified
+        # This allows both runtime and iterations to work together (whichever happens first)
+        if runtime:
+            def handle_runtime_limit():
+                # Check if iteration limit was already reached
+                if not (hasattr(env.runner, 'iteration_target_reached') and env.runner.iteration_target_reached):
+                    # Runtime limit reached first
+                    logger.info(f"Test stopped: Runtime limit of {runtime} seconds reached.")
+                os.kill(os.getpid(), signal.SIGINT)
+            
+            gevent.spawn_later(runtime, handle_runtime_limit)
         
         env.runner.greenlet.join()
 
@@ -214,7 +231,6 @@ class Grasshopper:
         runner = env.runner
         runner.iterations_started = 0
         runner.iteration_target_reached = False
-        logger.info(f"Iteration limit set to {iterations}")
         
         def iteration_limit_wrapper(method):
             @wraps(method)
@@ -222,10 +238,7 @@ class Grasshopper:
                 if runner.iterations_started >= iterations:
                     if not runner.iteration_target_reached:
                         runner.iteration_target_reached = True
-                        logger.info(
-                            f"Iteration limit reached ({iterations}), stopping users "
-                            f"at the start of their next task run"
-                        )
+                        logger.info(f"Test stopped: Iteration limit of {iterations} reached.")
                     if runner.user_count == 1:
                         logger.info("Last user stopped, quitting runner")
                         # Send final stats and quit

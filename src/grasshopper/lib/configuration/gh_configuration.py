@@ -220,8 +220,7 @@ class ConfigurationConstants:
             "attrs": {
                 "action": "store",
                 "type": int,
-                "help": "Run at most this number of task iterations and terminate "
-                "once they have finished.",
+                "help": "Run at most this number of task iterations and terminate once they have finished",
             },
             "default": 0,
             "typecast": typecast_int,
