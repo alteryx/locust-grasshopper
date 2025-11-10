@@ -197,7 +197,6 @@ class Grasshopper:
 
         env.runner.start_shape()
 
-
         def handle_runtime_limit():
             # Check if iteration limit was already reached
             if not (

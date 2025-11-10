@@ -70,7 +70,7 @@ def test_iteration_limit_stops_after_reaching_limit(mock_environment):
 
         # Create a mock TaskSet instance
         mock_taskset = MagicMock(spec=TaskSet)
-        
+
         # Create a callable mock task that is a bound method
         mock_task = MagicMock()
         mock_task.__self__ = mock_taskset
@@ -96,7 +96,7 @@ def test_iteration_limit_stops_after_reaching_limit(mock_environment):
 
 def test_launch_test_with_runtime_only():
     """Test that launch_test runs for defined runtime when only runtime is specified (iterations=0).
-    
+
     Runtime is always set as a safeguard to prevent tests from getting stuck.
     """
     with patch.object(Grasshopper, "set_ulimit"), patch.object(
@@ -135,7 +135,7 @@ def test_launch_test_with_runtime_only():
 
 def test_launch_test_with_both_iterations_and_runtime():
     """Test that launch_test stops based on what occurs first when both iterations and runtime are positive.
-    
+
     Runtime is always set as a safeguard. When iterations are also specified,
     the test will stop when either limit is reached first.
     """
