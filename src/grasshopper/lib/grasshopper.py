@@ -12,9 +12,10 @@ from typing import Dict, List, Optional, Type, Union
 if os.name == "posix":
     import resource  # pylint: disable=import-error
 
+from functools import wraps
+
 import gevent
 import locust
-from functools import wraps
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.listeners import GrasshopperListeners
 from locust import LoadTestShape
@@ -177,37 +178,47 @@ class Grasshopper:
         # processed because eventually, we will need to consult the shape to get the max
         # number of virtual users
         Grasshopper._assign_weights_to_user_classes(weighted_user_classes)
-        
+
         # Set up iteration limit if specified
         iterations = kwargs.get("iterations", 0)
         runtime = kwargs.get("runtime")
-        
+
         logger.info(f"Test run limits: {runtime} seconds and {iterations} iterations.")
         # Log test limits at the start
         if runtime and iterations > 0:
             logger.info("Test will stop when either limit is reached first.")
         elif runtime:
-            logger.info(f"Test will stop when runtime limit of {runtime} seconds will be reached.")
+            logger.info(
+                f"Test will stop when runtime limit of {runtime} seconds will be reached."
+            )
         elif iterations > 0:
-            logger.info(f"Test will stop when ietration limit of {iterations} will be reached.")
-        
+            logger.info(
+                f"Test will stop when ietration limit of {iterations} will be reached."
+            )
+
         if iterations > 0:
             Grasshopper._setup_iteration_limit(env, iterations)
-        
+
         env.runner.start_shape()
-        
+
         # Always set runtime-based termination if runtime is specified
         # This allows both runtime and iterations to work together (whichever happens first)
         if runtime:
+
             def handle_runtime_limit():
                 # Check if iteration limit was already reached
-                if not (hasattr(env.runner, 'iteration_target_reached') and env.runner.iteration_target_reached):
+                if not (
+                    hasattr(env.runner, "iteration_target_reached")
+                    and env.runner.iteration_target_reached
+                ):
                     # Runtime limit reached first
-                    logger.info(f"Test stopped: Runtime limit of {runtime} seconds reached.")
+                    logger.info(
+                        f"Test stopped: Runtime limit of {runtime} seconds reached."
+                    )
                 os.kill(os.getpid(), signal.SIGINT)
-            
+
             gevent.spawn_later(runtime, handle_runtime_limit)
-        
+
         env.runner.greenlet.join()
 
         return env
@@ -220,10 +231,10 @@ class Grasshopper:
     @staticmethod
     def _setup_iteration_limit(env: Environment, iterations: int):
         """Set up iteration limiting for the test.
-        
+
         This method patches TaskSet.execute_task to track iterations and stop
         the test when the iteration limit is reached.
-        
+
         Args:
             env: The Locust Environment object
             iterations: Maximum number of iterations to run
@@ -231,27 +242,33 @@ class Grasshopper:
         runner = env.runner
         runner.iterations_started = 0
         runner.iteration_target_reached = False
-        
+
         def iteration_limit_wrapper(method):
             @wraps(method)
             def wrapped(self, task):
                 if runner.iterations_started >= iterations:
                     if not runner.iteration_target_reached:
                         runner.iteration_target_reached = True
-                        logger.info(f"Test stopped: Iteration limit of {iterations} reached.")
+                        logger.info(
+                            f"Test stopped: Iteration limit of {iterations} reached."
+                        )
                     if runner.user_count == 1:
                         logger.info("Last user stopped, quitting runner")
                         # Send final stats and quit
-                        gevent.spawn_later(0.1, lambda: os.kill(os.getpid(), signal.SIGINT))
+                        gevent.spawn_later(
+                            0.1, lambda: os.kill(os.getpid(), signal.SIGINT)
+                        )
                     raise StopUser()
                 runner.iterations_started = runner.iterations_started + 1
                 method(self, task)
-            
+
             return wrapped
-        
+
         # Patch TaskSet methods to add iteration limiting
         TaskSet.execute_task = iteration_limit_wrapper(TaskSet.execute_task)
-        DefaultTaskSet.execute_task = iteration_limit_wrapper(DefaultTaskSet.execute_task)
+        DefaultTaskSet.execute_task = iteration_limit_wrapper(
+            DefaultTaskSet.execute_task
+        )
 
     @staticmethod
     def load_shape(shape_name: str, **kwargs) -> LoadTestShape:

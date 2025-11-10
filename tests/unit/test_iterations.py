@@ -1,22 +1,23 @@
 """Unit tests for the iterations feature."""
 
+from unittest.mock import MagicMock, create_autospec, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, create_autospec
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from locust.env import Environment
+from locust.exception import StopUser
 from locust.runners import LocalRunner
 from locust.user.task import DefaultTaskSet, TaskSet
-from locust.exception import StopUser
 
 
 class MockJourney(BaseJourney):
     """Mock journey for testing."""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.task_count = 0
-    
+
     def example_task(self):
         self.task_count += 1
 
@@ -35,9 +36,9 @@ def mock_environment():
 def test_setup_iteration_limit_initializes_runner_attributes(mock_environment):
     """Test that _setup_iteration_limit properly initializes runner attributes."""
     Grasshopper._setup_iteration_limit(mock_environment, 10)
-    
+
     assert mock_environment.runner.iterations_started == 0
-    assert mock_environment.runner.iteration_target_reached == False
+    assert mock_environment.runner.iteration_target_reached is False
 
 
 def test_setup_iteration_limit_patches_taskset_methods(mock_environment):
@@ -45,14 +46,14 @@ def test_setup_iteration_limit_patches_taskset_methods(mock_environment):
     # Store original methods
     original_taskset_execute = TaskSet.execute_task
     original_default_taskset_execute = DefaultTaskSet.execute_task
-    
+
     try:
         Grasshopper._setup_iteration_limit(mock_environment, 10)
-        
+
         # Check that methods have been patched (wrapped)
         assert TaskSet.execute_task != original_taskset_execute
         assert DefaultTaskSet.execute_task != original_default_taskset_execute
-        
+
     finally:
         # Restore original methods
         TaskSet.execute_task = original_taskset_execute
@@ -63,28 +64,28 @@ def test_iteration_limit_stops_after_reaching_limit(mock_environment):
     """Test that tasks stop executing after iteration limit is reached."""
     # Store original method
     original_taskset_execute = TaskSet.execute_task
-    
+
     try:
         Grasshopper._setup_iteration_limit(mock_environment, 2)
-        
+
         # Create a mock TaskSet
         mock_taskset = MagicMock(spec=TaskSet)
         mock_task = MagicMock()
-        
+
         # Execute tasks up to the limit
         TaskSet.execute_task(mock_taskset, mock_task)
         assert mock_environment.runner.iterations_started == 1
-        
+
         TaskSet.execute_task(mock_taskset, mock_task)
         assert mock_environment.runner.iterations_started == 2
-        
+
         # Next execution should raise StopUser
         with pytest.raises(StopUser):
             TaskSet.execute_task(mock_taskset, mock_task)
-        
+
         # Verify that iteration target was reached
-        assert mock_environment.runner.iteration_target_reached == True
-        
+        assert mock_environment.runner.iteration_target_reached is True
+
     finally:
         # Restore original method
         TaskSet.execute_task = original_taskset_execute
@@ -92,74 +93,68 @@ def test_iteration_limit_stops_after_reaching_limit(mock_environment):
 
 def test_launch_test_with_iterations_no_runtime_timer():
     """Test that launch_test doesn't set runtime timer when iterations is specified."""
-    with patch.object(Grasshopper, 'set_ulimit'), \
-         patch.object(Grasshopper, '_setup_iteration_limit') as mock_setup_iterations, \
-         patch('grasshopper.lib.grasshopper.Environment') as MockEnvironment, \
-         patch('grasshopper.lib.grasshopper.gevent.spawn_later') as mock_spawn_later, \
-         patch('grasshopper.lib.grasshopper.gevent.spawn'), \
-         patch('grasshopper.lib.grasshopper.locust.stats.stats_history'), \
-         patch('grasshopper.lib.grasshopper.GrasshopperListeners'):
-        
+    with patch.object(Grasshopper, "set_ulimit"), patch.object(
+        Grasshopper, "_setup_iteration_limit"
+    ) as mock_setup_iterations, patch(
+        "grasshopper.lib.grasshopper.Environment"
+    ) as MockEnvironment, patch(
+        "grasshopper.lib.grasshopper.gevent.spawn_later"
+    ) as mock_spawn_later, patch("grasshopper.lib.grasshopper.gevent.spawn"), patch(
+        "grasshopper.lib.grasshopper.locust.stats.stats_history"
+    ), patch("grasshopper.lib.grasshopper.GrasshopperListeners"):
         # Setup mock environment
         mock_env = MagicMock()
         mock_env.runner = MagicMock()
         mock_env.runner.greenlet = MagicMock()
         mock_env.runner.greenlet.join = MagicMock()
         MockEnvironment.return_value = mock_env
-        
+
         # Mock shape instance
         mock_shape = MagicMock()
         mock_shape.configured_runtime = 120
-        
+
         # Launch test with iterations
-        kwargs = {
-            'iterations': 10,
-            'runtime': 120,
-            'shape_instance': mock_shape
-        }
-        
+        kwargs = {"iterations": 10, "runtime": 120, "shape_instance": mock_shape}
+
         Grasshopper.launch_test(MockJourney, **kwargs)
-        
+
         # Verify that _setup_iteration_limit was called
         mock_setup_iterations.assert_called_once_with(mock_env, 10)
-        
+
         # Verify that runtime timer was NOT set (spawn_later not called)
         mock_spawn_later.assert_not_called()
 
 
 def test_launch_test_without_iterations_sets_runtime_timer():
     """Test that launch_test sets runtime timer when iterations is not specified."""
-    with patch.object(Grasshopper, 'set_ulimit'), \
-         patch.object(Grasshopper, '_setup_iteration_limit') as mock_setup_iterations, \
-         patch('grasshopper.lib.grasshopper.Environment') as MockEnvironment, \
-         patch('grasshopper.lib.grasshopper.gevent.spawn_later') as mock_spawn_later, \
-         patch('grasshopper.lib.grasshopper.gevent.spawn'), \
-         patch('grasshopper.lib.grasshopper.locust.stats.stats_history'), \
-         patch('grasshopper.lib.grasshopper.GrasshopperListeners'):
-        
+    with patch.object(Grasshopper, "set_ulimit"), patch.object(
+        Grasshopper, "_setup_iteration_limit"
+    ) as mock_setup_iterations, patch(
+        "grasshopper.lib.grasshopper.Environment"
+    ) as MockEnvironment, patch(
+        "grasshopper.lib.grasshopper.gevent.spawn_later"
+    ) as mock_spawn_later, patch("grasshopper.lib.grasshopper.gevent.spawn"), patch(
+        "grasshopper.lib.grasshopper.locust.stats.stats_history"
+    ), patch("grasshopper.lib.grasshopper.GrasshopperListeners"):
         # Setup mock environment
         mock_env = MagicMock()
         mock_env.runner = MagicMock()
         mock_env.runner.greenlet = MagicMock()
         mock_env.runner.greenlet.join = MagicMock()
         MockEnvironment.return_value = mock_env
-        
+
         # Mock shape instance
         mock_shape = MagicMock()
         mock_shape.configured_runtime = 120
-        
+
         # Launch test without iterations (or with 0)
-        kwargs = {
-            'iterations': 0,
-            'runtime': 120,
-            'shape_instance': mock_shape
-        }
-        
+        kwargs = {"iterations": 0, "runtime": 120, "shape_instance": mock_shape}
+
         Grasshopper.launch_test(MockJourney, **kwargs)
-        
+
         # Verify that _setup_iteration_limit was NOT called
         mock_setup_iterations.assert_not_called()
-        
+
         # Verify that runtime timer WAS set
         mock_spawn_later.assert_called_once()
         # Check that it was called with the runtime value
