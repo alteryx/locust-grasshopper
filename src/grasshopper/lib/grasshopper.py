@@ -180,44 +180,37 @@ class Grasshopper:
         Grasshopper._assign_weights_to_user_classes(weighted_user_classes)
 
         # Set up iteration limit if specified
+        # Runtime-based termination is always set as a safeguard to prevent tests being stuck/run indefinitely
         iterations = kwargs.get("iterations", 0)
         runtime = kwargs.get("runtime")
 
-        logger.info(f"Test run limits: {runtime} seconds and {iterations} iterations.")
         # Log test limits at the start
-        if runtime and iterations > 0:
-            logger.info("Test will stop when either limit is reached first.")
-        elif runtime:
-            logger.info(
-                f"Test will stop when runtime limit of {runtime} seconds will be reached."
-            )
-        elif iterations > 0:
-            logger.info(
-                f"Test will stop when ietration limit of {iterations} will be reached."
-            )
-
         if iterations > 0:
+            logger.info(
+                f"Test run limits: {runtime} seconds runtime and {iterations} iterations."
+            )
+            logger.info("Test will stop when either limit is reached first.")
             Grasshopper._setup_iteration_limit(env, iterations)
+        else:
+            logger.info(f"Test run limit: {runtime} seconds runtime.")
+            logger.info("Test will stop when runtime limit is reached.")
 
         env.runner.start_shape()
 
-        # Always set runtime-based termination if runtime is specified
-        # This allows both runtime and iterations to work together (whichever happens first)
-        if runtime:
 
-            def handle_runtime_limit():
-                # Check if iteration limit was already reached
-                if not (
-                    hasattr(env.runner, "iteration_target_reached")
-                    and env.runner.iteration_target_reached
-                ):
-                    # Runtime limit reached first
-                    logger.info(
-                        f"Test stopped: Runtime limit of {runtime} seconds reached."
-                    )
-                os.kill(os.getpid(), signal.SIGINT)
+        def handle_runtime_limit():
+            # Check if iteration limit was already reached
+            if not (
+                hasattr(env.runner, "iteration_target_reached")
+                and env.runner.iteration_target_reached
+            ):
+                # Runtime limit reached first
+                logger.info(
+                    f"Test stopped: Runtime limit of {runtime} seconds reached."
+                )
+            os.kill(os.getpid(), signal.SIGINT)
 
-            gevent.spawn_later(runtime, handle_runtime_limit)
+        gevent.spawn_later(runtime, handle_runtime_limit)
 
         env.runner.greenlet.join()
 
