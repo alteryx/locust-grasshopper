@@ -95,10 +95,10 @@ def test_run_example_journey(complete_configuration):
 
 ## Commonly used grasshopper pytest arguments
 
-- `--runtime`: Number of seconds to run each test. Set to 120 by default.
-- `--iterations`: Number of iterations to for each test to run. If specified, the test will 
-stop when either the iteration limit is reached or the runtime expires, whichever comes first. 
-Set to 0 by default (no iteration limit).
+- `--runtime`: Number of seconds to run each test. Runtime is defined always. Set to 120 by default.
+- `--iterations`: Number of iterations to for each test (but accross all users) to run. 
+If specified, the test will stop when either the iteration limit is reached or the runtime 
+expires, whichever comes first. Set to 0 by default (no iteration limit).
 - `--users`: Max number of users that are spawned. Set to 1 by default.
 - `--spawn_rate` : Number of users to spawn per second. Set to 1 by default.
 - `--shape`: The name of a shape to run for the test. 
