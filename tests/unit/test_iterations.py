@@ -28,8 +28,8 @@ def mock_environment():
     env = create_autospec(Environment)
     env.runner = create_autospec(LocalRunner)
     env.runner.user_count = 1
-    env.runner.iterations_started = 0
-    env.runner.iteration_target_reached = False
+    env.runner.iterations_count = 0
+    env.runner.iterations_exhausted = False
     return env
 
 
@@ -37,8 +37,8 @@ def test_setup_iteration_limit_initializes_runner_attributes(mock_environment):
     """Test that _setup_iteration_limit properly initializes runner attributes."""
     Grasshopper._setup_iteration_limit(mock_environment, 10)
 
-    assert mock_environment.runner.iterations_started == 0
-    assert mock_environment.runner.iteration_target_reached is False
+    assert mock_environment.runner.iterations_count == 0
+    assert mock_environment.runner.iterations_exhausted is False
 
 
 def test_setup_iteration_limit_patches_taskset_methods(mock_environment):
@@ -77,17 +77,17 @@ def test_iteration_limit_stops_after_reaching_limit(mock_environment):
 
         # Execute tasks up to the limit
         TaskSet.execute_task(mock_taskset, mock_task)
-        assert mock_environment.runner.iterations_started == 1
+        assert mock_environment.runner.iterations_count == 1
 
         TaskSet.execute_task(mock_taskset, mock_task)
-        assert mock_environment.runner.iterations_started == 2
+        assert mock_environment.runner.iterations_count == 2
 
         # Next execution should raise StopUser
         with pytest.raises(StopUser):
             TaskSet.execute_task(mock_taskset, mock_task)
 
         # Verify that iteration target was reached
-        assert mock_environment.runner.iteration_target_reached is True
+        assert mock_environment.runner.iterations_exhausted is True
 
     finally:
         # Restore original method

@@ -101,7 +101,6 @@ stop when either the iteration limit is reached or the runtime expires, whicheve
 Set to 0 by default (no iteration limit).
 - `--users`: Max number of users that are spawned. Set to 1 by default.
 - `--spawn_rate` : Number of users to spawn per second. Set to 1 by default.
-
 - `--shape`: The name of a shape to run for the test. 
 If you don't specify a shape or shape instance, then the shape `Default` will be used, 
   which just runs with the users, runtime & spawn_rate specified on the command line (or picks up defaults 

@@ -200,8 +200,8 @@ class Grasshopper:
         def handle_runtime_limit():
             # Check if iteration limit was already reached
             if not (
-                hasattr(env.runner, "iteration_target_reached")
-                and env.runner.iteration_target_reached
+                hasattr(env.runner, "iterations_exhausted")
+                and env.runner.iterations_exhausted
             ):
                 # Runtime limit reached first
                 logger.info(
@@ -226,21 +226,20 @@ class Grasshopper:
 
         This method patches TaskSet.execute_task to track iterations and stop
         the test when the iteration limit is reached.
-
         Args:
             env: The Locust Environment object
             iterations: Maximum number of iterations to run
         """
         runner = env.runner
-        runner.iterations_started = 0
-        runner.iteration_target_reached = False
+        runner.iterations_count = 0
+        runner.iterations_exhausted = False
 
         def iteration_limit_wrapper(method):
             @wraps(method)
             def wrapped(self, task):
-                if runner.iterations_started >= iterations:
-                    if not runner.iteration_target_reached:
-                        runner.iteration_target_reached = True
+                if runner.iterations_count >= iterations:
+                    if not runner.iterations_exhausted:
+                        runner.iterations_exhausted = True
                         logger.info(
                             f"Test stopped: Iteration limit of {iterations} reached."
                         )
@@ -251,8 +250,10 @@ class Grasshopper:
                             0.1, lambda: os.kill(os.getpid(), signal.SIGINT)
                         )
                     raise StopUser()
-                runner.iterations_started = runner.iterations_started + 1
-                method(self, task)
+                try:
+                    method(self, task)
+                finally:
+                    runner.iterations_count = runner.iterations_count + 1
 
             return wrapped
 
