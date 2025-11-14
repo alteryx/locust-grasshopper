@@ -215,6 +215,16 @@ class ConfigurationConstants:
             "default": 120.0,
             "typecast": typecast_float,
         },
+        "iterations": {
+            "opts": ["--iterations"],
+            "attrs": {
+                "action": "store",
+                "type": int,
+                "help": "Run at most this number of task iterations and terminate once they have finished",
+            },
+            "default": 0,
+            "typecast": typecast_int,
+        },
         "spawn_rate": {
             "opts": ["-R", "--spawn_rate"],
             "attrs": {

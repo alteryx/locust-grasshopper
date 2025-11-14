@@ -6,6 +6,7 @@ class GrasshopperConstants:
 
     GRASSHOPPER_ATTR_NAMES = [
         "runtime",
+        "iterations",
         "users",
         "spawn_rate",
         "shape",
