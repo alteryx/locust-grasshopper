@@ -400,9 +400,9 @@ class YamlScenarioFile(pytest.File):
     # the `cleanup_temp_file` fixture
 
     def collect(self):
-        """Collect the file, knowing the path via self.path."""
+        """Collect the file, knowing the path via self.fspath."""
         atexit.register(self._cleanup_temp_file)
-        self.full_scenarios_list = yaml.safe_load(self.path.open())
+        self.full_scenarios_list = yaml.safe_load(self.fspath.open())
         valid_scenarios = self._get_valid_scenarios(self.full_scenarios_list)
         for scenario_name, scenario_contents in valid_scenarios.items():
             yield self._create_scenario(scenario_name, scenario_contents)
@@ -412,7 +412,7 @@ class YamlScenarioFile(pytest.File):
         valid_scenarios = _get_tagged_scenarios(
             full_scenarios_list=full_scenarios_list,
             config=self.config,
-            path=self.path,
+            fspath=self.fspath,
         )  # tag filter
 
         return valid_scenarios
@@ -472,7 +472,7 @@ class Scenario(pytest.Item):
         self.parent = parent
 
         self.scenario_name = name
-        self.scenario_file = self.parent.path
+        self.scenario_file = self.parent.fspath
         self.test_file_name = spec.get("test_file_name")
 
     def runtest(self):
@@ -520,7 +520,7 @@ class Scenario(pytest.Item):
 
     def reportinfo(self):
         """Return info about the scenario being run."""
-        return self.path, 0, f"Scenario: {self.name}"
+        return self.fspath, 0, f"Scenario: {self.name}"
 
 
 class YamlError(Exception):
@@ -536,7 +536,7 @@ def _fetch_args(attr_names, config) -> dict:
     return args
 
 
-def _get_tagged_scenarios(full_scenarios_list, config, path) -> dict:
+def _get_tagged_scenarios(full_scenarios_list, config, fspath) -> dict:
     valid_scenarios = {}
     tags_to_query_for = config.getoption("--tags") or os.getenv("TAGS")
     if tags_to_query_for:
@@ -562,7 +562,7 @@ def _get_tagged_scenarios(full_scenarios_list, config, path) -> dict:
         )
     else:
         logging.warning(
-            f"Since no tags param was specified, ALL scenarios in {path} will be run!"
+            f"Since no tags param was specified, ALL scenarios in {fspath} will be run!"
         )
         valid_scenarios = full_scenarios_list
 
