@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locust-grasshopper"
-version = "1.4.1" # Managed by bump2version
+version = "1.4.2" # Managed by bump2version
 readme = { file = "README.md", content-type = "text/markdown" }
 description = "a load testing tool extended from locust"
 classifiers = [
