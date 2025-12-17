@@ -31,6 +31,23 @@ example_scenario_2:
     - smoke
     - example2
 
+example_scenario_with_iterations:
+  test_file_name: test_example.py
+  grasshopper_args:
+    users: 2
+    spawn_rate: 1
+    runtime: 300
+    iterations: 10  # Test will stop after 10 iterations or 300 seconds, whichever comes first
+  grasshopper_scenario_args:
+    foo: bar_iterations
+    thresholds:
+      get google images:
+        type: get
+        limit: 2000
+  tags:
+    - iterations
+    - example
+
 example_scenario_composite:
   grasshopper_args:
     users: 10
