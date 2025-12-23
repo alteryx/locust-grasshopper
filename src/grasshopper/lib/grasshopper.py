@@ -17,6 +17,7 @@ from functools import wraps
 import gevent
 import locust
 from grasshopper.lib.journeys.base_journey import BaseJourney
+from grasshopper.lib.journeys.base_user_journey import BaseUserJourney
 from grasshopper.lib.util.listeners import GrasshopperListeners
 from locust import LoadTestShape
 from locust.env import Environment
@@ -96,6 +97,9 @@ class Grasshopper:
             Type[BaseJourney],
             List[Type[BaseJourney]],
             Dict[Type[BaseJourney], float],
+            Type[BaseUserJourney],
+            List[Type[BaseUserJourney]],
+            Dict[Type[BaseUserJourney], float],
         ],
         **kwargs,
     ) -> Environment:
