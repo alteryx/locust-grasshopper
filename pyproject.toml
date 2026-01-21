@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locust-grasshopper"
-version = "1.4.3" # Managed by bump2version
+version = "1.4.5" # Managed by bump2version
 readme = { file = "README.md", content-type = "text/markdown" }
 description = "a load testing tool extended from locust"
 classifiers = [
@@ -34,7 +34,7 @@ dependencies = [
     "influxdb >= 5.3.1",
     "locust ~= 2.23",
     "locust-influxdb-listener ~= 1.0",
-    "pytest >= 6.2.5",
+    "pytest >= 9.0.1",
     "pyyaml >= 5.4.1",
     "tag-matcher >= 0.0.5",
     "termcolor ~= 1.0",

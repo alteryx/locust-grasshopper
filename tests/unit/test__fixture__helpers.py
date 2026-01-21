@@ -11,7 +11,7 @@ def test_get_tagged_scenarios_happy():
         "scenario1": {"tags": ["asdf"]},
         "scenario2": {"tags": ["foo"]},
     }
-    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, fspath="asdf")
+    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, path="asdf")
     assert tagged_scenarios == {"scenario1": {"tags": ["asdf", "scenario1"]}}
 
 
@@ -23,7 +23,7 @@ def test_get_tagged_scenarios_happy_env_var():
         "scenario1": {"tags": ["asdf"]},
         "scenario2": {"tags": ["foo"]},
     }
-    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, fspath="asdf")
+    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, path="asdf")
     assert tagged_scenarios == {"scenario2": {"tags": ["foo", "scenario2"]}}
 
 
@@ -34,7 +34,7 @@ def test_get_tagged_scenarios_no_tags_supplied(caplog):
         "scenario1": {"tags": ["asdf"]},
         "scenario2": {"tags": ["foo"]},
     }
-    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, fspath="asdf")
+    tagged_scenarios = _get_tagged_scenarios(raw_yaml_dict, config_mock, path="asdf")
     expected = {"scenario1": {"tags": ["asdf"]}, "scenario2": {"tags": ["foo"]}}
     assert tagged_scenarios == expected
     assert "ALL scenarios in asdf will be run!" in caplog.text
