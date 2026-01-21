@@ -7,13 +7,12 @@ class.
 import logging
 import signal
 from collections import abc
-from uuid import uuid4
 
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.journeys.base_journey import BaseJourney, VULoggingAdapter
 from locust import User
-from grasshopper.lib.journeys.base_journey import VULoggingAdapter, BaseJourney
 
 # This is an inbuilt logger, renamed for clarity of purpose.
 # It logs messages without prefixing them with the virtual user (VU) number.
@@ -76,7 +75,6 @@ class BaseUserJourney(User):
     def _register_new_vu(self):
         """Increment the user count and return the new vu's number."""
         BaseUserJourney.VUS_DICT[self.vu_number] = self
-
 
     @property
     def scenario_args(self):
