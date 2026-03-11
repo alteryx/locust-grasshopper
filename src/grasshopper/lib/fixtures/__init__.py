@@ -361,10 +361,10 @@ def composite_weighted_user_classes():
 
 # -------------------------------- OTHER FIXTURES ------------------------------
 @pytest.fixture(scope="function", autouse=True)
-def do_scenario_delay(grasshopper_args):
+def do_scenario_delay(complete_configuration):
     """Functionality to delay between each scenario run."""
     yield
-    delay = grasshopper_args.get("scenario_delay")
+    delay = complete_configuration.get("scenario_delay")
     if delay and delay > 0:
         logger.info(f"Waiting for {delay} seconds between scenarios...")
         time.sleep(delay)
