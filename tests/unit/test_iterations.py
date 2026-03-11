@@ -99,15 +99,15 @@ def test_launch_test_with_runtime_only():
 
     Runtime is always set as a safeguard to prevent tests from getting stuck.
     """
-    with patch.object(Grasshopper, "set_ulimit"), patch.object(
-        Grasshopper, "_setup_iteration_limit"
-    ) as mock_setup_iterations, patch(
-        "grasshopper.lib.grasshopper.Environment"
-    ) as MockEnvironment, patch(
-        "grasshopper.lib.grasshopper.gevent.spawn_later"
-    ) as mock_spawn_later, patch("grasshopper.lib.grasshopper.gevent.spawn"), patch(
-        "grasshopper.lib.grasshopper.locust.stats.stats_history"
-    ), patch("grasshopper.lib.grasshopper.GrasshopperListeners"):
+    with (
+        patch.object(Grasshopper, "set_ulimit"),
+        patch.object(Grasshopper, "_setup_iteration_limit") as mock_setup_iterations,
+        patch("grasshopper.lib.grasshopper.Environment") as MockEnvironment,
+        patch("grasshopper.lib.grasshopper.gevent.spawn_later") as mock_spawn_later,
+        patch("grasshopper.lib.grasshopper.gevent.spawn"),
+        patch("grasshopper.lib.grasshopper.locust.stats.stats_history"),
+        patch("grasshopper.lib.grasshopper.GrasshopperListeners"),
+    ):
         # Setup mock environment
         mock_env = MagicMock()
         mock_env.runner = MagicMock()
@@ -139,15 +139,15 @@ def test_launch_test_with_both_iterations_and_runtime():
     Runtime is always set as a safeguard. When iterations are also specified,
     the test will stop when either limit is reached first.
     """
-    with patch.object(Grasshopper, "set_ulimit"), patch.object(
-        Grasshopper, "_setup_iteration_limit"
-    ) as mock_setup_iterations, patch(
-        "grasshopper.lib.grasshopper.Environment"
-    ) as MockEnvironment, patch(
-        "grasshopper.lib.grasshopper.gevent.spawn_later"
-    ) as mock_spawn_later, patch("grasshopper.lib.grasshopper.gevent.spawn"), patch(
-        "grasshopper.lib.grasshopper.locust.stats.stats_history"
-    ), patch("grasshopper.lib.grasshopper.GrasshopperListeners"):
+    with (
+        patch.object(Grasshopper, "set_ulimit"),
+        patch.object(Grasshopper, "_setup_iteration_limit") as mock_setup_iterations,
+        patch("grasshopper.lib.grasshopper.Environment") as MockEnvironment,
+        patch("grasshopper.lib.grasshopper.gevent.spawn_later") as mock_spawn_later,
+        patch("grasshopper.lib.grasshopper.gevent.spawn"),
+        patch("grasshopper.lib.grasshopper.locust.stats.stats_history"),
+        patch("grasshopper.lib.grasshopper.GrasshopperListeners"),
+    ):
         # Setup mock environment
         mock_env = MagicMock()
         mock_env.runner = MagicMock()

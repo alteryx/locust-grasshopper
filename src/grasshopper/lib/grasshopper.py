@@ -229,7 +229,7 @@ class Grasshopper:
     @staticmethod
     def _reset_iteration_limit():
         """Reset TaskSet methods to their original state.
-        
+
         This must be called before setting up a new iteration limit to ensure
         the previous test's state doesn't affect the new test.
         """
@@ -248,7 +248,7 @@ class Grasshopper:
         """
         # First, restore original methods to clear any previous test's state
         Grasshopper._reset_iteration_limit()
-        
+
         runner = env.runner
         runner.iterations_count = 0
         runner.iterations_exhausted = False
@@ -263,7 +263,7 @@ class Grasshopper:
                             f"Test stopped: Iteration limit of {iterations} reached."
                         )
                         # Trigger stop
-                        os.kill(os.getpid(), signal.SIGINT)                        
+                        os.kill(os.getpid(), signal.SIGINT)
                     raise StopUser()
                 try:
                     method(self, task)
