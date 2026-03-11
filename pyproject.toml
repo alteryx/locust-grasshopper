@@ -50,7 +50,7 @@ dev = [
     "tox==4.13.0",
 
     # Linting and formatting
-    "ruff==0.2.2",
+    "ruff~=0.15.0",
 ]
 
 [project.urls]
