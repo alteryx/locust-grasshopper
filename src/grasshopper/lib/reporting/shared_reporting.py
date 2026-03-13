@@ -16,15 +16,6 @@ class SharedReporting:
     FORMAT_STRING_STANDARD_COLUMN_LAYOUT = "{:<30} {:<10} {:<10} {:<10}"
 
     @staticmethod
-    def _bold_colorized(text: str, color: str) -> str:
-        """Colorize text consistently across supported termcolor versions."""
-        try:
-            return colored(text, color, attrs=["bold"], force_color=True)
-        except TypeError:
-            # termcolor<3 does not support `force_color`
-            return colored(text, color, attrs=["bold"])
-
-    @staticmethod
     def colorized_threshold_string(
         trend_name: str,
         threshold: Dict[str, Any],
@@ -36,9 +27,9 @@ class SharedReporting:
         )
         success = SharedReporting.get_threshold_status(threshold)
         if success and not any_errors_occurred:
-            colored_string = SharedReporting._bold_colorized(formatted, "green")
+            colored_string = colored(formatted, "green", attrs=["bold"])
         else:
-            colored_string = SharedReporting._bold_colorized(formatted, "red")
+            colored_string = colored(formatted, "red", attrs=["bold"])
 
         return colored_string, any_errors_occurred
 
