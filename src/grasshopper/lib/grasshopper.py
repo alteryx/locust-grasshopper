@@ -25,6 +25,10 @@ from locust.user.task import DefaultTaskSet, TaskSet
 
 logger = logging.getLogger()
 
+# Store original TaskSet methods to restore after each test
+_original_taskset_execute_task = TaskSet.execute_task
+_original_default_taskset_execute_task = DefaultTaskSet.execute_task
+
 
 class Grasshopper:
     """Main entry point to access addins and extensions."""
@@ -187,13 +191,15 @@ class Grasshopper:
         # Log test limits at the start
         if iterations > 0:
             logger.info(
-                f"Test run limits: {runtime} seconds runtime and {iterations} iterations."
+                f"Test run limits: {runtime} seconds runtime and {iterations} iterations.\n"
+                "Test will stop when either limit is reached first."
             )
-            logger.info("Test will stop when either limit is reached first.")
             Grasshopper._setup_iteration_limit(env, iterations)
         else:
-            logger.info(f"Test run limit: {runtime} seconds runtime.")
-            logger.info("Test will stop when runtime limit is reached.")
+            logger.info(
+                f"Test run limit: {runtime} seconds runtime.\n"
+                "Test will stop when runtime is exhausted."
+            )
 
         env.runner.start_shape()
 
@@ -221,6 +227,16 @@ class Grasshopper:
             user_class.weight = weight
 
     @staticmethod
+    def _reset_iteration_limit():
+        """Reset TaskSet methods to their original state.
+
+        This must be called before setting up a new iteration limit to ensure
+        the previous test's state doesn't affect the new test.
+        """
+        TaskSet.execute_task = _original_taskset_execute_task
+        DefaultTaskSet.execute_task = _original_default_taskset_execute_task
+
+    @staticmethod
     def _setup_iteration_limit(env: Environment, iterations: int):
         """Set up iteration limiting for the test.
 
@@ -230,6 +246,9 @@ class Grasshopper:
             env: The Locust Environment object
             iterations: Maximum number of iterations to run
         """
+        # First, restore original methods to clear any previous test's state
+        Grasshopper._reset_iteration_limit()
+
         runner = env.runner
         runner.iterations_count = 0
         runner.iterations_exhausted = False
@@ -243,12 +262,8 @@ class Grasshopper:
                         logger.info(
                             f"Test stopped: Iteration limit of {iterations} reached."
                         )
-                    if runner.user_count == 1:
-                        logger.info("Last user stopped, quitting runner")
-                        # Send final stats and quit
-                        gevent.spawn_later(
-                            0.1, lambda: os.kill(os.getpid(), signal.SIGINT)
-                        )
+                        # Trigger stop
+                        os.kill(os.getpid(), signal.SIGINT)
                     raise StopUser()
                 try:
                     method(self, task)
@@ -258,9 +273,10 @@ class Grasshopper:
             return wrapped
 
         # Patch TaskSet methods to add iteration limiting
-        TaskSet.execute_task = iteration_limit_wrapper(TaskSet.execute_task)
+        # We patch the original methods, not the potentially already-patched ones
+        TaskSet.execute_task = iteration_limit_wrapper(_original_taskset_execute_task)
         DefaultTaskSet.execute_task = iteration_limit_wrapper(
-            DefaultTaskSet.execute_task
+            _original_default_taskset_execute_task
         )
 
     @staticmethod
