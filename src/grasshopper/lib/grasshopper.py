@@ -197,8 +197,8 @@ class Grasshopper:
             Grasshopper._setup_iteration_limit(env, iterations)
         else:
             logger.info(
-                f"Test run limit: {runtime} seconds runtime..\n"
-                "Test will stop when either limit is reached first."
+                f"Test run limit: {runtime} seconds runtime.\n"
+                "Test will stop when runtime is exhausted."
             )
 
         env.runner.start_shape()
