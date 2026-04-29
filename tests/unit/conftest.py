@@ -6,11 +6,11 @@ from gevent import monkey
 
 monkey.patch_all()
 
-import logging
-import re
-from pathlib import Path
+import logging  # noqa: E402
+import re  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-import pytest
+import pytest  # noqa: E402
 
 pytest_plugins = ["pytester"]
 

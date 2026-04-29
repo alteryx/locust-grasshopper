@@ -10,7 +10,7 @@ from gevent import monkey
 
 monkey.patch_all()
 
-import os
+import os  # noqa: E402
 
 # import pytest
 
