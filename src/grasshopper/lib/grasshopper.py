@@ -170,7 +170,7 @@ class Grasshopper:
         env.grasshopper = Grasshopper(global_configuration=kwargs)
         env.create_local_runner()
         env.runner.stats.reset_all()
-        gevent.spawn(locust.stats.stats_history, env.runner)
+        stats_greenlet = gevent.spawn(locust.stats.stats_history, env.runner)
         env.grasshopper_listeners = GrasshopperListeners(environment=env)
 
         # env.shape_class is actually supplied a shape *instance*
@@ -203,7 +203,15 @@ class Grasshopper:
 
         env.runner.start_shape()
 
+        # Use a flag to track whether this specific test has already been stopped.
+        # This prevents stale greenlets from previous tests from interfering with
+        # the current test, and ensures the stop message is only logged once.
+        test_stopped = [False]
+
         def handle_runtime_limit():
+            if test_stopped[0]:
+                return
+            test_stopped[0] = True
             # Check if iteration limit was already reached
             if not (
                 hasattr(env.runner, "iterations_exhausted")
@@ -215,9 +223,18 @@ class Grasshopper:
                 )
             os.kill(os.getpid(), signal.SIGINT)
 
-        gevent.spawn_later(runtime, handle_runtime_limit)
+        runtime_greenlet = gevent.spawn_later(runtime, handle_runtime_limit)
 
         env.runner.greenlet.join()
+
+        # Cancel the runtime timer greenlet if it hasn't fired yet.
+        # This is critical when running multiple scenarios sequentially in the
+        # same process (e.g., YAML scenario files): without cancellation, stale
+        # runtime timers from earlier tests can fire during later tests, causing
+        # premature termination, incorrect "Runtime limit reached" messages, or
+        # silent test interruption.
+        test_stopped[0] = True
+        runtime_greenlet.kill(block=False)
 
         return env
 

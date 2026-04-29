@@ -169,3 +169,95 @@ def test_launch_test_with_both_iterations_and_runtime():
         mock_spawn_later.assert_called_once()
         # Check that runtime timer was called with the runtime value
         assert mock_spawn_later.call_args[0][0] == 120
+
+
+def test_launch_test_kills_runtime_greenlet_after_test_ends():
+    """Test that the runtime timer greenlet is killed after the test completes.
+
+    When running multiple scenarios sequentially in the same process (e.g., via
+    YAML scenario files), stale runtime timer greenlets from earlier tests must
+    be cancelled. Otherwise, they can fire during later tests, causing premature
+    termination, incorrect "Runtime limit reached" messages, or silent test
+    interruption.
+    """
+    with (
+        patch.object(Grasshopper, "set_ulimit"),
+        patch.object(Grasshopper, "_setup_iteration_limit"),
+        patch("grasshopper.lib.grasshopper.Environment") as MockEnvironment,
+        patch("grasshopper.lib.grasshopper.gevent.spawn_later") as mock_spawn_later,
+        patch("grasshopper.lib.grasshopper.gevent.spawn"),
+        patch("grasshopper.lib.grasshopper.locust.stats.stats_history"),
+        patch("grasshopper.lib.grasshopper.GrasshopperListeners"),
+    ):
+        # Setup mock environment
+        mock_env = MagicMock()
+        mock_env.runner = MagicMock()
+        mock_env.runner.greenlet = MagicMock()
+        mock_env.runner.greenlet.join = MagicMock()
+        MockEnvironment.return_value = mock_env
+
+        # Mock shape instance
+        mock_shape = MagicMock()
+        mock_shape.configured_runtime = 300
+
+        # Create a mock greenlet that spawn_later returns
+        mock_runtime_greenlet = MagicMock()
+        mock_spawn_later.return_value = mock_runtime_greenlet
+
+        kwargs = {"iterations": 1, "runtime": 300, "shape_instance": mock_shape}
+
+        Grasshopper.launch_test(MockJourney, **kwargs)
+
+        # Verify that the runtime greenlet was killed after the test ended
+        mock_runtime_greenlet.kill.assert_called_once_with(block=False)
+
+
+def test_runtime_handler_is_noop_after_test_stopped():
+    """Test that the runtime handler does nothing if the test has already stopped.
+
+    This verifies the test_stopped flag mechanism that prevents stale greenlets
+    from interfering with subsequent tests.
+    """
+    with (
+        patch.object(Grasshopper, "set_ulimit"),
+        patch.object(Grasshopper, "_setup_iteration_limit"),
+        patch("grasshopper.lib.grasshopper.Environment") as MockEnvironment,
+        patch("grasshopper.lib.grasshopper.gevent.spawn_later") as mock_spawn_later,
+        patch("grasshopper.lib.grasshopper.gevent.spawn"),
+        patch("grasshopper.lib.grasshopper.locust.stats.stats_history"),
+        patch("grasshopper.lib.grasshopper.GrasshopperListeners"),
+        patch("grasshopper.lib.grasshopper.os.kill") as mock_kill,
+    ):
+        # Setup mock environment
+        mock_env = MagicMock()
+        mock_env.runner = MagicMock()
+        mock_env.runner.greenlet = MagicMock()
+        mock_env.runner.greenlet.join = MagicMock()
+        MockEnvironment.return_value = mock_env
+
+        # Mock shape instance
+        mock_shape = MagicMock()
+        mock_shape.configured_runtime = 300
+
+        # Capture the handle_runtime_limit callback
+        captured_callback = None
+
+        def capture_spawn_later(delay, func):
+            nonlocal captured_callback
+            captured_callback = func
+            return MagicMock()
+
+        mock_spawn_later.side_effect = capture_spawn_later
+
+        kwargs = {"iterations": 1, "runtime": 300, "shape_instance": mock_shape}
+
+        Grasshopper.launch_test(MockJourney, **kwargs)
+
+        # After launch_test returns, test_stopped[0] is True.
+        # Calling the captured callback should be a no-op.
+        mock_kill.reset_mock()
+        assert captured_callback is not None
+        captured_callback()
+
+        # os.kill should NOT have been called because test_stopped is True
+        mock_kill.assert_not_called()
