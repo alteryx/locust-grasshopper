@@ -170,7 +170,7 @@ class Grasshopper:
         env.grasshopper = Grasshopper(global_configuration=kwargs)
         env.create_local_runner()
         env.runner.stats.reset_all()
-        stats_greenlet = gevent.spawn(locust.stats.stats_history, env.runner)
+        gevent.spawn(locust.stats.stats_history, env.runner)
         env.grasshopper_listeners = GrasshopperListeners(environment=env)
 
         # env.shape_class is actually supplied a shape *instance*
