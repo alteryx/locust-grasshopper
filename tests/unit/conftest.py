@@ -1,5 +1,11 @@
 """Module: Conftest."""
 
+# IMPORTANT: gevent monkey patching must happen before any other imports
+# to avoid SSL-related RecursionError issues with locust
+from gevent import monkey
+
+monkey.patch_all()
+
 import logging
 import re
 from pathlib import Path
