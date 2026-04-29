@@ -1,16 +1,10 @@
 """Module: Conftest."""
 
-# IMPORTANT: gevent monkey patching must happen before any other imports
-# to avoid SSL-related RecursionError issues with locust
-from gevent import monkey
+import logging
+import re
+from pathlib import Path
 
-monkey.patch_all()
-
-import logging  # noqa: E402
-import re  # noqa: E402
-from pathlib import Path  # noqa: E402
-
-import pytest  # noqa: E402
+import pytest
 
 pytest_plugins = ["pytester"]
 

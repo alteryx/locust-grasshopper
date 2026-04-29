@@ -4,13 +4,7 @@ Conftest for use with integration tests for Grasshopper.
 
 """
 
-# IMPORTANT: gevent monkey patching must happen before any other imports
-# to avoid SSL-related RecursionError issues with locust
-from gevent import monkey
-
-monkey.patch_all()
-
-import os  # noqa: E402
+import os
 
 # import pytest
 
