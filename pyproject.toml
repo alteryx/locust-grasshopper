@@ -85,7 +85,7 @@ legacy_tox_ini = """
 
     [testenv]
     deps = .[dev]
-    commands = pytest tests/unit
+    commands = python -m gevent.monkey --module pytest tests/unit
 """
 
 [tool.ruff]
