@@ -32,7 +32,7 @@ requires-python = ">=3.10,<4"
 dependencies = [
     "gevent >= 24.2.1",
     "influxdb >= 5.3.1",
-    "locust ~= 2.23",
+    "locust ~= 2.43.3",
     "locust-influxdb-listener ~= 1.0",
     "pytest >= 9.0.1",
     "pyyaml >= 5.4.1",
@@ -50,7 +50,7 @@ dev = [
     "tox == 4.13.0",
 
     # Linting and formatting
-    "ruff == 0.2.2",
+    "ruff >= 0.14.10",
 ]
 
 [project.urls]
