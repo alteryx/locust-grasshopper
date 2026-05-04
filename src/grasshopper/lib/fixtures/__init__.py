@@ -16,7 +16,6 @@ from grasshopper.lib.configuration.gh_configuration import (
     ConfigurationConstants,
     GHConfiguration,
 )
-from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.util.decorators import deprecate
 
 logger = logging.getLogger(__name__)
@@ -306,6 +305,8 @@ def typecast(merge_sources):
 
 @pytest.fixture(scope="session")
 def process_shape(typecast):
+    from grasshopper.lib.grasshopper import Grasshopper
+
     config = GHConfiguration(typecast)
     shape = config.get("shape")
 
