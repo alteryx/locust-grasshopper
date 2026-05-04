@@ -225,16 +225,17 @@ class Grasshopper:
 
         runtime_greenlet = gevent.spawn_later(runtime, handle_runtime_limit)
 
-        env.runner.greenlet.join()
-
-        # Cancel the runtime timer greenlet if it hasn't fired yet.
-        # This is critical when running multiple scenarios sequentially in the
-        # same process (e.g., YAML scenario files): without cancellation, stale
-        # runtime timers from earlier tests can fire during later tests, causing
-        # premature termination, incorrect "Runtime limit reached" messages, or
-        # silent test interruption.
-        test_stopped[0] = True
-        runtime_greenlet.kill(block=False)
+        try:
+            env.runner.greenlet.join()
+        finally:
+            # Cancel the runtime timer greenlet if it hasn't fired yet.
+            # This is critical when running multiple scenarios sequentially in the
+            # same process (e.g., YAML scenario files): without cancellation, stale
+            # runtime timers from earlier tests can fire during later tests, causing
+            # premature termination, incorrect "Runtime limit reached" messages, or
+            # silent test interruption.
+            test_stopped[0] = True
+            runtime_greenlet.kill(block=False)
 
         return env
 
