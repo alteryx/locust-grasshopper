@@ -273,7 +273,9 @@ def test_wait_is_bypassed_when_limit_reached(mock_environment):
         mock_taskset = MagicMock(spec=TaskSet)
 
         # Mock original TaskSet.wait implementation by patching the original wait reference
-        with patch("grasshopper.lib.grasshopper._original_taskset_wait") as mock_orig_wait:
+        with patch(
+            "grasshopper.lib.grasshopper._original_taskset_wait"
+        ) as mock_orig_wait:
             # Before limit is reached
             mock_environment.runner.iterations_count = 0
             TaskSet.wait(mock_taskset)
