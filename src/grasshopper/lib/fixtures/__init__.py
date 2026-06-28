@@ -335,7 +335,7 @@ def process_shape(typecast):
         # add the overrides
         config.update(overrides)
     else:
-        logger.error(f"CONFIG FIXTURE: Shape is missing from configuration {config}")
+        logger.warning(f"CONFIG FIXTURE: Shape is missing from configuration {config}")
 
     logger.debug(f"CONFIG FIXTURE: process_shape {config}")
 
