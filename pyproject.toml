@@ -82,6 +82,7 @@ legacy_tox_ini = """
         py310
         py311
         py312
+    skip_missing_interpreters = true
 
     [testenv]
     deps = .[dev]
