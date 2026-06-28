@@ -28,6 +28,7 @@ logger = logging.getLogger()
 # Store original TaskSet methods to restore after each test
 _original_taskset_execute_task = TaskSet.execute_task
 _original_default_taskset_execute_task = DefaultTaskSet.execute_task
+_original_taskset_wait = TaskSet.wait
 
 
 class Grasshopper:
@@ -253,6 +254,7 @@ class Grasshopper:
         """
         TaskSet.execute_task = _original_taskset_execute_task
         DefaultTaskSet.execute_task = _original_default_taskset_execute_task
+        TaskSet.wait = _original_taskset_wait
 
     @staticmethod
     def _setup_iteration_limit(env: Environment, iterations: int):
@@ -296,6 +298,14 @@ class Grasshopper:
         DefaultTaskSet.execute_task = iteration_limit_wrapper(
             _original_default_taskset_execute_task
         )
+
+        # Patch TaskSet.wait to skip sleep if iteration limit has been reached
+        def wrapped_wait(self):
+            if runner.iterations_count >= iterations:
+                return
+            _original_taskset_wait(self)
+
+        TaskSet.wait = wrapped_wait
 
     @staticmethod
     def load_shape(shape_name: str, **kwargs) -> LoadTestShape:

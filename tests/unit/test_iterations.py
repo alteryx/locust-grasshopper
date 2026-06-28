@@ -261,3 +261,33 @@ def test_runtime_handler_is_noop_after_test_stopped():
 
         # os.kill should NOT have been called because test_stopped is True
         mock_kill.assert_not_called()
+
+
+def test_wait_is_bypassed_when_limit_reached(mock_environment):
+    """Test that TaskSet.wait() is bypassed when iteration limit is reached."""
+    try:
+        # Set iteration limit to 1
+        Grasshopper._setup_iteration_limit(mock_environment, 1)
+
+        # Create a mock TaskSet instance
+        mock_taskset = MagicMock(spec=TaskSet)
+
+        # Mock original TaskSet.wait implementation by patching the original wait reference
+        with patch(
+            "grasshopper.lib.grasshopper._original_taskset_wait"
+        ) as mock_orig_wait:
+            # Before limit is reached
+            mock_environment.runner.iterations_count = 0
+            TaskSet.wait(mock_taskset)
+            mock_orig_wait.assert_called_once_with(mock_taskset)
+
+            # Reset mock
+            mock_orig_wait.reset_mock()
+
+            # After limit is reached
+            mock_environment.runner.iterations_count = 1
+            TaskSet.wait(mock_taskset)
+            mock_orig_wait.assert_not_called()
+
+    finally:
+        Grasshopper._reset_iteration_limit()
