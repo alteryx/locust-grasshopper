@@ -132,13 +132,15 @@ class Grasshopper:
         configuration["namespace"] = namespace
 
         default_tags = {}
-        datadog_env = self.global_configuration.get("datadog_env") or os.getenv("DD_ENV")
+        datadog_env = self.global_configuration.get("datadog_env") or os.getenv(
+            "DD_ENV"
+        )
         if datadog_env:
             default_tags["env"] = datadog_env
 
-        datadog_service = self.global_configuration.get(
-            "datadog_service"
-        ) or os.getenv("DD_SERVICE")
+        datadog_service = self.global_configuration.get("datadog_service") or os.getenv(
+            "DD_SERVICE"
+        )
         if datadog_service:
             default_tags["service"] = datadog_service
 
