@@ -127,6 +127,17 @@ you must specify a host.
 - `--grafana_host`: If your grafana is a separate URL from the influxdb, you can 
   specify it here. If you don't, then the grafana URL will be the same as the 
   influxdb URL when the grasshopper object generates grafana links. 
+- `--datadog_api_key`: Datadog API key for direct metric reporting. You can also use
+  the `DD_API_KEY` environment variable.
+- `--datadog_site`: Datadog site, e.g. `datadoghq.com` or `us5.datadoghq.com`.
+  Defaults to `datadoghq.com`. You can also use `DD_SITE`.
+- `--datadog_namespace`: Metric namespace prefix for Datadog reporting.
+  Defaults to `grasshopper`.
+- `--datadog_env`: Optional Datadog `env` tag value. You can also use `DD_ENV`.
+- `--datadog_service`: Optional Datadog `service` tag value. You can also use
+  `DD_SERVICE`.
+- `--datadog_tags`: Optional comma-separated Datadog tags such as
+  `team:shield,test:navigation`. You can also use `DD_TAGS`.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -381,9 +392,12 @@ This data is also reported to the console at the end of each test.
 Additional design details about how a database listener works with grasshopper/locust can be 
 found in the [Database Listener Design Documentation](./docs/database_listener_design_documentation.md).
 
-When you specify a time series database URL param to `launch_test`, such as 
-`influx_host`, all metrics will be automatically reported to tables within the `locust` 
-timeseries database via the specified URL. These tables include:
+When you specify a metrics backend configuration param to `launch_test`, the
+corresponding listener will be initialized automatically. For example:
+- `influx_host` enables InfluxDB reporting
+- `datadog_api_key` or `DD_API_KEY` enables Datadog reporting
+
+If both backends are configured, Grasshopper will report to both. These metrics include:
 - `locust_checks`: check name, check passed, etc.
 - `locust_events`: test started, test stopped, etc.
 - `locust_exceptions`: error messages
