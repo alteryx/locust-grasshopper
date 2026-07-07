@@ -152,7 +152,9 @@ class DatadogApiListener:
         tags: dict | None = None,
         timestamp: int | None = None,
     ):
-        metric_path = f"{self.namespace}.{metric_name}" if self.namespace else metric_name
+        metric_path = (
+            f"{self.namespace}.{metric_name}" if self.namespace else metric_name
+        )
         self.series_buffer.append(
             {
                 "metric": metric_path,
