@@ -3,11 +3,10 @@
 The listeners module contains all the custom listeners that we have defined for Locust.
 """
 
+import json
 import logging
 from datetime import datetime, timezone
-import json
-from urllib import error
-from urllib import request
+from urllib import error, request
 
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.utils import (
