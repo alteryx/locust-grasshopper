@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from grasshopper.lib.util.check_constants import CheckConstants
-from grasshopper.lib.util.listeners import GrasshopperListeners
+from grasshopper.lib.util.listeners import DatadogApiListener, GrasshopperListeners
 from grasshopper.lib.util.utils import (
     check,
     current_method_name,
@@ -329,3 +329,87 @@ def test_append_checks_data(mock_logging, example_checks_dict):
     env.stats.checks = example_checks_dict
     listeners._append_checks_data(env)
     assert mock_logging.call_count == 6
+
+
+def test_datadog_listener_emits_request_metrics(monkeypatch):
+    env = MagicMock()
+    env.host = "https://perf.example"
+    response_mock = MagicMock()
+    response_mock.read.return_value = b"{}"
+    response_mock.__enter__.return_value = response_mock
+    response_mock.__exit__.return_value = None
+    urlopen_mock = MagicMock(return_value=response_mock)
+    monkeypatch.setattr("grasshopper.lib.util.listeners.request.urlopen", urlopen_mock)
+
+    listener = DatadogApiListener(
+        environment=env,
+        api_key="secret",
+        site="datadoghq.com",
+        namespace="grasshopper",
+        default_tags={"service": "shield-trifacta"},
+    )
+    listener.on_request(
+        request_type="CUSTOM",
+        name="PX_TREND_example",
+        response_time=123.4,
+        response_length=0,
+        response=None,
+        context={"journey": "example"},
+        exception=None,
+    )
+    listener.flush()
+
+    request_obj = urlopen_mock.call_args.args[0]
+    assert request_obj.full_url == "https://api.datadoghq.com/api/v1/series"
+    assert request_obj.headers["Dd-api-key"] == "secret"
+    payload = request_obj.data.decode("utf-8")
+    assert '"metric": "grasshopper.locust_requests.count"' in payload
+    assert '"metric": "grasshopper.locust_requests.response_time"' in payload
+    assert '"service:shield-trifacta"' in payload
+    assert '"journey:example"' in payload
+
+
+def test_write_metric_point_reports_to_datadog_listener():
+    env = MagicMock()
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    timestamp = MagicMock()
+
+    listeners.write_metric_point(
+        "locust_requests",
+        {"response_time": 456.0},
+        time=timestamp,
+        tags={"job_type": "batch"},
+    )
+
+    listeners.datadog_listener.write_point.assert_called_once_with(
+        measurement="locust_requests",
+        fields={"response_time": 456.0},
+        time=timestamp,
+        tags={"job_type": "batch"},
+    )
+
+
+def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.extra_context = {"journey": "connections"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs(
+        "connection health",
+        True,
+        {"job_type": "batch"},
+    )
+
+    listeners.datadog_listener.record_check.assert_called_once()
+    call_kwargs = listeners.datadog_listener.record_check.call_args.kwargs
+    assert call_kwargs["check_name"] == "connection health"
+    assert call_kwargs["check_passed"] is True
+    assert call_kwargs["extra_tags"] == {
+        "check_name": "connection health",
+        "environment": "https://perf.example",
+        "journey": "connections",
+        "job_type": "batch",
+    }
