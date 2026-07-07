@@ -34,6 +34,16 @@ _original_taskset_wait = TaskSet.wait
 class Grasshopper:
     """Main entry point to access addins and extensions."""
 
+    SENSITIVE_CONFIGURATION_KEYS = {
+        "access_token",
+        "datadog_api_key",
+        "influx_pwd",
+        "password",
+        "rp_token",
+        "rp_uuid",
+        "workspace_token",
+    }
+
     def __init__(self, global_configuration: dict = {}, **kwargs):
         self.global_configuration = global_configuration
         self.log()
@@ -42,9 +52,18 @@ class Grasshopper:
         """Log all the configuration values."""
         logger.info("--- Grasshopper configuration ---")
         for k, v in self.global_configuration.items():
-            v = BaseJourney.normalize_url(v) if k == "target_url" else v
+            v = self._sanitize_configuration_value(k, v)
             logger.info(f"{k}: [{v}]")
         logger.info("--- /Grasshopper configuration ---")
+
+    @classmethod
+    def _sanitize_configuration_value(cls, key: str, value):
+        """Redact sensitive values before logging."""
+        if key == "target_url":
+            return BaseJourney.normalize_url(value)
+        if key in cls.SENSITIVE_CONFIGURATION_KEYS and value:
+            return "***REDACTED***"
+        return value
 
     @property
     def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
@@ -94,6 +113,63 @@ class Grasshopper:
         )
         configuration["grafana_host"] = host
         return configuration
+
+    @property
+    def datadog_configuration(self) -> dict[str, Optional[Union[dict, int, str]]]:
+        """Extract the Datadog related configuration items."""
+        configuration = {}
+
+        api_key = self.global_configuration.get("datadog_api_key") or os.getenv(
+            "DD_API_KEY"
+        )
+        if api_key:
+            configuration["api_key"] = api_key
+
+        site = self.global_configuration.get("datadog_site") or os.getenv("DD_SITE")
+        configuration["site"] = site or "datadoghq.com"
+
+        namespace = self.global_configuration.get("datadog_namespace") or "grasshopper"
+        configuration["namespace"] = namespace
+
+        default_tags = {}
+        datadog_env = self.global_configuration.get("datadog_env") or os.getenv("DD_ENV")
+        if datadog_env:
+            default_tags["env"] = datadog_env
+
+        datadog_service = self.global_configuration.get(
+            "datadog_service"
+        ) or os.getenv("DD_SERVICE")
+        if datadog_service:
+            default_tags["service"] = datadog_service
+
+        datadog_tags = self.global_configuration.get("datadog_tags") or os.getenv(
+            "DD_TAGS"
+        )
+        if datadog_tags:
+            default_tags.update(self._parse_datadog_tags(datadog_tags))
+
+        if default_tags:
+            configuration["default_tags"] = default_tags
+
+        return configuration
+
+    @staticmethod
+    def _parse_datadog_tags(raw_tags: str) -> dict[str, str]:
+        """Parse Datadog tag strings like `team:shield,test:navigation`."""
+        parsed_tags = {}
+        for raw_tag in str(raw_tags).split(","):
+            raw_tag = raw_tag.strip()
+            if not raw_tag:
+                continue
+
+            if ":" in raw_tag:
+                key, value = raw_tag.split(":", 1)
+            else:
+                key, value = raw_tag, "true"
+
+            parsed_tags[key.strip()] = value.strip()
+
+        return parsed_tags
 
     @staticmethod
     def launch_test(
