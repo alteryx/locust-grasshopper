@@ -29,9 +29,9 @@ def test_set_ulimit_already_high():
 
         mock_resource.getrlimit.assert_called_with(mock_resource.RLIMIT_NOFILE)
         mock_resource.setrlimit.assert_not_called()
-        mock_logger.info.assert_any_call("Current open file limits - soft: 15000, hard: 20000")
-        mock_logger.info.assert_any_call("Hard limit of 20000 is above minimum required limit of 10000")
-        mock_logger.info.assert_any_call("Soft limit of 15000 is above minimum required limit of 10000")
+        mock_logger.info.assert_any_call("Current open files limits - soft: 15000, hard: 20000")
+        mock_logger.info.assert_any_call("Hard limit of 20000 is in line with minimum required limit of 10000")
+        mock_logger.info.assert_any_call("Soft limit of 15000 is in line with minimum required limit of 10000")
 
 
 def test_set_ulimit_increase_both_success():
@@ -57,15 +57,15 @@ def test_set_ulimit_increase_both_success():
          patch("grasshopper.lib.grasshopper.logger") as mock_logger:
 
         Grasshopper.set_ulimit()
-        mock_logger.info.assert_any_call("Current open file limits - soft: 2000, hard: 5000")
+        mock_logger.info.assert_any_call("Current open files limits - soft: 2000, hard: 5000")
 
         # Successful hard limit increase
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (2000, 10000))
-        mock_logger.info.assert_any_call("Successfully increased hard limit to 10000")
+        mock_logger.info.assert_any_call("Open files hard limit increased to 10000")
 
         # Successful soft limit increase
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (10000, 10000))
-        mock_logger.info.assert_any_call("Successfully increased soft limit to 10000")
+        mock_logger.info.assert_any_call("Open files soft limit increased to 10000")
 
         mock_logger.warning.assert_not_called()
 
@@ -98,13 +98,13 @@ def test_set_ulimit_hard_fails_soft_success():
 
         # It should try to set hard limit to (2000, 10000) -> fails
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (2000, 10000))
-        mock_logger.info.assert_any_call("Could not increase hard limit directly: Not permitted")
+        mock_logger.warning.assert_any_call("Could not increase hard limit directly: Not permitted")
         # It should then try to set soft limit to (10000, 5000) -> succeeds (hard limit should remain original 5000 since it failed to increase)
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (10000, 5000))
-        mock_logger.info.assert_any_call("Successfully increased soft limit to 10000")
+        mock_logger.info.assert_any_call("Open files soft limit increased to 10000")
 
 
-        mock_logger.info.assert_any_call("Final open file limits - soft: 10000, hard: 5000")
+        mock_logger.info.assert_any_call("Final open files limits - soft: 10000, hard: 5000")
 
 
 def test_set_ulimit_hard_success_soft_fails():
@@ -136,19 +136,18 @@ def test_set_ulimit_hard_success_soft_fails():
         Grasshopper.set_ulimit()
 
         # Info log before changes
-        mock_logger.info.assert_any_call("Current open file limits - soft: 2000, hard: 5000")
+        mock_logger.info.assert_any_call("Current open files limits - soft: 2000, hard: 5000")
         # Successful hard limit increase
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (2000, 10000))
-        mock_logger.info.assert_any_call("Successfully increased hard limit to 10000")
+        mock_logger.info.assert_any_call("Open files hard limit increased to 10000")
 
         # Failed soft limit increase
         mock_resource.setrlimit.assert_any_call(mock_resource.RLIMIT_NOFILE, (10000, 10000))
-        mock_logger.info.assert_any_call("Could not increase soft limit directly: Soft limit adjustment denied")
+        mock_logger.warning.assert_any_call("Could not increase soft limit directly: Soft limit adjustment denied")
 
-        mock_logger.info.assert_any_call("Final open file limits - soft: 2000, hard: 10000")
+        mock_logger.info.assert_any_call("Final open files limits - soft: 2000, hard: 10000")
 
         # Verify warning log
-        mock_logger.warning.assert_called_once()
         assert "System open file limit '2000' is below minimum" in mock_logger.warning.call_args[0][0]
 
 
