@@ -340,30 +340,46 @@ class Grasshopper:
                             resource.RLIMIT_NOFILE,
                             (initial_soft, minimum_hard_open_file_limit),
                         )
-                        _, increased_hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-                        logger.info(f"Open files hard limit increased to {increased_hard_limit}")
+                        _, increased_hard_limit = resource.getrlimit(
+                            resource.RLIMIT_NOFILE
+                        )
+                        logger.info(
+                            f"Open files hard limit increased to {increased_hard_limit}"
+                        )
                     except Exception as e:
                         logger.warning(f"Could not increase hard limit directly: {e}")
                 else:
-                    logger.info(f"Hard limit of {initial_hard} is in line with minimum required limit of {minimum_hard_open_file_limit}")
+                    logger.info(
+                        f"Hard limit of {initial_hard} is in line with minimum required limit of {minimum_hard_open_file_limit}"
+                    )
 
                 # Try to increase the soft limit separately
-                current_soft_limit, current_hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+                current_soft_limit, current_hard_limit = resource.getrlimit(
+                    resource.RLIMIT_NOFILE
+                )
                 if current_soft_limit < minimum_soft_open_file_limit:
                     try:
                         resource.setrlimit(
                             resource.RLIMIT_NOFILE,
                             (minimum_soft_open_file_limit, current_hard_limit),
                         )
-                        increased_hard_limit, _ = resource.getrlimit(resource.RLIMIT_NOFILE)
-                        logger.info(f"Open files soft limit increased to {increased_hard_limit}")
+                        increased_hard_limit, _ = resource.getrlimit(
+                            resource.RLIMIT_NOFILE
+                        )
+                        logger.info(
+                            f"Open files soft limit increased to {increased_hard_limit}"
+                        )
                     except Exception as e:
                         logger.warning(f"Could not increase soft limit directly: {e}")
                 else:
-                    logger.info(f"Soft limit of {current_soft_limit} is in line with minimum required limit of {minimum_soft_open_file_limit}")
+                    logger.info(
+                        f"Soft limit of {current_soft_limit} is in line with minimum required limit of {minimum_soft_open_file_limit}"
+                    )
 
                 final_soft, final_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-                logger.info(f"Final open files limits - soft: {final_soft}, hard: {final_hard}")
+                logger.info(
+                    f"Final open files limits - soft: {final_soft}, hard: {final_hard}"
+                )
                 if final_soft < minimum_soft_open_file_limit:
                     logger.warning(
                         f"System open file limit '{final_soft}' is below minimum "
@@ -373,8 +389,8 @@ class Grasshopper:
                         f"for more info."
                     )
             except BaseException as e:
-                logger.warning(
-                    f"Failed to retrieve system open file limits: {e}. "
-                )
+                logger.warning(f"Failed to retrieve system open file limits: {e}. ")
         else:
-            logger.info("Can't modify open file limits on non-POSIX systems. Skipping ulimit adjustment.")
+            logger.info(
+                "Can't modify open file limits on non-POSIX systems. Skipping ulimit adjustment."
+            )
