@@ -127,17 +127,9 @@ you must specify a host.
 - `--grafana_host`: If your grafana is a separate URL from the influxdb, you can 
   specify it here. If you don't, then the grafana URL will be the same as the 
   influxdb URL when the grasshopper object generates grafana links. 
-- `--datadog_api_key`: Datadog API key for direct metric reporting. You can also use
-  the `DD_API_KEY` environment variable.
-- `--datadog_site`: Datadog site, e.g. `datadoghq.com` or `us5.datadoghq.com`.
-  Defaults to `datadoghq.com`. You can also use `DD_SITE`.
-- `--datadog_namespace`: Metric namespace prefix for Datadog reporting.
-  Defaults to `grasshopper`.
-- `--datadog_env`: Optional Datadog `env` tag value. You can also use `DD_ENV`.
-- `--datadog_service`: Optional Datadog `service` tag value. You can also use
-  `DD_SERVICE`.
-- `--datadog_tags`: Optional comma-separated Datadog tags such as
-  `team:shield,test:navigation`. You can also use `DD_TAGS`.
+- Datadog metric reporting requires the `DD_API_KEY` and `DD_ENV` environment
+  variables. `DD_SITE` defaults to `datadoghq.com`; `DD_SERVICE` and `DD_VERSION`
+  add stable service and release tags when provided.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -395,13 +387,23 @@ found in the [Database Listener Design Documentation](./docs/database_listener_d
 When you specify a metrics backend configuration param to `launch_test`, the
 corresponding listener will be initialized automatically. For example:
 - `influx_host` enables InfluxDB reporting
-- `datadog_api_key` or `DD_API_KEY` enables Datadog reporting
+- `DD_API_KEY` and `DD_ENV` enable Datadog reporting
 
-If both backends are configured, Grasshopper will report to both. These metrics include:
-- `locust_checks`: check name, check passed, etc.
-- `locust_events`: test started, test stopped, etc.
-- `locust_exceptions`: error messages
-- `locust_requests`: HTTP requests and custom trends
+If both backends are configured, Grasshopper reports to both. The Datadog listener
+emits:
+
+- `locust_requests.count`, `locust_requests.response_time`, and
+  `locust_requests.response_length`
+- `locust_requests.error`
+- `locust_checks.total`, `locust_checks.passed`, and `locust_checks.failed`
+- numeric custom point fields as `<measurement>.<field>`
+
+Datadog reporting is disabled unless both required variables are configured. Metric
+submission is best-effort and runs outside the request path so a Datadog outage does
+not fail or delay the load test. Stable `env`, `service`, and `version` tags are added
+when configured. Per-execution identifiers and sensitive tag keys (for example
+`job_id` or keys containing `token`) are excluded to keep tag cardinality bounded and
+avoid leaking credentials.
 
 To run the influxdb/grafana locally, you can use the docker-compose file in the example directory:
 ```shell

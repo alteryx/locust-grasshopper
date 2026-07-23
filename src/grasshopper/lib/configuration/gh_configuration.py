@@ -49,15 +49,6 @@ def typecast_bool(value):
     return new_value
 
 
-def typecast_datadog_tags(value):
-    """Ensure Datadog tags are stored as a comma-separated string."""
-    if type(value) == list:
-        return ",".join([str(item) for item in value])
-    if value is None:
-        return None
-    return str(value)
-
-
 class ConfigurationConstants:
     """Class to hold the _definition_ of all the configuration values available.
 
@@ -131,51 +122,6 @@ class ConfigurationConstants:
                 "help": "The base grafana url. If not specified, will default to the "
                 "url that the influxdb/influx_host is set to.",
             },
-        },
-        "datadog_api_key": {
-            "opts": ["--datadog_api_key"],
-            "attrs": {
-                "action": "store",
-                "help": "Datadog API key for direct metric reporting.",
-            },
-        },
-        "datadog_site": {
-            "opts": ["--datadog_site"],
-            "attrs": {
-                "action": "store",
-                "help": "Datadog site, e.g. datadoghq.com or us5.datadoghq.com.",
-            },
-            "default": "datadoghq.com",
-        },
-        "datadog_namespace": {
-            "opts": ["--datadog_namespace"],
-            "attrs": {
-                "action": "store",
-                "help": "Metric namespace prefix for Datadog reporting.",
-            },
-            "default": "grasshopper",
-        },
-        "datadog_env": {
-            "opts": ["--datadog_env"],
-            "attrs": {
-                "action": "store",
-                "help": "Datadog env tag value to append to emitted metrics.",
-            },
-        },
-        "datadog_service": {
-            "opts": ["--datadog_service"],
-            "attrs": {
-                "action": "store",
-                "help": "Datadog service tag value to append to emitted metrics.",
-            },
-        },
-        "datadog_tags": {
-            "opts": ["--datadog_tags"],
-            "attrs": {
-                "action": "store",
-                "help": "Comma-separated Datadog tags in key:value format.",
-            },
-            "typecast": typecast_datadog_tags,
         },
         "slack_webhook": {
             "opts": ["--slack_webhook"],
