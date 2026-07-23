@@ -5,9 +5,11 @@ The listeners module contains all the custom listeners that we have defined for 
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from urllib import error, request
 
+import gevent
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
@@ -23,6 +25,14 @@ logger = logging.getLogger()
 class DatadogApiListener:
     """Forward Locust and custom metrics to the Datadog metrics API."""
 
+    _SENSITIVE_TAG_FRAGMENTS = (
+        "authorization",
+        "cookie",
+        "password",
+        "secret",
+        "token",
+    )
+
     def __init__(
         self,
         environment: Environment,
@@ -31,6 +41,7 @@ class DatadogApiListener:
         namespace: str = "grasshopper",
         default_tags: dict | None = None,
         batch_size: int = 200,
+        close_timeout: float = 5,
     ):
         self.environment = environment
         self.api_key = api_key
@@ -38,12 +49,27 @@ class DatadogApiListener:
         self.namespace = namespace.strip(".")
         self.default_tags = default_tags or {}
         self.batch_size = batch_size
+        self.close_timeout = close_timeout
         self.series_buffer = []
+        self._flush_greenlet = None
         environment.events.request.add_listener(self.on_request)
 
     def close(self):
-        """Flush any buffered metrics."""
-        self.flush()
+        """Best-effort flush without allowing telemetry to block test shutdown."""
+        try:
+            self.environment.events.request.remove_listener(self.on_request)
+        except (AttributeError, ValueError):
+            pass
+
+        self._schedule_flush()
+        self._flush_greenlet.join(timeout=self.close_timeout)
+        if not self._flush_greenlet.ready():
+            logger.warning(
+                "Datadog metrics flush exceeded %.1f seconds; "
+                "continuing test shutdown with unsent telemetry.",
+                self.close_timeout,
+            )
+            self._flush_greenlet.kill(block=False)
 
     def on_request(
         self,
@@ -57,49 +83,62 @@ class DatadogApiListener:
         **_kwargs,
     ):
         """Report each Locust request event to Datadog."""
-        del response
-        timestamp = self._unix_timestamp()
-        tags = self._merge_tags(
-            {
+        try:
+            status_code = getattr(response, "status_code", None)
+            if status_code is None:
+                status_code = getattr(response, "status", None)
+            timestamp = self._unix_timestamp()
+            request_tags = {
                 "name": name,
                 "request_type": request_type,
                 "environment": getattr(self.environment, "host", None),
-            },
-            context or {},
-        )
-        self.increment("locust_requests.count", tags=tags, timestamp=timestamp)
-        self.gauge(
-            "locust_requests.response_time",
-            response_time,
-            tags=tags,
-            timestamp=timestamp,
-        )
-        if response_length is not None:
+            }
+            if status_code is not None:
+                request_tags["code"] = str(status_code)
+
+            tags = self._merge_tags(request_tags, context or {})
+            self.increment("locust_requests.count", tags=tags, timestamp=timestamp)
             self.gauge(
-                "locust_requests.response_length",
-                response_length,
+                "locust_requests.response_time",
+                response_time,
                 tags=tags,
                 timestamp=timestamp,
             )
-        if exception is not None:
-            error_tags = tags | {"exception_type": type(exception).__name__}
-            self.increment(
-                "locust_requests.error",
-                tags=error_tags,
-                timestamp=timestamp,
-            )
+            if response_length is not None:
+                self.gauge(
+                    "locust_requests.response_length",
+                    response_length,
+                    tags=tags,
+                    timestamp=timestamp,
+                )
+            if exception is not None:
+                error_tags = tags | {"exception_type": type(exception).__name__}
+                self.increment(
+                    "locust_requests.error",
+                    tags=error_tags,
+                    timestamp=timestamp,
+                )
+        except Exception as exc:
+            logger.warning("Failed to buffer Datadog request metrics: %s", exc)
+
+    @staticmethod
+    def normalize_check_name(check_name: str) -> str:
+        """Normalize check names to the shared metric/trace correlation format."""
+        return re.sub(r"_+", "_", re.sub(r"[^a-z0-9]+", "_", check_name.lower())).strip(
+            "_"
+        )
 
     def record_check(
         self, check_name: str, check_passed: bool, extra_tags: dict, time=None
     ):
-        """Report a check outcome to Datadog."""
+        """Report a check outcome using the trace-compatible check name."""
         timestamp = self._unix_timestamp(time)
-        tags = self._merge_tags(
+        tags = self._merge_tags(extra_tags)
+        tags.update(
             {
-                "check_name": check_name,
+                "check_name": self.normalize_check_name(check_name),
                 "environment": getattr(self.environment, "host", None),
-            },
-            extra_tags,
+            }
         )
         self.increment("locust_checks.total", tags=tags, timestamp=timestamp)
         metric_suffix = "passed" if check_passed else "failed"
@@ -164,7 +203,12 @@ class DatadogApiListener:
             }
         )
         if len(self.series_buffer) >= self.batch_size:
-            self.flush()
+            self._schedule_flush()
+
+    def _schedule_flush(self):
+        """Flush in a separate greenlet so metric I/O never delays a Locust request."""
+        if self._flush_greenlet is None or self._flush_greenlet.ready():
+            self._flush_greenlet = gevent.spawn(self.flush)
 
     def flush(self):
         """Flush buffered metrics to the Datadog API in batches."""
@@ -215,16 +259,24 @@ class DatadogApiListener:
             merged_tags.update(extra_tags)
         return merged_tags
 
-    @staticmethod
-    def _format_tags(tags: dict) -> list[str]:
+    @classmethod
+    def _format_tags(cls, tags: dict) -> list[str]:
         formatted_tags = []
         for key, value in tags.items():
-            if value is None:
+            if value is None or cls._is_volatile_or_sensitive_tag(key):
                 continue
             normalized_key = str(key).replace(" ", "_")
             normalized_value = str(value).replace(" ", "_")
             formatted_tags.append(f"{normalized_key}:{normalized_value}")
         return formatted_tags
+
+    @classmethod
+    def _is_volatile_or_sensitive_tag(cls, key) -> bool:
+        """Exclude secrets and per-execution identifiers from Datadog tags."""
+        normalized_key = str(key).strip().lower().replace("-", "_")
+        return normalized_key.endswith("_id") or any(
+            fragment in normalized_key for fragment in cls._SENSITIVE_TAG_FRAGMENTS
+        )
 
     @staticmethod
     def _unix_timestamp(metric_time=None) -> int:
@@ -280,14 +332,21 @@ class GrasshopperListeners:
                 "All collected metrics reported to Datadog API site `%s`",
                 datadog_configuration.get("site"),
             )
-            self.datadog_listener = DatadogApiListener(
-                environment=environment,
-                **datadog_configuration,
-            )
+            try:
+                self.datadog_listener = DatadogApiListener(
+                    environment=environment,
+                    **datadog_configuration,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Datadog listener initialization failed; "
+                    "continuing without Datadog metrics: %s",
+                    exc,
+                )
         else:
             logger.info(
-                "Datadog API key was not specified. Skipping Datadog listener "
-                "initialization..."
+                "DD_API_KEY and DD_ENV were not both specified. "
+                "Skipping Datadog listener initialization..."
             )
 
     @events.test_stop.add_listener
@@ -306,7 +365,13 @@ class GrasshopperListeners:
                 f"Unexpected exception appending trend data to environment object: {e}"
             )
         if self.datadog_listener is not None:
-            self.datadog_listener.close()
+            try:
+                self.datadog_listener.close()
+            except Exception as exc:
+                logger.warning(
+                    "Datadog metrics shutdown failed; continuing test shutdown: %s",
+                    exc,
+                )
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
@@ -324,12 +389,15 @@ class GrasshopperListeners:
             )
             self.influxdb_listener.cache.append(point)
         if getattr(self, "datadog_listener") is not None:
-            self.datadog_listener.record_check(
-                check_name=check_name,
-                check_passed=check_passed,
-                extra_tags=tags,
-                time=time,
-            )
+            try:
+                self.datadog_listener.record_check(
+                    check_name=check_name,
+                    check_passed=check_passed,
+                    extra_tags=tags,
+                    time=time,
+                )
+            except Exception as exc:
+                logger.warning("Failed to buffer Datadog check metric: %s", exc)
 
     def write_metric_point(
         self, measurement: str, fields: dict, time=None, tags: dict | None = None
@@ -344,12 +412,15 @@ class GrasshopperListeners:
             self.influxdb_listener.cache.append(point)
 
         if getattr(self, "datadog_listener") is not None:
-            self.datadog_listener.write_point(
-                measurement=measurement,
-                fields=fields,
-                time=time,
-                tags=metric_tags,
-            )
+            try:
+                self.datadog_listener.write_point(
+                    measurement=measurement,
+                    fields=fields,
+                    time=time,
+                    tags=metric_tags,
+                )
+            except Exception as exc:
+                logger.warning("Failed to buffer Datadog custom metric: %s", exc)
 
     @staticmethod
     def _append_trend_data(environment):

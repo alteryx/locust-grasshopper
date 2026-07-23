@@ -28,8 +28,6 @@ def expected_global_defaults():
         "influx": False,
         "influx_ssl": False,
         "influx_verify_ssl": False,
-        "datadog_site": "datadoghq.com",
-        "datadog_namespace": "grasshopper",
         "report_portal": False,
         "rp_launch_name": "Grasshopper Performance Test Run | Launch name unknown",
         "rp_launch": "Grasshopper Performance Test Run | Launch name unknown",

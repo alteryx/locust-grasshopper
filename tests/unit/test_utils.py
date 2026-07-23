@@ -353,8 +353,12 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         name="PX_TREND_example",
         response_time=123.4,
         response_length=0,
-        response=None,
-        context={"journey": "example"},
+        response=MagicMock(status_code=201),
+        context={
+            "journey": "example",
+            "job_id": "job-123",
+            "workspace_token": "do-not-emit",
+        },
         exception=None,
     )
     listener.flush()
@@ -367,6 +371,59 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"metric": "grasshopper.locust_requests.response_time"' in payload
     assert '"service:shield-trifacta"' in payload
     assert '"journey:example"' in payload
+    assert '"code:201"' in payload
+    assert "job-123" not in payload
+    assert "do-not-emit" not in payload
+
+
+def test_datadog_check_name_matches_trace_correlation_format():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.record_check(
+        "WorkflowCriticalUserJourney | Workflow deleted",
+        True,
+        {"check_name": "untrusted override"},
+    )
+
+    assert len(listener.series_buffer) == 2
+    for metric in listener.series_buffer:
+        assert (
+            "check_name:workflowcriticaluserjourney_workflow_deleted" in metric["tags"]
+        )
+
+
+def test_datadog_listener_schedules_network_flush_off_request_path(monkeypatch):
+    env = MagicMock()
+    scheduled = []
+    monkeypatch.setattr(
+        "grasshopper.lib.util.listeners.gevent.spawn",
+        lambda func: scheduled.append(func) or MagicMock(),
+    )
+    listener = DatadogApiListener(
+        environment=env,
+        api_key="secret",
+        batch_size=1,
+    )
+
+    listener.gauge("metric", 1)
+
+    assert scheduled == [listener.flush]
+
+
+def test_grasshopper_listeners_leave_datadog_disabled_without_api_key():
+    env = MagicMock()
+    env.grasshopper.influx_configuration = {"influx_host": None}
+    env.grasshopper.datadog_configuration = {
+        "site": "datadoghq.com",
+        "namespace": "grasshopper",
+    }
+    listeners = GrasshopperListeners(environment=env)
+
+    listeners.on_test_start(env)
+
+    assert listeners.datadog_listener is None
 
 
 def test_write_metric_point_reports_to_datadog_listener():

@@ -36,7 +36,6 @@ class Grasshopper:
 
     SENSITIVE_CONFIGURATION_KEYS = {
         "access_token",
-        "datadog_api_key",
         "influx_pwd",
         "password",
         "rp_token",
@@ -116,62 +115,27 @@ class Grasshopper:
 
     @property
     def datadog_configuration(self) -> dict[str, Optional[Union[dict, int, str]]]:
-        """Extract the Datadog related configuration items."""
-        configuration = {}
+        """Build Datadog configuration from standard environment variables."""
+        api_key = os.getenv("DD_API_KEY")
+        environment = os.getenv("DD_ENV")
+        if not api_key or not environment:
+            return {}
 
-        api_key = self.global_configuration.get("datadog_api_key") or os.getenv(
-            "DD_API_KEY"
-        )
-        if api_key:
-            configuration["api_key"] = api_key
+        default_tags = {"env": environment}
+        for tag_name, variable_name in (
+            ("service", "DD_SERVICE"),
+            ("version", "DD_VERSION"),
+        ):
+            value = os.getenv(variable_name)
+            if value:
+                default_tags[tag_name] = value
 
-        site = self.global_configuration.get("datadog_site") or os.getenv("DD_SITE")
-        configuration["site"] = site or "datadoghq.com"
-
-        namespace = self.global_configuration.get("datadog_namespace") or "grasshopper"
-        configuration["namespace"] = namespace
-
-        default_tags = {}
-        datadog_env = self.global_configuration.get("datadog_env") or os.getenv(
-            "DD_ENV"
-        )
-        if datadog_env:
-            default_tags["env"] = datadog_env
-
-        datadog_service = self.global_configuration.get("datadog_service") or os.getenv(
-            "DD_SERVICE"
-        )
-        if datadog_service:
-            default_tags["service"] = datadog_service
-
-        datadog_tags = self.global_configuration.get("datadog_tags") or os.getenv(
-            "DD_TAGS"
-        )
-        if datadog_tags:
-            default_tags.update(self._parse_datadog_tags(datadog_tags))
-
-        if default_tags:
-            configuration["default_tags"] = default_tags
-
-        return configuration
-
-    @staticmethod
-    def _parse_datadog_tags(raw_tags: str) -> dict[str, str]:
-        """Parse Datadog tag strings like `team:shield,test:navigation`."""
-        parsed_tags = {}
-        for raw_tag in str(raw_tags).split(","):
-            raw_tag = raw_tag.strip()
-            if not raw_tag:
-                continue
-
-            if ":" in raw_tag:
-                key, value = raw_tag.split(":", 1)
-            else:
-                key, value = raw_tag, "true"
-
-            parsed_tags[key.strip()] = value.strip()
-
-        return parsed_tags
+        return {
+            "api_key": api_key,
+            "site": os.getenv("DD_SITE", "datadoghq.com"),
+            "namespace": "grasshopper",
+            "default_tags": default_tags,
+        }
 
     @staticmethod
     def launch_test(
