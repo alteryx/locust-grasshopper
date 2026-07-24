@@ -250,25 +250,12 @@ class DatadogApiListener:
     def _format_tags(cls, tags: dict) -> list[str]:
         formatted_tags = []
         for key, value in tags.items():
-            if value is None or cls._is_volatile_or_sensitive_tag(key):
+            if value is None:
                 continue
             normalized_key = str(key).replace(" ", "_")
             normalized_value = str(value).replace(" ", "_")
             formatted_tags.append(f"{normalized_key}:{normalized_value}")
         return formatted_tags
-
-    @classmethod
-    def _is_volatile_or_sensitive_tag(cls, key) -> bool:
-        """Keep Datadog tags low-cardinality and free of obvious secrets."""
-        normalized_key = str(key).strip().lower().replace("-", "_")
-        return normalized_key.endswith("_id") or normalized_key in {
-            "authorization",
-            "cookie",
-            "password",
-            "secret",
-            "token",
-            "workspace_token",
-        }
 
     @staticmethod
     def _unix_timestamp(metric_time=None) -> int:
