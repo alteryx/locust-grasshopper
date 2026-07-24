@@ -370,8 +370,8 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"metric": "grasshopper.locust_requests.count"' in payload
     assert '"metric": "grasshopper.locust_requests.response_time"' in payload
     assert '"service:shield-trifacta"' in payload
-    assert '"journey:example"' in payload
     assert '"code:201"' in payload
+    assert "journey:example" not in payload
     assert "job-123" not in payload
     assert "do-not-emit" not in payload
 

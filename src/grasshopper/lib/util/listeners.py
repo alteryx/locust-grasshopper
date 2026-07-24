@@ -25,14 +25,6 @@ logger = logging.getLogger()
 class DatadogApiListener:
     """Forward Locust and custom metrics to the Datadog metrics API."""
 
-    _SENSITIVE_TAG_FRAGMENTS = (
-        "authorization",
-        "cookie",
-        "password",
-        "secret",
-        "token",
-    )
-
     def __init__(
         self,
         environment: Environment,
@@ -96,7 +88,7 @@ class DatadogApiListener:
             if status_code is not None:
                 request_tags["code"] = str(status_code)
 
-            tags = self._merge_tags(request_tags, context or {})
+            tags = self._merge_tags(request_tags)
             self.increment("locust_requests.count", tags=tags, timestamp=timestamp)
             self.gauge(
                 "locust_requests.response_time",
@@ -121,22 +113,17 @@ class DatadogApiListener:
         except Exception as exc:
             logger.warning("Failed to buffer Datadog request metrics: %s", exc)
 
-    @staticmethod
-    def normalize_check_name(check_name: str) -> str:
-        """Normalize check names to the shared metric/trace correlation format."""
-        return re.sub(r"_+", "_", re.sub(r"[^a-z0-9]+", "_", check_name.lower())).strip(
-            "_"
-        )
-
     def record_check(
         self, check_name: str, check_passed: bool, extra_tags: dict, time=None
     ):
-        """Report a check outcome using the trace-compatible check name."""
+        """Report a check outcome."""
         timestamp = self._unix_timestamp(time)
         tags = self._merge_tags(extra_tags)
         tags.update(
             {
-                "check_name": self.normalize_check_name(check_name),
+                "check_name": re.sub(
+                    r"_+", "_", re.sub(r"[^a-z0-9]+", "_", check_name.lower())
+                ).strip("_"),
                 "environment": getattr(self.environment, "host", None),
             }
         )
@@ -206,7 +193,7 @@ class DatadogApiListener:
             self._schedule_flush()
 
     def _schedule_flush(self):
-        """Flush in a separate greenlet so metric I/O never delays a Locust request."""
+        """Run Datadog HTTP I/O outside the Locust request path."""
         if self._flush_greenlet is None or self._flush_greenlet.ready():
             self._flush_greenlet = gevent.spawn(self.flush)
 
@@ -272,11 +259,16 @@ class DatadogApiListener:
 
     @classmethod
     def _is_volatile_or_sensitive_tag(cls, key) -> bool:
-        """Exclude secrets and per-execution identifiers from Datadog tags."""
+        """Keep Datadog tags low-cardinality and free of obvious secrets."""
         normalized_key = str(key).strip().lower().replace("-", "_")
-        return normalized_key.endswith("_id") or any(
-            fragment in normalized_key for fragment in cls._SENSITIVE_TAG_FRAGMENTS
-        )
+        return normalized_key.endswith("_id") or normalized_key in {
+            "authorization",
+            "cookie",
+            "password",
+            "secret",
+            "token",
+            "workspace_token",
+        }
 
     @staticmethod
     def _unix_timestamp(metric_time=None) -> int:
