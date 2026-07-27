@@ -6,7 +6,7 @@ Serves as an example implementation of the IExtendedReporter interface.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from grasshopper.lib.reporting.iextendedreporter import IExtendedReporter
 from grasshopper.lib.reporting.shared_reporting import SharedReporting
@@ -37,10 +37,11 @@ class ERBasicConsoleReporter(IExtendedReporter):
         cls,
         suite_name: str,
         start_epoch: float,
-        suite_args: Dict[str, Any] = {},
+        suite_args: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         """Report the grasshopper (pre)suite information to the console."""
+        suite_args = suite_args or {}
         logger.info(cls.LINE)
         logger.info(
             f"Starting Suite {suite_name} at {start_epoch} with the following "
@@ -55,7 +56,7 @@ class ERBasicConsoleReporter(IExtendedReporter):
         suite_name: str,
         start_epoch: float,
         end_epoch: float,
-        suite_args: Dict[str, Any] = {},
+        suite_args: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         """Report the grasshopper (post)suite information to the console."""
@@ -67,10 +68,11 @@ class ERBasicConsoleReporter(IExtendedReporter):
         cls,
         test_name: str,
         start_epoch: float,
-        test_args: Dict[str, Any] = {},
+        test_args: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         """Report the grasshopper (pre)test information to the console."""
+        test_args = test_args or {}
         logger.info(cls.LINE)
         logger.info(
             f"Starting Test {test_name} at {start_epoch} with the following arguments:"
@@ -85,7 +87,7 @@ class ERBasicConsoleReporter(IExtendedReporter):
         start_epoch: float,
         end_epoch: float,
         locust_environment: locust_environment = None,
-        test_args: Dict[str, Any] = {},
+        test_args: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         """Report the grasshopper (post)test information to the console."""
@@ -98,7 +100,7 @@ class ERBasicConsoleReporter(IExtendedReporter):
         logger.info(cls.LINE)
 
     @staticmethod
-    def _report_thresholds_to_console(trends: Dict[str, Dict[str, Any]]) -> None:
+    def _report_thresholds_to_console(trends: dict[str, dict[str, Any]]) -> None:
         """Print all the thresholds to the console in a pretty table."""
         logger.info("----------------------THRESHOLD REPORT-------------------------")
         logger.info(

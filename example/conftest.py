@@ -1,5 +1,7 @@
 """A file which is used to establish pytest fixtures, plugins, hooks, etc."""
 
+import importlib
+
 import pytest
 from gevent import monkey
 
@@ -7,7 +9,9 @@ monkey.patch_all()
 # ^this part has to be done first in order to avoid errors with importing the requests
 # module
 
-from grasshopper.lib.configuration.gh_configuration import GHConfiguration  # noqa: E402
+GHConfiguration = importlib.import_module(
+    "grasshopper.lib.configuration.gh_configuration"
+).GHConfiguration
 
 
 def pytest_addoption(parser):

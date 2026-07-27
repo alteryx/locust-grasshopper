@@ -20,7 +20,11 @@ class IExtendedReporter(ABC):
 
     @abstractmethod
     def event_pre_suite(
-        self, suite_name: str, start_epoch: float, suite_args: dict = {}, **kwargs
+        self,
+        suite_name: str,
+        start_epoch: float,
+        suite_args: dict | None = None,
+        **kwargs,
     ):
         """Call by ReporterExtensions when a pre-suite event occurs."""
 
@@ -30,14 +34,18 @@ class IExtendedReporter(ABC):
         suite_name: str,
         start_epoch: float,
         end_epoch: float,
-        suite_args: dict = {},
+        suite_args: dict | None = None,
         **kwargs,
     ):
         """Call by ReporterExtensions when a post-test event occurs."""
 
     @abstractmethod
     def event_pre_test(
-        self, test_name: str, start_epoch: float, test_args: dict = {}, **kwargs
+        self,
+        test_name: str,
+        start_epoch: float,
+        test_args: dict | None = None,
+        **kwargs,
     ):
         """Call by ReporterExtensions when a pre-test event occurs."""
 
@@ -48,7 +56,7 @@ class IExtendedReporter(ABC):
         start_epoch: float,
         end_epoch: float,
         locust_env: locust_environment = None,
-        test_args: dict = {},
+        test_args: dict | None = None,
         **kwargs,
     ):
         """Call by ReporterExtensions when a post-test event occurs."""

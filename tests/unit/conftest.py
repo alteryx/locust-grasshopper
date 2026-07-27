@@ -161,9 +161,9 @@ def calculate_path(filename, subdir="../fixture_testing_data"):
 
 def perform_fixture_test_with_optional_log_capture(
     pytester,
-    outcomes={"passed": 1},
+    outcomes=None,
     caplog=None,
-    target_messages=[],
+    target_messages=None,
 ):
     """Perform the actual 'test' portion of a fixture test and validate the results.
 
@@ -182,6 +182,8 @@ def perform_fixture_test_with_optional_log_capture(
     into a list for you.
 
     """
+    outcomes = outcomes or {"passed": 1}
+    target_messages = target_messages or []
     # Step 1: Run the test within the test
     if caplog:
         with caplog.at_level(logging.DEBUG):

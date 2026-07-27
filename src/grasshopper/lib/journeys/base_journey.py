@@ -82,8 +82,9 @@ class BaseJourney(HttpUser):
             return url.strip() + "/"
 
     @classmethod
-    def replace_incoming_scenario_args(cls, brand_new_args={}):
+    def replace_incoming_scenario_args(cls, brand_new_args=None):
         """Replace the existing set of scenario_args with a new collection."""
+        brand_new_args = brand_new_args or {}
         cls._incoming_test_parameters = brand_new_args
 
     @classmethod

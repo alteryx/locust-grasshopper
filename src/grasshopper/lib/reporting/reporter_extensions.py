@@ -2,7 +2,7 @@
 
 # Standard Library
 import logging
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar
 
 from grasshopper.lib.reporting.iextendedreporter import IExtendedReporter
 
@@ -28,7 +28,7 @@ class ReporterExtensions:
         """Register an instance of an er."""
         try:
             cls._ers[er.get_name()] = er
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # intentionally catching all exceptions so that if there is a problem with
             # an extended reporter it won't a) get registered & b) affect anything else
             logger.warning(
@@ -48,13 +48,13 @@ class ReporterExtensions:
 
     @classmethod
     @property
-    def registrations(cls) -> Dict[str, IExtendedReporter]:
+    def registrations(cls) -> dict[str, IExtendedReporter]:
         """Return the list of currently registered ers."""
         return cls._ers
 
     @classmethod
     @property
-    def ers(cls) -> List[IExtendedReporter]:
+    def ers(cls) -> list[IExtendedReporter]:
         return [v for k, v in cls._ers.items()]
 
     @classmethod
@@ -71,7 +71,7 @@ class ReporterExtensions:
                 )
                 event_method = getattr(er, event)
                 event_method(*args, **kwargs)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # intentionally catching ALL exceptions so that a faulty extension will
                 # not ever affect other reporters or the main test process
                 logger.warning(
@@ -84,26 +84,29 @@ class ReporterExtensions:
         cls,
         test_name: str,
         start_epoch: float,
-        test_args: Dict[str, Any] = {},
+        test_args: dict[str, Any] | None = None,
         **kwargs,
     ):
         """Call the pre-test event on all registered ers."""
+        test_args = test_args or {}
         cls._notify_event(
             "event_pre_test", test_name, start_epoch, test_args=test_args, **kwargs
         )
 
     @classmethod
-    def notify_pre_suite(cls, suite_name, start_epoch, suite_args={}, **kwargs):
+    def notify_pre_suite(cls, suite_name, start_epoch, suite_args=None, **kwargs):
         """Call the pre-suite event on all registered ers."""
+        suite_args = suite_args or {}
         cls._notify_event(
             "event_pre_suite", suite_name, start_epoch, suite_args=suite_args, **kwargs
         )
 
     @classmethod
     def notify_post_suite(
-        cls, suite_name, start_epoch, end_epoch, suite_args={}, **kwargs
+        cls, suite_name, start_epoch, end_epoch, suite_args=None, **kwargs
     ):
         """Call the post-suite event on all registered ers."""
+        suite_args = suite_args or {}
         cls._notify_event(
             "event_post_suite",
             suite_name,
@@ -120,10 +123,11 @@ class ReporterExtensions:
         start_epoch,
         end_epoch,
         locust_env,
-        test_args={},
+        test_args=None,
         **kwargs,
     ):
         """Call the post-test event on all registered ers."""
+        test_args = test_args or {}
         cls._notify_event(
             "event_post_test",
             test_name,

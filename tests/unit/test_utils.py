@@ -248,8 +248,10 @@ def test_threshold_console_output(mock_logging, example_trends_dict):
     report_thresholds_to_console(example_trends_dict)
 
     call_strings = [
-        "-------------------------------- THRESHOLD REPORT "
-        "--------------------------------",
+        (
+            "-------------------------------- THRESHOLD REPORT "
+            "--------------------------------"
+        ),
         "{:<45} {:<10} {:<10} {:<10}".format(
             "Trend_Name", "Percentile", "Limit", "Actual"
         ),
@@ -281,8 +283,10 @@ def test_threshold_console_output(mock_logging, example_trends_dict):
 def test_checks_console_output(mock_logging, example_checks_dict):
     report_checks_to_console(example_checks_dict)
     call_strings = [
-        "------------------------------------------------------- CHECKS REPORT "
-        "-------------------------------------------------------",
+        (
+            "------------------------------------------------------- CHECKS REPORT "
+            "-------------------------------------------------------"
+        ),
         "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
             "Check_Name", "Passed", "Failed", "Total", "Percentage"
         ),

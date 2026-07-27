@@ -136,7 +136,7 @@ class DatadogApiListener:
     def _buffer_metric(
         self,
         metric_name: str,
-        value: int | float,
+        value: float,
         metric_type: str,
         tags: dict,
         timestamp: int | None = None,
@@ -193,7 +193,7 @@ class DatadogApiListener:
                 self.site,
                 exc.read().decode("utf-8", errors="replace"),
             )
-        except Exception as exc:
+        except (OSError, TimeoutError, error.URLError) as exc:
             logger.warning(
                 "Failed to submit Datadog metrics batch to `%s`: %s",
                 self.site,

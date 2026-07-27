@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def pytest_addoption(parser):
     """Add in the grasshopper specific cmdline args."""
-    for attr_name, attr_definition in ConfigurationConstants.COMPLETE_ATTRS.items():
+    for attr_definition in ConfigurationConstants.COMPLETE_ATTRS.values():
         opts = attr_definition["opts"]
         option_attrs = attr_definition.get("attrs", {})
         parser.addoption(*opts, **option_attrs)
@@ -145,7 +145,7 @@ def env_var_args(env_var_prefix_key, extra_env_var_keys):
 
     for env_var_name, env_var_value in os.environ.items():
         if (
-            env_var_name.lower() in ConfigurationConstants.COMPLETE_ATTRS.keys()
+            env_var_name.lower() in ConfigurationConstants.COMPLETE_ATTRS
             or env_var_name.startswith(env_var_prefix_key)
             or env_var_name in extra_env_var_keys
         ):
@@ -179,7 +179,7 @@ def request_config(request):
 def cmdln_args(request_config):
     config = GHConfiguration()
 
-    for attr_name, attr_definition in ConfigurationConstants.COMPLETE_ATTRS.items():
+    for attr_name in ConfigurationConstants.COMPLETE_ATTRS:
         config.update_single_key(attr_name, request_config.getoption(f"--{attr_name}"))
 
     logger.debug(f"CONFIG FIXTURE: cmdln_args {config}")
@@ -211,7 +211,7 @@ def pre_processed_args(
         )
         pre_config.update_single_key("scenario_name", scenario_name)
 
-    except Exception as e:
+    except (AttributeError, TypeError) as e:
         logger.error(
             f"CONFIG_FIXTURE: Uncaught exception in pre_processed_args fixture: "
             f"{type(e).__name__} | {e}"
@@ -243,7 +243,7 @@ def scenario_file_args(pre_processed_args):
                 "scenario_test_file_name", scenario.get("test_file_name")
             )
             config.update_single_key("scenario_tags", scenario.get("tags"))
-        except Exception as e:
+        except (AttributeError, TypeError, OSError, yaml.YAMLError) as e:
             logger.warning(
                 f"CONFIG FIXTURE: Unexpected error loading scenario {scenario_name} "
                 f"from {scenario_file}: {type(e).__name__} | {e}"
@@ -271,12 +271,11 @@ def merge_sources(
         config.update(scenario_file_args)
         config.update(env_var_args)
         config.update(cmdln_args)
-    except Exception as e:
+    except (AttributeError, TypeError, ValueError) as e:
         logger.error(
             f"CONFIG FIXTURE: Unexpected error in merge_sources: "
             f"{type(e).__name__} | {e}"
         )
-        pass
 
     logger.debug(f"CONFIG FIXTURE: env_var_args {config}")
 
@@ -506,7 +505,7 @@ class Scenario(pytest.Item):
         args = [
             arg
             for arg in args
-            if not any([arg.startswith(ignore_arg) for ignore_arg in ignore_args])
+            if not any(arg.startswith(ignore_arg) for ignore_arg in ignore_args)
         ]
         exit_code = pytest.main(args)
         assert exit_code == pytest.ExitCode.OK
@@ -534,7 +533,7 @@ class YamlError(Exception):
 def _fetch_args(attr_names, config) -> dict:
     args = {}
     for arg in attr_names:
-        if arg in config.option.__dict__.keys() and config.getoption(f"{arg}"):
+        if arg in config.option.__dict__ and config.getoption(f"{arg}"):
             args[arg] = config.getoption(f"{arg}")
     return args
 
@@ -558,13 +557,13 @@ def _get_tagged_scenarios(full_scenarios_list, config, path) -> dict:
             tags_list.append(scenario_name)
             if tagmatcher.match(query_str=tags_to_query_for, tags=tags_list):
                 valid_scenarios[scenario_name] = scenario_contents
-        logging.info(
+        logger.info(
             f"Scenarios collected that match the specific tag query `"
             f"{tags_to_query_for}`: "
-            f"{[scenario_name for scenario_name in valid_scenarios.keys()]}"
+            f"{[scenario_name for scenario_name in valid_scenarios]}"
         )
     else:
-        logging.warning(
+        logger.warning(
             f"Since no tags param was specified, ALL scenarios in {path} will be run!"
         )
         valid_scenarios = full_scenarios_list

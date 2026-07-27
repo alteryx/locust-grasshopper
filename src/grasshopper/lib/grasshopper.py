@@ -7,7 +7,6 @@ grasshopper functionality.
 import logging
 import os
 import signal
-from typing import Dict, List, Optional, Type, Union
 
 if os.name == "posix":
     import resource  # pylint: disable=import-error
@@ -34,8 +33,8 @@ _original_taskset_wait = TaskSet.wait
 class Grasshopper:
     """Main entry point to access addins and extensions."""
 
-    def __init__(self, global_configuration: dict = {}, **kwargs):
-        self.global_configuration = global_configuration
+    def __init__(self, global_configuration: dict | None = None, **kwargs):
+        self.global_configuration = global_configuration or {}
         self.log()
 
     def log(self) -> None:
@@ -48,7 +47,7 @@ class Grasshopper:
         logger.info("--- /Grasshopper configuration ---")
 
     @property
-    def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
+    def influx_configuration(self) -> dict[str, bool | str | None]:
         """Extract the influx related configuration items.
 
         The InfluxDbSettings object should only get keys if there is a
@@ -83,7 +82,7 @@ class Grasshopper:
         return configuration
 
     @property
-    def grafana_configuration(self) -> dict[str, Optional[str]]:
+    def grafana_configuration(self) -> dict[str, str | None]:
         """Extract the grafana related configuration items.
 
         # TODO-DEPRECATED: move this code to the GHConfiguration object
@@ -123,11 +122,11 @@ class Grasshopper:
 
     @staticmethod
     def launch_test(
-        weighted_user_classes: Union[
-            Type[BaseJourney],
-            List[Type[BaseJourney]],
-            Dict[Type[BaseJourney], float],
-        ],
+        weighted_user_classes: (
+            type[BaseJourney]
+            | list[type[BaseJourney]]
+            | dict[type[BaseJourney], float]
+        ),
         **kwargs,
     ) -> Environment:
         """
@@ -337,7 +336,7 @@ class Grasshopper:
     def load_shape(shape_name: str, **kwargs) -> LoadTestShape:
         """Return the instantiated shape instance given string shape name."""
         shape_name = shape_name.capitalize()  # to make sure it is capitalized
-        import grasshopper.lib.util.shapes as shapes
+        from grasshopper.lib.util import shapes
 
         if shape_name in dir(shapes):
             return getattr(shapes, shape_name)(**kwargs)

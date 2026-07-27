@@ -7,7 +7,6 @@ another place to live.
 import logging
 import sys
 import time
-from datetime import datetime
 
 from grasshopper.lib.util.check_constants import CheckConstants
 from termcolor import colored
@@ -15,8 +14,9 @@ from termcolor import colored
 logger = logging.getLogger()
 
 
-def custom_trend(trend_name: str, extra_tag_keys=[]):
+def custom_trend(trend_name: str, extra_tag_keys=None):
     """Establish a custom trend for a function."""
+    extra_tag_keys = extra_tag_keys or []
 
     def calc_time_delta_and_report_metric(func):
         def wrapper(journey_object, *args, **kwargs):
@@ -28,14 +28,13 @@ def custom_trend(trend_name: str, extra_tag_keys=[]):
                     "which has a test parameters and host attributes defined."
                 )
 
-            start_time = datetime.now()
+            start_time = time.perf_counter()
             result = func(journey_object, *args, **kwargs)
-            end_time = datetime.now()
-            time_delta = end_time - start_time
+            end_time = time.perf_counter()
             environment.events.request.fire(
                 request_type="CUSTOM",
                 name=trend_name,
-                response_time=round(time_delta.total_seconds() * 1000, 3),
+                response_time=round((end_time - start_time) * 1000, 3),
                 response_length=0,
                 response=None,
                 context=journey_object.tags,
@@ -63,7 +62,7 @@ def check(
     check_name: str,
     check_is_good: bool,
     env,
-    tags={},
+    tags=None,
     halt_on_failure=False,
     msg_on_failure=None,
     flexible_warning=0.95,
@@ -94,6 +93,7 @@ def check(
     slightly different calculations.
 
     """
+    tags = tags or {}
     check_is_good = bool(check_is_good)
     check_object = {
         "passed": 0,
@@ -103,7 +103,7 @@ def check(
     }
 
     if hasattr(env.stats, "checks") and type(env.stats.checks) is dict:
-        if check_name not in env.stats.checks.keys():
+        if check_name not in env.stats.checks:
             env.stats.checks[check_name] = check_object
     else:
         env.stats.checks = {check_name: check_object}
@@ -175,8 +175,8 @@ def report_checks_to_console(checks_dict):
             check_value["total"],
             check_value["percentage_passed_display"],
         )
-        result_string = "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
-            check_key, passed, failed, total, percent
+        result_string = (
+            f"{check_key:<80} {passed:<10} {failed:<10} {total:<10} {percent:<10}"
         )
         color_to_print = color_map.get(check_value["verdict"]) or "white"
         logger.info(colored(result_string, color_to_print, attrs=["bold"]))

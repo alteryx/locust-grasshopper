@@ -5,7 +5,8 @@ Also intended to be optionally used by ers that grasshopper consumers create.
 
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from termcolor import colored
 
@@ -18,9 +19,9 @@ class SharedReporting:
     @staticmethod
     def colorized_threshold_string(
         trend_name: str,
-        threshold: Dict[str, Any],
+        threshold: dict[str, Any],
         format_string: str = FORMAT_STRING_STANDARD_COLUMN_LAYOUT,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Build a colorized string for a threshold (based on success)."""
         formatted, any_errors_occurred = SharedReporting.plain_threshold_string(
             trend_name, threshold, format_string
@@ -34,7 +35,7 @@ class SharedReporting:
         return colored_string, any_errors_occurred
 
     @staticmethod
-    def get_threshold_status(threshold: Dict[str, Any]) -> bool:
+    def get_threshold_status(threshold: dict[str, Any]) -> bool:
         """Perform a smart calculation of success for a single threshold."""
         try:
             success = threshold.get("succeeded") or False
@@ -46,9 +47,9 @@ class SharedReporting:
     @staticmethod
     def plain_threshold_string(
         trend_name: str,
-        threshold: Dict[str, Any],
+        threshold: dict[str, Any],
         format_string: str = FORMAT_STRING_STANDARD_COLUMN_LAYOUT,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         """Generate a human friendly string for a threshold."""
         any_errors_occurred = False
         try:
@@ -58,7 +59,7 @@ class SharedReporting:
                 f"{threshold['less_than_in_ms']}ms",
                 f"{int(threshold['actual_value_in_ms'])}ms",
             )
-        except Exception as e:
+        except (KeyError, TypeError, ValueError) as e:
             # catch any kind of error (structural) and replace with a meaningful error
             # line to get reported out to the destination
             formatted = (
@@ -70,12 +71,12 @@ class SharedReporting:
 
     @staticmethod
     def calculate_threshold_lines(
-        trends: Dict[str, Dict[str, Any]],
+        trends: dict[str, dict[str, Any]],
         format_string: str = FORMAT_STRING_STANDARD_COLUMN_LAYOUT,
         formatter: Callable[
-            [str, dict, Optional[str]], str
+            [str, dict, str | None], str
         ] = plain_threshold_string.__func__,
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate a list lines, one line per threshold.
 
         Parameters
