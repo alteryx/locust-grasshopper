@@ -34,15 +34,6 @@ _original_taskset_wait = TaskSet.wait
 class Grasshopper:
     """Main entry point to access addins and extensions."""
 
-    SENSITIVE_CONFIGURATION_KEYS = {
-        "access_token",
-        "influx_pwd",
-        "password",
-        "rp_token",
-        "rp_uuid",
-        "workspace_token",
-    }
-
     def __init__(self, global_configuration: dict = {}, **kwargs):
         self.global_configuration = global_configuration
         self.log()
@@ -51,18 +42,10 @@ class Grasshopper:
         """Log all the configuration values."""
         logger.info("--- Grasshopper configuration ---")
         for k, v in self.global_configuration.items():
-            v = self._sanitize_configuration_value(k, v)
+            if k == "target_url":
+                v = BaseJourney.normalize_url(v)
             logger.info(f"{k}: [{v}]")
         logger.info("--- /Grasshopper configuration ---")
-
-    @classmethod
-    def _sanitize_configuration_value(cls, key: str, value):
-        """Redact sensitive values before logging."""
-        if key == "target_url":
-            return BaseJourney.normalize_url(value)
-        if key in cls.SENSITIVE_CONFIGURATION_KEYS and value:
-            return "***REDACTED***"
-        return value
 
     @property
     def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
@@ -114,21 +97,22 @@ class Grasshopper:
         return configuration
 
     @property
-    def datadog_configuration(self) -> dict[str, Optional[Union[dict, int, str]]]:
+    def datadog_configuration(self) -> dict[str, str | dict[str, str]]:
         """Build Datadog configuration from standard environment variables."""
-        api_key = os.getenv("DD_API_KEY")
-        environment = os.getenv("DD_ENV")
-        if not api_key or not environment:
+        if not (api_key := os.getenv("DD_API_KEY")) or not (
+            environment := os.getenv("DD_ENV")
+        ):
             return {}
 
-        default_tags = {"env": environment}
-        for tag_name, variable_name in (
-            ("service", "DD_SERVICE"),
-            ("version", "DD_VERSION"),
-        ):
-            value = os.getenv(variable_name)
-            if value:
-                default_tags[tag_name] = value
+        default_tags = {
+            tag_name: value
+            for tag_name, value in {
+                "env": environment,
+                "service": os.getenv("DD_SERVICE"),
+                "version": os.getenv("DD_VERSION"),
+            }.items()
+            if value
+        }
 
         return {
             "api_key": api_key,

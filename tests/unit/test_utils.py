@@ -4,7 +4,8 @@ from unittest.mock import MagicMock
 import pytest
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
 from grasshopper.lib.util.check_constants import CheckConstants
-from grasshopper.lib.util.listeners import DatadogApiListener, GrasshopperListeners
+from grasshopper.lib.util.datadog_listener import DatadogApiListener
+from grasshopper.lib.util.listeners import GrasshopperListeners
 from grasshopper.lib.util.utils import (
     check,
     current_method_name,
@@ -339,7 +340,9 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     response_mock.__enter__.return_value = response_mock
     response_mock.__exit__.return_value = None
     urlopen_mock = MagicMock(return_value=response_mock)
-    monkeypatch.setattr("grasshopper.lib.util.listeners.request.urlopen", urlopen_mock)
+    monkeypatch.setattr(
+        "grasshopper.lib.util.datadog_listener.request.urlopen", urlopen_mock
+    )
 
     listener = DatadogApiListener(
         environment=env,
@@ -398,7 +401,7 @@ def test_datadog_listener_schedules_network_flush_off_request_path(monkeypatch):
     env = MagicMock()
     scheduled = []
     monkeypatch.setattr(
-        "grasshopper.lib.util.listeners.gevent.spawn",
+        "grasshopper.lib.util.datadog_listener.gevent.spawn",
         lambda func: scheduled.append(func) or MagicMock(),
     )
     listener = DatadogApiListener(
@@ -407,7 +410,7 @@ def test_datadog_listener_schedules_network_flush_off_request_path(monkeypatch):
         batch_size=1,
     )
 
-    listener.gauge("metric", 1)
+    listener.write_point("measurement", {"metric": 1})
 
     assert scheduled == [listener.flush]
 
