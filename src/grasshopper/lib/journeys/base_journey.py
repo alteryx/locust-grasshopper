@@ -7,6 +7,7 @@ class.
 import logging
 import signal
 from collections import abc
+from typing import ClassVar
 from uuid import uuid4
 
 import gevent
@@ -43,12 +44,12 @@ class VULoggingAdapter(logging.LoggerAdapter):
 class BaseJourney(HttpUser):
     """The base journey class for all other journey classes."""
 
-    VUS_DICT = {}
+    VUS_DICT: ClassVar[dict] = {}
     host = ""
-    _incoming_test_parameters = {}
+    _incoming_test_parameters: ClassVar[dict] = {}
     abstract = True
     base_torn_down = False
-    defaults = {"thresholds": {}}
+    defaults: ClassVar[dict] = {"thresholds": {}}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -9,6 +9,7 @@ rate at all times.
 
 import json
 import logging
+from typing import Any, ClassVar
 
 from locust import LoadTestShape
 
@@ -80,7 +81,7 @@ class Smoke(Default):
 class Testingfixturesonly(Default):
     """Shape for testing fixtures, DO NOT USE!!."""
 
-    testing_values = {
+    testing_values: ClassVar[dict[str, Any]] = {
         "runtime": 10,
         "users": 20,
         "spawn_rate": 0.004,
@@ -121,7 +122,7 @@ class Trend(Default):
         return {"users": self.USERS, "spawn_rate": self.SPAWN_RATE}
 
 
-class Stages(Default):  # noqa E501
+class Stages(Default):
     """
     Stolen and slightly modified from this set of examples as part of the locust.io
     documentation.
@@ -137,7 +138,7 @@ class Stages(Default):  # noqa E501
     Most likely, you'd want to extend this class and only define a new stages attr.
     """
 
-    stages = [
+    stages: ClassVar[list[dict[str, int]]] = [
         {"duration": 60, "users": 1, "spawn_rate": 1},
         {"duration": 60, "users": 2, "spawn_rate": 2},
         {"duration": 60, "users": 3, "spawn_rate": 3},
@@ -181,7 +182,9 @@ class Spike(Stages):
 
     """
 
-    stages = [{"duration": 10, "users": 1, "spawn_rate": 1}]  # effectively a no-op
+    stages: ClassVar[list[dict[str, int]]] = [
+        {"duration": 10, "users": 1, "spawn_rate": 1}
+    ]  # effectively a no-op
 
     def __init__(self, *args, **kwargs):
         users = kwargs.get("users") or 1
@@ -203,7 +206,7 @@ class Spike(Stages):
         super().__init__(*args, **kwargs)
 
 
-class Customstages(Stages):  # noqa E501
+class Customstages(Stages):
     """Keyword arguments:
     stages -- can be either a json string or a dictionary object
 
@@ -225,7 +228,7 @@ class Customstages(Stages):  # noqa E501
 
     """
 
-    stages = [
+    stages: ClassVar[list[dict[str, float]]] = [
         {"duration": 68, "users": 4, "spawn_rate": 0.5},
         {"duration": 62, "users": 2, "spawn_rate": 1},
         {"duration": 72, "users": 6, "spawn_rate": 0.5},

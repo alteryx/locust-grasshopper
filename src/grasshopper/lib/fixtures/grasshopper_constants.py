@@ -1,10 +1,12 @@
 """The file for the GrasshopperConstants class."""
 
+from typing import ClassVar
+
 
 class GrasshopperConstants:
     """Things that are always the same in grasshopper tests."""
 
-    GRASSHOPPER_ATTR_NAMES = [
+    GRASSHOPPER_ATTR_NAMES: ClassVar[list[str]] = [
         "runtime",
         "iterations",
         "users",

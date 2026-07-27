@@ -8,6 +8,7 @@ import pathlib
 import shutil
 import time
 import uuid
+from typing import ClassVar
 
 import pytest
 import tagmatcher
@@ -391,8 +392,8 @@ def pytest_collect_file(parent, file_path):
 class YamlScenarioFile(pytest.File):
     """The logic behind what to do when a Yaml file is specified in pytest."""
 
-    composite_weighted_user_classes = {}
-    full_scenarios_list = []
+    composite_weighted_user_classes: ClassVar[dict] = {}
+    full_scenarios_list: ClassVar[list] = []
 
     temp_gh_file = None
 

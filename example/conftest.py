@@ -21,7 +21,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="function")
-def example_configuration_values(request):  # noqa: F811
+def example_configuration_values(request):
     """Load all the configuration values for this specific test (or suite).
 
     These would be any custom command line values that your test/suite needs and

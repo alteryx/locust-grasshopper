@@ -2,7 +2,7 @@ import logging
 
 from assertpy import assert_that
 
-from tests.unit.conftest import (  # noqa: I202
+from tests.unit.conftest import (
     CONFTEST_TEMPLATE,
     perform_fixture_test_with_optional_log_capture,
 )

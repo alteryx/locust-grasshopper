@@ -9,6 +9,7 @@ Code to support loading grasshopper configuration values:
 
 import json
 import logging
+from typing import Any, ClassVar
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class ConfigurationConstants:
     """
 
     # Grasshopper attrs that are typically set per test location (e.g. test repo)
-    GRASSHOPPER_ATTRS = {
+    GRASSHOPPER_ATTRS: ClassVar[dict[str, dict[str, Any]]] = {
         "influx_host": {
             "opts": ["--influx_host"],
             "attrs": {
@@ -177,7 +178,7 @@ class ConfigurationConstants:
 
     # Testrun attrs are typically set per test run and may change every time you
     # perform a different test run
-    TESTRUN_ATTRS = {
+    TESTRUN_ATTRS: ClassVar[dict[str, dict[str, Any]]] = {
         "shape": {
             "opts": ["-S", "--shape"],
             "attrs": {
@@ -341,7 +342,7 @@ class ConfigurationConstants:
     # scenario definition in a yaml file; However we don't enumerate all the possible
     # values because that would be very hard to maintain. listed here are just the ones
     # that we need to pull from the yaml and do something with (e.g. typecast)
-    SCENARIO_ATTRS = {
+    SCENARIO_ATTRS: ClassVar[dict[str, dict[str, Any]]] = {
         "thresholds": {
             "opts": ["--thresholds"],
             "attrs": {
@@ -353,9 +354,13 @@ class ConfigurationConstants:
         }
     }
 
-    COMPLETE_ATTRS = {**GRASSHOPPER_ATTRS, **TESTRUN_ATTRS, **SCENARIO_ATTRS}
+    COMPLETE_ATTRS: ClassVar[dict[str, dict[str, Any]]] = {
+        **GRASSHOPPER_ATTRS,
+        **TESTRUN_ATTRS,
+        **SCENARIO_ATTRS,
+    }
 
-    SHAPE_OVERRIDE_ATTR_NAMES = ["runtime", "spawn_rate", "users"]
+    SHAPE_OVERRIDE_ATTR_NAMES: ClassVar[list[str]] = ["runtime", "spawn_rate", "users"]
 
 
 class GHConfiguration(dict):

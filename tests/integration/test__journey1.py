@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from grasshopper.lib.grasshopper import BaseJourney, Grasshopper
 from grasshopper.lib.util.utils import custom_trend
 from locust import between, task
@@ -5,7 +7,7 @@ from locust import between, task
 
 class Journey1(BaseJourney):
     wait_time = between(min_wait=30, max_wait=40)
-    defaults = {}
+    defaults: ClassVar[dict] = {}
 
     @task
     @custom_trend("PX_TREND_google_home")

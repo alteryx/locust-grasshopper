@@ -2,7 +2,7 @@
 
 # Standard Library
 import logging
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from grasshopper.lib.reporting.iextendedreporter import IExtendedReporter
 
@@ -15,13 +15,13 @@ class ReporterExtensions:
     Across this entire class, using `er` = extended reporter for space reasons
     """
 
-    EVENTS = [
+    EVENTS: ClassVar[list[str]] = [
         "event_pre_test",
         "event_post_test",
         "event_pre_suite",
         "event_post_suite",
     ]
-    _ers: dict[str, IExtendedReporter] = []
+    _ers: ClassVar[dict[str, IExtendedReporter]] = {}
 
     @classmethod
     def register_er(cls, er: IExtendedReporter) -> None:

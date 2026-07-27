@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.utils import check
@@ -16,7 +18,10 @@ class ExampleJourney(BaseJourney):
     host = "https://google.com"
 
     # lower precedence scenario_args dict, merged in on startup
-    defaults = {"foo": "bar", "scenario_name": "default_example_scenario"}
+    defaults: ClassVar[dict[str, str]] = {
+        "foo": "bar",
+        "scenario_name": "default_example_scenario",
+    }
 
     # a locust task, repeated over and over again until the test finishes
     @task

@@ -8,7 +8,7 @@ from grasshopper.lib.configuration.gh_configuration import GHConfiguration
 
 # Alteryx Packages
 # alias to make patches easier to read
-from tests.unit.conftest import (  # noqa: I202
+from tests.unit.conftest import (
     CONFTEST_TEMPLATE,
     PYFILE_ASSERT_EMPTY_CONFIG,
     PYFILE_ASSERT_EXPECTED_CONFIG,
