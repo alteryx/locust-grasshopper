@@ -11,7 +11,7 @@ Here are some key functionalities that this project extends on Locust:
 - [custom trends](#custom-trends)
 - [timing thresholds](#thresholds)
 - [streamlined metric reporting/tagging system](#db-reporting)
-  (only influxDB is supported right now)
+  (InfluxDB and Datadog are supported)
 
 ## Installation
 This package can be installed via pip: `pip install locust-grasshopper`
@@ -287,7 +287,7 @@ in the "checks" table. Here is an example of using a check:
 from grasshopper.lib.util.utils import check
 ...
 response = self.client.get(
-    'https://google.com', name='get google'
+    "https://google.com", name="get google"
 )
 check(
     "get google responded with a 200",
@@ -398,12 +398,10 @@ emits:
 - `locust_checks.total`, `locust_checks.passed`, and `locust_checks.failed`
 - numeric custom point fields as `<measurement>.<field>`
 
-Datadog reporting is disabled unless both required variables are configured. Metric
-submission is best-effort and runs outside the request path so a Datadog outage does
-not fail or delay the load test. Stable `env`, `service`, and `version` tags are added
-when configured. Per-execution identifiers and sensitive tag keys (for example
-`job_id` or keys containing `token`) are excluded to keep tag cardinality bounded and
-avoid leaking credentials.
+Datadog reporting is disabled unless both `DD_API_KEY` and `DD_ENV` are configured.
+Metric submission runs outside the request path so Datadog API latency does not delay
+load test requests. `DD_ENV`, `DD_SERVICE`, and `DD_VERSION` are added as Datadog tags
+when configured.
 
 To run the influxdb/grafana locally, you can use the docker-compose file in the example directory:
 ```shell
@@ -414,8 +412,7 @@ and then you can access the grafana UI at `localhost`. The default username/pass
 To then run a test which reports to this influxdb just add the `--influx_host=localhost` handle. 
 
 
-There are a few ways you can pass in extra tags which 
-will be reported to the time series DB:
+There are a few ways you can pass in extra tags for metrics backends:
 
 1. **HTTP Request Tagging**   
      All HTTP requests are automatically tagged with their name. If you want to pass in 
@@ -423,10 +420,11 @@ will be reported to the time series DB:
      as a dictionary for the `context` param when making a request. For example:
 
     ```python
-    self.client.get('https://google.com', name='get google', context={'foo':'bar'})
+    self.client.get("https://google.com", name="get google", context={"foo": "bar"})
     ```
-    The tags on this metric would then be: `{'name': 'get google', 'foo': 'bar'}` which 
-    would get forwarded to the database if specified. 
+    The InfluxDB tags on this metric would then be:
+    `{'name': 'get google', 'foo': 'bar'}`. Datadog request metrics include the request
+    name, request type, environment, and response code.
 
 2. **Check Tagging**   
    When defining a check, you can pass in extra tags with the `tags` parameter:
@@ -434,13 +432,13 @@ will be reported to the time series DB:
     from grasshopper.lib.util.utils import check
     ...
     response = self.client.get(
-    'https://google.com', name='get google', context={'foo1':'bar1'}
+        "https://google.com", name="get google", context={"foo1": "bar1"}
     )
     check(
-       "get google responded with a 200",
-       response.status_code == 200,
-       env=self.environment,
-       tags = {'foo2': 'bar2'}
+        "get google responded with a 200",
+        response.status_code == 200,
+        env=self.environment,
+        tags={"foo2": "bar2"},
     )
     ```
 

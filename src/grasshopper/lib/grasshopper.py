@@ -123,9 +123,7 @@ class Grasshopper:
     @staticmethod
     def launch_test(
         weighted_user_classes: (
-            type[BaseJourney]
-            | list[type[BaseJourney]]
-            | dict[type[BaseJourney], float]
+            type[BaseJourney] | list[type[BaseJourney]] | dict[type[BaseJourney], float]
         ),
         **kwargs,
     ) -> Environment:
