@@ -286,9 +286,7 @@ in the "checks" table. Here is an example of using a check:
 ```python
 from grasshopper.lib.util.utils import check
 ...
-response = self.client.get(
-    "https://google.com", name="get google"
-)
+response = self.client.get("https://google.com", name="get google")
 check(
     "get google responded with a 200",
     response.status_code == 200,
