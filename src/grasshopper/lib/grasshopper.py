@@ -369,7 +369,7 @@ class Grasshopper:
                         logger.info(
                             f"Open files hard limit increased to {increased_hard_limit}"
                         )
-                    except Exception as e:
+                    except (OSError, ValueError) as e:
                         logger.warning(f"Could not increase hard limit directly: {e}")
                 else:
                     logger.info(
@@ -392,7 +392,7 @@ class Grasshopper:
                         logger.info(
                             f"Open files soft limit increased to {increased_hard_limit}"
                         )
-                    except Exception as e:
+                    except (OSError, ValueError) as e:
                         logger.warning(f"Could not increase soft limit directly: {e}")
                 else:
                     logger.info(
@@ -411,7 +411,7 @@ class Grasshopper:
                         f"https://github.com/locustio/locust/wiki/Installation#increasing-maximum-number-of-open-files-limit "
                         f"for more info."
                     )
-            except BaseException as e:
+            except (OSError, ValueError) as e:
                 logger.warning(f"Failed to retrieve system open file limits: {e}. ")
         else:
             logger.info(
