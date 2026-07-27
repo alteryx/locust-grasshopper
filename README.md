@@ -285,6 +285,7 @@ in the "checks" table. Here is an example of using a check:
 
 ```python
 from grasshopper.lib.util.utils import check
+
 ...
 response = self.client.get("https://google.com", name="get google")
 check(
@@ -428,6 +429,7 @@ There are a few ways you can pass in extra tags for metrics backends:
    When defining a check, you can pass in extra tags with the `tags` parameter:
     ```python
     from grasshopper.lib.util.utils import check
+
     ...
     response = self.client.get(
         "https://google.com", name="get google", context={"foo1": "bar1"}
