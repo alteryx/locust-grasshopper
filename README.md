@@ -11,7 +11,7 @@ Here are some key functionalities that this project extends on Locust:
 - [custom trends](#custom-trends)
 - [timing thresholds](#thresholds)
 - [streamlined metric reporting/tagging system](#db-reporting)
-  (only influxDB is supported right now)
+  (InfluxDB and Datadog are supported)
 
 ## Installation
 This package can be installed via pip: `pip install locust-grasshopper`
@@ -127,6 +127,9 @@ you must specify a host.
 - `--grafana_host`: If your grafana is a separate URL from the influxdb, you can 
   specify it here. If you don't, then the grafana URL will be the same as the 
   influxdb URL when the grasshopper object generates grafana links. 
+- Datadog metric reporting requires the `DD_API_KEY` and `DD_ENV` environment
+  variables. `DD_SITE` defaults to `datadoghq.com`; `DD_SERVICE` and `DD_VERSION`
+  add stable service and release tags when provided.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -282,10 +285,9 @@ in the "checks" table. Here is an example of using a check:
 
 ```python
 from grasshopper.lib.util.utils import check
+
 ...
-response = self.client.get(
-    'https://google.com', name='get google'
-)
+response = self.client.get("https://google.com", name="get google")
 check(
     "get google responded with a 200",
     response.status_code == 200,
@@ -381,13 +383,24 @@ This data is also reported to the console at the end of each test.
 Additional design details about how a database listener works with grasshopper/locust can be 
 found in the [Database Listener Design Documentation](./docs/database_listener_design_documentation.md).
 
-When you specify a time series database URL param to `launch_test`, such as 
-`influx_host`, all metrics will be automatically reported to tables within the `locust` 
-timeseries database via the specified URL. These tables include:
-- `locust_checks`: check name, check passed, etc.
-- `locust_events`: test started, test stopped, etc.
-- `locust_exceptions`: error messages
-- `locust_requests`: HTTP requests and custom trends
+When you specify a metrics backend configuration param to `launch_test`, the
+corresponding listener will be initialized automatically. For example:
+- `influx_host` enables InfluxDB reporting
+- `DD_API_KEY` and `DD_ENV` enable Datadog reporting
+
+If both backends are configured, Grasshopper reports to both. The Datadog listener
+emits:
+
+- `locust_requests.count`, `locust_requests.response_time`, and
+  `locust_requests.response_length`
+- `locust_requests.error`
+- `locust_checks.total`, `locust_checks.passed`, and `locust_checks.failed`
+- numeric custom point fields as `<measurement>.<field>`
+
+Datadog reporting is disabled unless both `DD_API_KEY` and `DD_ENV` are configured.
+Metric submission runs outside the request path so Datadog API latency does not delay
+load test requests. `DD_ENV`, `DD_SERVICE`, and `DD_VERSION` are added as Datadog tags
+when configured.
 
 To run the influxdb/grafana locally, you can use the docker-compose file in the example directory:
 ```shell
@@ -398,7 +411,7 @@ and then you can access the grafana UI at `localhost`. The default username/pass
 To then run a test which reports to this influxdb just add the `--influx_host=localhost` handle. 
 
 
-There are a few ways you can pass in extra tags which 
+There are a few ways you can pass in extra tags which
 will be reported to the time series DB:
 
 1. **HTTP Request Tagging**   
@@ -407,24 +420,26 @@ will be reported to the time series DB:
      as a dictionary for the `context` param when making a request. For example:
 
     ```python
-    self.client.get('https://google.com', name='get google', context={'foo':'bar'})
+    self.client.get("https://google.com", name="get google", context={"foo": "bar"})
     ```
-    The tags on this metric would then be: `{'name': 'get google', 'foo': 'bar'}` which 
-    would get forwarded to the database if specified. 
+    The InfluxDB tags on this metric would then be:
+    `{'name': 'get google', 'foo': 'bar'}`. Datadog request metrics include the request
+    name, request type, environment, and response code.
 
 2. **Check Tagging**   
    When defining a check, you can pass in extra tags with the `tags` parameter:
     ```python
     from grasshopper.lib.util.utils import check
+
     ...
     response = self.client.get(
-    'https://google.com', name='get google', context={'foo1':'bar1'}
+        "https://google.com", name="get google", context={"foo1": "bar1"}
     )
     check(
-       "get google responded with a 200",
-       response.status_code == 200,
-       env=self.environment,
-       tags = {'foo2': 'bar2'}
+        "get google responded with a 200",
+        response.status_code == 200,
+        env=self.environment,
+        tags={"foo2": "bar2"},
     )
     ```
 
