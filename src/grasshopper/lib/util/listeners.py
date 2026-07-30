@@ -34,7 +34,7 @@ class GrasshopperListeners:
 
     @events.test_start.add_listener
     def on_test_start(self, environment: Environment, **_kwargs):
-        """Create listeners for the configured metrics backends."""
+        """Create a listener for the test start event, starts an influxdb connection."""
         influx_configuration = environment.grasshopper.influx_configuration
         influx_host = influx_configuration.get("influx_host")
 
@@ -75,7 +75,7 @@ class GrasshopperListeners:
 
     @events.test_stop.add_listener
     def on_test_stop_append_metric_data(self, environment, **_kwargs):
-        """Append final stats data and close configured metrics listeners."""
+        """Create a listener which appends metrics to the environment.stats object."""
         try:
             self._append_trend_data(environment)
         except Exception as e:  # noqa: BLE001
@@ -91,7 +91,7 @@ class GrasshopperListeners:
         self._send_to_datadog("shutdown", "close")
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
-        """Write one check datapoint to each configured metrics backend."""
+        """Flush a check datapoint to whatever grasshopper dbs are being used."""
         environment_base_url = self.locust_environment.host
         tags = {"check_name": check_name, "environment": environment_base_url}
         if hasattr(self.locust_environment, "extra_context"):
