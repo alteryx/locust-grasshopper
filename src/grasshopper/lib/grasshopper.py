@@ -95,6 +95,31 @@ class Grasshopper:
         configuration["grafana_host"] = host
         return configuration
 
+    @property
+    def datadog_configuration(self) -> dict[str, str | dict[str, str]]:
+        """Build Datadog configuration from standard environment variables."""
+        if not (api_key := os.getenv("DD_API_KEY")) or not (
+            environment := os.getenv("DD_ENV")
+        ):
+            return {}
+
+        default_tags = {
+            tag_name: value
+            for tag_name, value in {
+                "env": environment,
+                "service": os.getenv("DD_SERVICE"),
+                "version": os.getenv("DD_VERSION"),
+            }.items()
+            if value
+        }
+
+        return {
+            "api_key": api_key,
+            "site": os.getenv("DD_SITE", "datadoghq.com"),
+            "namespace": "grasshopper",
+            "default_tags": default_tags,
+        }
+
     @staticmethod
     def launch_test(
         weighted_user_classes: Union[

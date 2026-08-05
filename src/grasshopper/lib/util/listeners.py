@@ -4,9 +4,10 @@ The listeners module contains all the custom listeners that we have defined for 
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from grasshopper.lib.util.check_constants import CheckConstants
+from grasshopper.lib.util.datadog_listener import DatadogApiListener
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
@@ -22,6 +23,7 @@ class GrasshopperListeners:
     """All of the hooks used to report custom metrics/checks to dbs/the console."""
 
     influxdb_listener: InfluxDBListener = None
+    datadog_listener: DatadogApiListener = None
     locust_environment: Environment
 
     def __init__(self, environment: Environment):
@@ -54,21 +56,39 @@ class GrasshopperListeners:
                 "initialization..."
             )
 
+        datadog_configuration = environment.grasshopper.datadog_configuration
+        api_key = datadog_configuration.get("api_key")
+        if api_key:
+            logger.info(
+                "All collected metrics reported to Datadog API site `%s`",
+                datadog_configuration.get("site"),
+            )
+            self.datadog_listener = DatadogApiListener(
+                environment=environment,
+                **datadog_configuration,
+            )
+        else:
+            logger.info(
+                "DD_API_KEY and DD_ENV were not both specified. "
+                "Skipping Datadog listener initialization..."
+            )
+
     @events.test_stop.add_listener
     def on_test_stop_append_metric_data(self, environment, **_kwargs):
         """Create a listener which appends metrics to the environment.stats object."""
         try:
             self._append_trend_data(environment)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 f"Unexpected exception appending trend data to environment object: {e}"
             )
         try:
             self._append_checks_data(environment)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 f"Unexpected exception appending trend data to environment object: {e}"
             )
+        self._send_to_datadog("shutdown", "close")
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
@@ -78,13 +98,55 @@ class GrasshopperListeners:
             tags.update(self.locust_environment.extra_context)
         tags.update(extra_tags)
         fields = {"check_passed": int(check_passed)}
-        time = datetime.utcnow()
+        time = datetime.now(timezone.utc)
 
-        if getattr(self, "influxdb_listener") is not None:
+        if self.influxdb_listener is not None:
             point = self.influxdb_listener._InfluxDBListener__make_data_point(
                 "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
+        self._send_to_datadog(
+            "check metric",
+            "record_check",
+            check_name=check_name,
+            check_passed=check_passed,
+            extra_tags=tags,
+            time=time,
+        )
+
+    def write_metric_point(
+        self, measurement: str, fields: dict, time=None, tags: dict | None = None
+    ):
+        """Fan out one custom metric point to InfluxDB and Datadog when enabled."""
+        metric_tags = tags or {}
+
+        if self.influxdb_listener is not None:
+            point = self.influxdb_listener._InfluxDBListener__make_data_point(
+                measurement,
+                fields,
+                time or datetime.now(timezone.utc),
+                tags=metric_tags,
+            )
+            self.influxdb_listener.cache.append(point)
+
+        self._send_to_datadog(
+            "custom metric",
+            "record_custom_point",
+            measurement=measurement,
+            fields=fields,
+            time=time,
+            tags=metric_tags,
+        )
+
+    def _send_to_datadog(self, operation: str, method_name: str, *args, **kwargs):
+        """Call a Datadog listener method when Datadog reporting is configured."""
+        datadog_listener = getattr(self, "datadog_listener", None)
+        if datadog_listener is None:
+            return
+        try:
+            getattr(datadog_listener, method_name)(*args, **kwargs)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Failed to send Datadog %s: %s", operation, exc)
 
     @staticmethod
     def _append_trend_data(environment):
