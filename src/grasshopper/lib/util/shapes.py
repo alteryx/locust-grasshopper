@@ -195,7 +195,7 @@ class Spike(Stages):
         self.stages = [
             {"duration": spike_duration, "users": users, "spawn_rate": spawn_rate},
             {
-                "duration": spike_duration + cooldown_duration,
+                "duration": cooldown_duration,
                 "users": 1,
                 "spawn_rate": cooldown_spawn_rate,
             },
