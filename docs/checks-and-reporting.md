@@ -76,15 +76,13 @@ from locust import task
 
 
 @task
-@custom_trend("browse catalog", extra_tag_keys=["tenant_id"])
+@custom_trend("browse catalog")
 def browse_catalog(self):
     self.client.get("/products")
     self.client.get("/categories")
 ```
 
-To add a threshold for this timing, use the name `browse catalog` and type
-`CUSTOM`. `extra_tag_keys` selects values from the journey's `scenario_args` to
-include with its custom metric.
+To add a threshold for this timing, use the name `browse catalog` and type `CUSTOM`.
 
 ## InfluxDB and Grafana
 
@@ -125,7 +123,7 @@ Metrics use the `grasshopper.` prefix by default:
 For example, the request count metric is `grasshopper.locust_requests.count`.
 Request metrics include name, request type, environment, and status-code tags;
 arbitrary request `context` values are not forwarded as Datadog request tags.
-Checks and custom metrics accept their own extra tags.
+Checks and custom metric points accept their own extra tags.
 
 If both backends are configured, Grasshopper reports to both. Contributor-facing
 background is in the [listener design diagram](database_listener_design_documentation.md).
