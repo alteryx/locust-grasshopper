@@ -2,35 +2,91 @@
 
 # Grasshopper
 
-A lightweight framework for performing load tests against an environment, primarily 
-against an API. Grasshopper glues [Locust](https://locust.io/), [Pytest](https://docs.pytest.org/en/7.1.x/#), some plugins (namely [Locust InfluxDBListener](https://github.com/hoodoo-digital/locust-influxdb-listener) ) and some custom code to provide a
-package that makes authoring load tests simple with very little boilerplate needed.
+**Build a performance test suite for your application with Locust and pytest.**
 
-Here are some key functionalities that this project extends on Locust:
-- [checks](#checks)
-- [custom trends](#custom-trends)
-- [timing thresholds](#thresholds)
-- [streamlined metric reporting/tagging system](#db-reporting)
-  (InfluxDB and Datadog are supported)
+Grasshopper helps performance testers and SDETs turn load tests into a repeatable
+Python test suite. Write user journeys with [Locust](https://locust.io/), use
+[pytest](https://docs.pytest.org/) fixtures to prepare your application and test
+data, and run the same tests with different workloads.
+
+- **Reuse your test setup:** fixtures, parametrization, and ordinary Python assertions.
+- **Describe your workloads:** tagged YAML scenarios, weighted journeys, and load shapes.
+- **Define what passes:** [response checks](#checks), [custom timings](#custom-trends),
+  and [timing thresholds](#thresholds), with explicit pytest assertions for CI.
+- **Track results:** console output and optional [InfluxDB or Datadog reporting](#db-reporting).
+
+[Try the quickstart](#quickstart) · [Configure a test](#configuring-grasshopper) ·
+[Use scenarios](#launching-tests-with-a-configuration) · [Contribute](#contributing)
 
 ## Installation
 Requires Python 3.11 or newer. Supported Locust versions are 2.43.3 through 2.47.x.
 
-This package can be installed via pip: `pip install locust-grasshopper`
-
-## Example Load Test
-- You can refer to the test `test_example.py` in the `example` directory for a basic 
-  skeleton of how to get a load test running. In the same directory, there is also an 
-  example `conftest.py` that will show you how to get basic parameterization working.
-- This test can be invoked by running `pytest example/test_example.py` in the root of 
-  this project.
-- This test can also be invoked via a YAML scenario file:
 ```shell
-cd example
-pytest example_scenarios.YAML --tags=example1
+python -m pip install locust-grasshopper
 ```
- In this example scenario file, you can see how grasshopper_args, 
- grasshopper_scenario_args, and tags are being set.
+
+## Quickstart
+
+Run a small performance suite against a local demo API. A pytest fixture starts
+the API on an available loopback port and stops it after the tests. You do not
+need a running application, Docker, or a metrics service.
+
+Clone the repository and install it in a virtual environment:
+
+```shell
+git clone https://github.com/alteryx/locust-grasshopper.git
+cd locust-grasshopper
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+cd example/quickstart
+python -m gevent.monkey --module pytest
+```
+
+On Windows, activate the environment with `.venv\Scripts\Activate.ps1` in PowerShell.
+The `gevent.monkey` entry point applies Locust's cooperative I/O setup before
+pytest and its plugins load.
+
+The suite tests two API endpoints, each with three virtual users for three seconds.
+It checks that requests were made, responses succeeded, no journey errors occurred,
+and the 95th-percentile response time stayed at or below 500 ms. The terminal shows
+the threshold results followed by pytest's `2 passed` summary; request counts and
+timings vary by machine.
+
+The example has three files:
+
+| File | Purpose |
+| --- | --- |
+| [conftest.py](example/quickstart/conftest.py) | Start and stop the local demo API with a fixture. |
+| [test_performance.py](example/quickstart/test_performance.py) | Define the journey, run it for each endpoint, and assert the results. |
+| [pytest.ini](example/quickstart/pytest.ini) | Set a short default workload. |
+
+Try a larger workload or produce a JUnit report for your CI system:
+
+```shell
+python -m gevent.monkey --module pytest --users=10 --spawn_rate=5 --runtime=10
+python -m gevent.monkey --module pytest --junitxml=results.xml
+```
+
+**The assertions make this a test.** Grasshopper reports threshold results; the
+assertions in `test_performance.py` make pytest fail when those results miss your
+requirements. To see a failure, change the example's threshold `limit` from `500`
+to `1` ms and rerun it.
+
+To use this pattern for your application, copy the three files into your test
+suite, replace the local API fixture with your application's URL and setup, and
+adapt the endpoints, response checks, workload, and timing budget. This short
+demo teaches the workflow; choose representative traffic and longer runs when
+evaluating your application's performance.
+
+## More examples
+
+The [existing example journey](example/test_example.py) and
+[configuration fixture](example/conftest.py) show custom test parameters. The
+[YAML scenarios](example/example_scenarios.YAML) demonstrate tags and reusable
+workload configuration. Those examples target an external site; update their
+target and requests for your application before running them.
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Creating a load test

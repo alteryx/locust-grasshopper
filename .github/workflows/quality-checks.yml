@@ -38,4 +38,6 @@ jobs:
       - run: pip install "tox==4.67.1"
       - name: Run unit tests
         run: tox run --skip-missing-interpreters false
+      - name: Run quickstart
+        run: tox run -e py311-locustmin -- -c example/quickstart/pytest.ini example/quickstart
 
