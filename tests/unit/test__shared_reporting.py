@@ -1,6 +1,18 @@
 import pytest
 from assertpy import assert_that
 from grasshopper.lib.reporting.shared_reporting import SharedReporting
+from termcolor.termcolor import can_colorize
+
+
+@pytest.fixture(autouse=True)
+def enable_terminal_colors(monkeypatch):
+    """Keep ANSI assertions independent of terminal and environment detection."""
+    monkeypatch.delenv("ANSI_COLORS_DISABLED", raising=False)
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    can_colorize.cache_clear()
+    yield
+    can_colorize.cache_clear()
 
 
 @pytest.fixture(scope="session")

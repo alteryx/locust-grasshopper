@@ -9,8 +9,11 @@ readme = { file = "README.md", content-type = "text/markdown" }
 description = "a load testing tool extended from locust"
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
@@ -28,29 +31,29 @@ maintainers = [
 ]
 keywords = ["load testing", "performance", "locust", "grasshopper"]
 license = { file = "LICENSE" }
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dependencies = [
-    "gevent >= 24.2.1",
-    "influxdb >= 5.3.1",
-    "locust ~= 2.43.3",
-    "locust-influxdb-listener ~= 1.0",
-    "pytest >= 9.0.1",
-    "pyyaml >= 5.4.1",
+    "gevent >= 25.9.1",
+    "influxdb >= 5.3.2",
+    "locust >= 2.43.3, < 2.48",
+    "locust-influxdb-listener ~= 1.0.2",
+    "pytest >= 9.1.1, < 10",
+    "pyyaml >= 6.0.3",
     "tag-matcher >= 0.0.5",
-    "termcolor ~= 1.0",
+    "termcolor ~= 3.3",
 ]
 
 [project.optional-dependencies]
 dev = [
     # Testing stuff	
     "assertpy == 1.1",
-    "pytest-cov == 4.0.0",
-    "pytest-mock == 3.10.0",
-    "requests-mock == 1.11.0",
-    "tox == 4.13.0",
+    "pytest-cov == 7.1.0",
+    "pytest-mock == 3.17.0",
+    "requests-mock == 1.12.1",
+    "tox == 4.67.1",
 
     # Linting and formatting
-    "ruff == 0.15.8",
+    "ruff == 0.17.2",
 ]
 
 [project.urls]
@@ -60,7 +63,7 @@ dev = [
 where = ["src"]
 
 [tool.pytest.ini_options]
-minversion = "6.0"
+minversion = "9.1.1"
 addopts = "-rap --junitxml=reports/junit_test_results.xml --cov=src --cov-report=html --cov-report=xml --cov-report=term"
 testpaths = ["tests/unit"]
 junit_suite_name = "locust-grasshopper"
@@ -79,14 +82,16 @@ legacy_tox_ini = """
     [tox]
     min_version = 4.0
     env_list =
-        py310
-        py311
-        py312
+        py311-locustmin
+        py{311,312,313,314,315}-locustcurrent
     skip_missing_interpreters = true
 
     [testenv]
-    deps = .[dev]
-    commands = python -m gevent.monkey --module pytest tests/unit
+    extras = dev
+    deps =
+        locustmin: locust==2.43.3
+        locustcurrent: locust==2.47.0
+    commands = python -m gevent.monkey --module pytest {posargs:tests/unit}
 """
 
 [tool.ruff]
@@ -97,6 +102,8 @@ line-length = 88
 
 [tool.ruff.lint]
 
+# Preserve the rule set used before Ruff 0.17 changed its defaults.
+select = ["E4", "E7", "E9", "F"]
 # Adds Pyflakes, Mccabe, Pydocstyle, etc. run `ruff linter` to see all available linters
 extend-select = ["F", "C90", "I", "N", "ICN"]
 ignore = ["N801", "N803", "N806", "N815", "N818", "E721"]
@@ -106,6 +113,9 @@ dummy-variable-rgx = "^_$"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 18
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = ["classmethod", "classproperty"]
 
 [tool.ruff.format]
 

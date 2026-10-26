@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, List
 
 from grasshopper.lib.reporting.iextendedreporter import IExtendedReporter
+from grasshopper.lib.util.decorators import classproperty
 
 logger = logging.getLogger()
 
@@ -46,14 +47,12 @@ class ReporterExtensions:
             # currently registered
             logger.warning(e)
 
-    @classmethod
-    @property
+    @classproperty
     def registrations(cls) -> Dict[str, IExtendedReporter]:
         """Return the list of currently registered ers."""
         return cls._ers
 
-    @classmethod
-    @property
+    @classproperty
     def ers(cls) -> List[IExtendedReporter]:
         return [v for k, v in cls._ers.items()]
 
