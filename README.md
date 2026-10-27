@@ -59,10 +59,6 @@ pytest example_scenarios.YAML --tags=smoke
 Change the journey's `host`, endpoint, and assertions to target your application.
 Use your own test environment when increasing the workload.
 
-These guides match the repository version. PyPI 1.4.14 does not include the
-pytest startup fix used here, so use the source installation above when
-following these examples.
-
 To install a published release in an existing project, run
 `python -m pip install locust-grasshopper`.
 Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshopper/#history).
