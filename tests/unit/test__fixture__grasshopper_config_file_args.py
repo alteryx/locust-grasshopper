@@ -12,6 +12,28 @@ from tests.unit.conftest import (
 FIXTURE_UNDER_TEST = "grasshopper_config_file_args"
 
 
+def test__grasshopper_config_file_args__optional_file_not_configured(pytester, caplog):
+    """Omitting the optional config file should not produce a warning."""
+    pytester.makeconftest(
+        CONFTEST_TEMPLATE.format(fixture_name=FIXTURE_UNDER_TEST, patches="")
+    )
+    pytester.makepyfile(
+        PYFILE_TEMPLATE.format(
+            fixture_name=FIXTURE_UNDER_TEST,
+            validations=PYFILE_ASSERT_EMPTY_CONFIG.format(
+                fixture_name=FIXTURE_UNDER_TEST
+            ),
+        )
+    )
+
+    perform_fixture_test_with_optional_log_capture(pytester, caplog=caplog)
+
+    assert not any(
+        record.name == "grasshopper.lib.fixtures" and record.levelno >= logging.WARNING
+        for record in caplog.records
+    )
+
+
 def test__grasshopper_config_file_args__happy(pytester):
     # calculate the path before going into the other pytest context
     mock_config_file_path = calculate_path("mock_basic.config")

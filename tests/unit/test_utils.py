@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import time
 from unittest.mock import MagicMock
 
@@ -15,6 +17,43 @@ from grasshopper.lib.util.utils import (
     report_thresholds_to_console,
 )
 from termcolor import colored
+
+
+def test_listener_import_contains_only_the_legacy_influxdb_warning():
+    """Import works with strict warnings without changing the caller's filters."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "error::DeprecationWarning",
+            "-c",
+            """
+from gevent import monkey
+monkey.patch_all()
+
+import warnings
+import grasshopper.lib.util.listeners
+
+# The same warning outside the import must still reach the caller.
+try:
+    warnings.warn_explicit(
+        "datetime.datetime.utcfromtimestamp() is deprecated",
+        DeprecationWarning,
+        filename="influxdb/line_protocol.py",
+        lineno=16,
+        module="influxdb.line_protocol",
+    )
+except DeprecationWarning:
+    pass
+else:
+    raise AssertionError("The InfluxDB import leaked its warning filter")
+""",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.fixture
@@ -323,7 +362,7 @@ def test_append_checks_data(mock_logging, example_checks_dict):
     env = MagicMock()
     listeners = GrasshopperListeners(environment=env)
     listeners._append_checks_data(env)
-    mock_logging.assert_called_with("No checks data to report.")
+    mock_logging.assert_called_with("No named Grasshopper checks were recorded.")
     mock_logging.reset_mock()
 
     env.stats.checks = example_checks_dict

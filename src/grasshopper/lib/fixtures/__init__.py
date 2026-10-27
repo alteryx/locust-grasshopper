@@ -81,11 +81,9 @@ def grasshopper_config_file_args(request):
         config.update(**scenario_vals)
 
     except pytest.FixtureLookupError:
-        logger.warning(
-            "CONFIG FIXTURE: Skipping loading from grasshopper configuration file "
-            "because fixture 'grasshopper_config_file_path` not found. You can safely "
-            "ignore this warning if you were not intending to use a grasshopper "
-            "configuration file."
+        logger.info(
+            "CONFIG FIXTURE: No optional configuration file specified "
+            "(grasshopper_config_file_path fixture not defined)."
         )
     except FileNotFoundError:
         logger.warning(
