@@ -87,7 +87,7 @@ def grasshopper_config_file_args(request):
         config.update(**scenario_vals)
 
     except pytest.FixtureLookupError:
-        logger.info(
+        logger.debug(
             "CONFIG FIXTURE: No optional configuration file specified "
             "(grasshopper_config_file_path fixture not defined)."
         )
