@@ -13,17 +13,17 @@ InfluxDB and Datadog metrics reporting.
 Locust runs your virtual users and records request statistics. Grasshopper adds
 the test-suite workflow around it:
 
-- **[pytest load testing](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md):**
+- **[pytest load testing](docs/writing-tests.md):**
   reuse fixtures for setup, authentication, and test data; assert results and produce JUnit reports for CI.
-- **[Repeatable API workloads](https://github.com/alteryx/locust-grasshopper/blob/main/docs/configuration.md):**
+- **[Repeatable API workloads](docs/configuration.md):**
   configure YAML scenarios, tags, load shapes, and weighted Locust journeys.
-- **[Latency thresholds](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#timing-thresholds) and [checks](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#response-and-workflow-checks):**
+- **[Latency thresholds](docs/checks-and-reporting.md#timing-thresholds) and [checks](docs/checks-and-reporting.md#response-and-workflow-checks):**
   set response-time budgets and assert pass/fail results in pytest.
-- **[Workflow timing](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#time-a-multi-request-workflow):**
+- **[Workflow timing](docs/checks-and-reporting.md#time-a-multi-request-workflow):**
   measure latency across multiple API requests using custom trends.
-- **Metrics reporting:** view console results or send metrics to
-  [InfluxDB](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#influxdb-and-grafana) and
-  [Datadog](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#datadog).
+- **[Metrics reporting](docs/checks-and-reporting.md):** view console results or send metrics to
+  [InfluxDB](docs/checks-and-reporting.md#influxdb-and-grafana) and
+  [Datadog](docs/checks-and-reporting.md#datadog).
 
 ## Quickstart
 
@@ -50,7 +50,7 @@ a p95 response time at or below 2000 ms. You should see threshold and check repo
 followed by a `1 passed` summary. Internet access is required; no local server,
 Docker, or metrics service is needed.
 
-The same journey also has a [YAML scenario file](https://github.com/alteryx/locust-grasshopper/blob/main/example/example_scenarios.YAML):
+The same journey also has a [YAML scenario file](example/example_scenarios.YAML):
 
 ```shell
 pytest example_scenarios.YAML --tags=smoke
@@ -63,21 +63,21 @@ To install a published release in an existing project, run
 `python -m pip install locust-grasshopper`.
 Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshopper/#history).
 
-**Next:** [adapt the demo to your application](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md).
+**Next:** [adapt the demo to your application](docs/writing-tests.md).
 
 ## Documentation
 
 | Guide | What you will learn |
 | --- | --- |
-| [Write a performance test suite](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md) | Find the main APIs, reuse pytest fixtures, change the workload, and produce CI results. |
-| [Configure load tests and YAML scenarios](https://github.com/alteryx/locust-grasshopper/blob/main/docs/configuration.md) | Set users and runtime, select scenarios, and pass configuration into journeys. |
-| [Checks, timing thresholds, and reporting](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md) | Define success, measure workflows, and send metrics to InfluxDB or Datadog. |
+| [Write a performance test suite](docs/writing-tests.md) | Find the main APIs, reuse pytest fixtures, change the workload, and produce CI results. |
+| [Configure load tests and YAML scenarios](docs/configuration.md) | Set users and runtime, select scenarios, and pass configuration into journeys. |
+| [Checks, timing thresholds, and reporting](docs/checks-and-reporting.md) | Define success, measure workflows, and send metrics to InfluxDB or Datadog. |
 
 ## Will a failed performance requirement fail CI?
 
 When your test asserts it. Grasshopper records checks and threshold results;
 your pytest assertions decide whether the test passes. The
-[quickstart test](https://github.com/alteryx/locust-grasshopper/blob/main/example/test_example.py)
+[quickstart test](example/test_example.py)
 demonstrates this, including checks for missing traffic and journey errors.
 
 ## Contributing
@@ -93,4 +93,4 @@ ruff check .
 ruff format --check .
 ```
 
-Licensed under [Apache 2.0](https://github.com/alteryx/locust-grasshopper/blob/main/LICENSE).
+Licensed under [Apache 2.0](LICENSE).
