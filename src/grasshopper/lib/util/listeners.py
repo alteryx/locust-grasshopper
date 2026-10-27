@@ -62,7 +62,7 @@ class GrasshopperListeners:
                 env=environment, influxDbSettings=influx_db_settings
             )
         else:
-            logger.info(
+            logger.debug(
                 "InfluxDB host was not specified. Skipping influxdb listener "
                 "initialization..."
             )
@@ -79,7 +79,7 @@ class GrasshopperListeners:
                 **datadog_configuration,
             )
         else:
-            logger.info(
+            logger.debug(
                 "DD_API_KEY and DD_ENV were not both specified. "
                 "Skipping Datadog listener initialization..."
             )
