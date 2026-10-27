@@ -13,14 +13,14 @@ Colors are automatic in a terminal. If your IDE or CI captures output, use
 
 ## Timing thresholds
 
-The [quickstart](../example/quickstart/test_performance.py) declares thresholds in
-`CatalogJourney.defaults`. This sets a 500 ms budget for the 95th percentile of
-`GET /products` response times:
+The [quickstart](../example/test_example.py) declares thresholds in
+`ExampleJourney.defaults`. This sets a 2000 ms budget for the 95th percentile of
+`GET /get` response times:
 
 ```python
 defaults = {
     "thresholds": {
-        "/products": {"type": "GET", "percentile": 0.95, "limit": 500},
+        "/get": {"type": "GET", "percentile": 0.95, "limit": 2000},
     },
 }
 ```
@@ -32,7 +32,7 @@ when you supply `name="product lookup"` to `self.client.get`, use that name inst
 After `launch_test` returns, inspect and assert the result:
 
 ```python
-threshold = environment.stats.trends["/products"]["thresholds"][0]
+threshold = environment.stats.trends["/get"]["thresholds"][0]
 assert threshold["succeeded"], threshold
 ```
 
@@ -45,24 +45,24 @@ These settings override the journey's defaults.
 ## Response and workflow checks
 
 Call `check` inside a journey to record a named pass/fail result. The quickstart
-uses this check to verify that the product catalog contains items:
+uses this check to verify that httpbin echoes the requested URL:
 
 ```python
 from grasshopper.lib.util.utils import check
 
-response = self.client.get("/products")
+response = self.client.get("/get")
 check(
-    "catalog is not empty",
-    response.status_code == 200 and bool(response.json().get("items")),
+    "request URL is echoed",
+    response.status_code == 200 and response.json().get("url") == response.url,
     env=self.environment,
-    tags={"journey": "catalog"},
+    tags={"journey": "example"},
 )
 ```
 
 Checks are aggregated by name. After the workload, enforce the result in pytest:
 
 ```python
-result = environment.stats.checks["catalog is not empty"]
+result = environment.stats.checks["request URL is echoed"]
 assert result["total"] > 0
 assert result["failed"] == 0, result
 ```
@@ -74,8 +74,7 @@ assertions so an early stop also produces a failing test.
 
 Add a `custom_trend` decorator to a journey method to measure its total duration.
 For an application with `/products` and `/categories` endpoints, add this task to
-your journey, with the imports at module level. Adapt the paths to your application;
-the local demo serves only `/products`.
+your journey, with the imports at module level. Adapt the paths to your application.
 
 ```python
 from grasshopper.lib.util.utils import custom_trend

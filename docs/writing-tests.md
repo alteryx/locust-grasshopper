@@ -7,21 +7,23 @@ Grasshopper runs Locust journeys from pytest tests. Use fixtures for setup and
 test data, journeys for repeated user actions, and assertions for the results
 your application must meet.
 
-## Start with the local API demo
+## Start with the public API demo
 
-Run the [quickstart](../README.md#quickstart), then open its three files:
+Run the [quickstart](../README.md#quickstart), then open its four files in `example/`:
 
 | File | Responsibility |
 | --- | --- |
-| [conftest.py](../example/quickstart/conftest.py) | Start a local API on an available loopback port and stop it after the suite. |
-| [test_performance.py](../example/quickstart/test_performance.py) | Run a catalog workload and assert the results. |
-| [pytest.ini](../example/quickstart/pytest.ini) | Set a short workload and show results in the terminal. |
+| [test_example.py](../example/test_example.py) | Request httpbin's `/get` endpoint and assert the results. |
+| [conftest.py](../example/conftest.py) | Set short workload defaults that CLI, environment, and YAML settings can override. |
+| [pytest.ini](../example/pytest.ini) | Load Grasshopper and show results in the terminal. |
+| [example_scenarios.YAML](../example/example_scenarios.YAML) | Define smoke and iteration-limited workloads for the same journey. |
 
-In the test, `CatalogJourney` extends `BaseJourney`, a Locust `HttpUser` subclass.
-Its `@task` method repeatedly requests `/products`. The journey's `defaults`
-declare a 500 ms budget for the 95th percentile of response times.
+In the test, `ExampleJourney` extends `BaseJourney`, a Locust `HttpUser` subclass.
+Its `host` is `https://httpbin.org`, and its `@task` method repeatedly requests
+`/get`. The journey's `defaults` declare a 2000 ms budget for the 95th percentile
+of response times.
 
-`Grasshopper.launch_test(CatalogJourney, **complete_configuration)` starts the
+`Grasshopper.launch_test(ExampleJourney, **complete_configuration)` starts the
 workload and returns a Locust environment containing the results. Always pass the
 `complete_configuration` fixture; it includes the configured load shape.
 
@@ -47,31 +49,20 @@ If you cannot change the pytest configuration, use
 
 ## Point the suite at your application
 
-Copy the three quickstart files into your own test directory. Replace the demo
-`conftest.py` with a fixture that supplies your application's base URL:
+Copy the four example files into your own test directory. Change
+`ExampleJourney.host` to your application's base URL, such as
+`https://api.test.example.com`. Locust prepends it to the path in `self.client.get`.
 
-```python
-import os
-
-import pytest
-
-
-@pytest.fixture(scope="session")
-def local_api() -> str:
-    return os.environ["APP_BASE_URL"]
-```
-
-Set `APP_BASE_URL` to your test environment before running pytest. The fixture
-keeps the name used by the demo; you can rename it together with the test argument.
-Adapt the endpoint, expected response body, timing budget, and wait time to
-your application. Add fixtures for authentication or test data as needed.
+Adapt the endpoint, named check, threshold name, timing budget, and wait time to
+your application. Add pytest fixtures for authentication or test data as needed.
 
 For application-specific values supplied through configuration, see
 [journey settings](configuration.md#journey-settings).
 
 ## Change the workload
 
-From your test directory, use the same entry point as the quickstart:
+After pointing the journey at your own test environment, use the same entry point
+as the quickstart:
 
 ```shell
 pytest --users=10 --spawn_rate=5 --runtime=10
@@ -80,7 +71,7 @@ pytest --users=10 --spawn_rate=5 --runtime=10
 This starts up to ten users at five users per second, for ten seconds **per test
 case**. The journey's `wait_time` controls the pause between task iterations.
 Choose realistic traffic and longer runs when evaluating application performance;
-the short local demo is a way to learn the workflow.
+the short public API demo is a way to learn the workflow.
 
 For reusable workload definitions, see [YAML scenarios](configuration.md#yaml-scenarios).
 
@@ -91,14 +82,14 @@ The demo asserts five things after each workload:
 1. No journey errors were recorded.
 2. At least one request completed.
 3. No HTTP requests failed.
-4. The `catalog is not empty` check ran and had no failures.
+4. The `request URL is echoed` check ran and had no failures.
 5. The configured p95 timing threshold passed.
 
 Keep explicit assertions when adapting it. Locust records task exceptions, and
 Grasshopper reports thresholds; neither substitutes for the pytest assertions.
 See [checks and timing thresholds](checks-and-reporting.md) for additional criteria.
 
-To see the demo fail, change its threshold `limit` from `500` to `1` ms and rerun
+To see the demo fail, change its threshold `limit` from `2000` to `1` ms and rerun
 it. Restore the value afterward.
 
 Produce a report your CI system can collect with pytest's built-in JUnit support:
@@ -107,5 +98,5 @@ Produce a report your CI system can collect with pytest's built-in JUnit support
 pytest --junitxml=results.xml
 ```
 
-Pytest exits nonzero when an assertion fails. Your application must be available
-to the CI runner; the quickstart's fixture supplies the server only for the demo.
+Pytest exits nonzero when an assertion fails. The target API must be reachable
+from the CI runner; public API availability and network latency affect the demo's results.

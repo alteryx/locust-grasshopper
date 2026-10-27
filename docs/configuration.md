@@ -18,11 +18,9 @@ Pass it to `Grasshopper.launch_test` to configure the workload.
 | `--shape` | Load shape, such as `Default` or `Spike`. | `Default` |
 | `--scenario_delay` | Pause between YAML scenarios, in seconds. | `0` |
 
-The quickstart overrides these defaults in `pytest.ini` with three users and a
-three-second runtime. Command-line settings, including that `addopts` line, take
-precedence over YAML and environment settings. Before trying the YAML or
-environment examples below, remove the `--users`, `--spawn_rate`, and `--runtime`
-options, keeping `addopts = -p locust_grasshopper`.
+The quickstart's [conftest.py](../example/conftest.py) overrides the `global_defaults`
+fixture to use one user and a three-second runtime. YAML, environment variables,
+and CLI options override those demo defaults without editing `pytest.ini`.
 
 List all options with `pytest --help` after
 [configuring pytest](writing-tests.md#configure-pytest). Load shapes
@@ -30,46 +28,47 @@ can override workload settings; see the [available shapes](../src/grasshopper/li
 
 ## YAML scenarios
 
-Keep scenarios beside your test file. For the copied quickstart, save this as
-`scenarios.yaml`:
+Keep scenarios beside your test file. The quickstart includes
+[example_scenarios.YAML](../example/example_scenarios.YAML):
 
 ```yaml
 smoke:
-  test_file_name: test_performance.py
+  test_file_name: test_example.py
   grasshopper_args:
     users: 1
     spawn_rate: 1
     runtime: 3
   tags: [smoke]
 
-load:
-  test_file_name: test_performance.py
+iterations:
+  test_file_name: test_example.py
   grasshopper_args:
-    users: 10
-    spawn_rate: 5
+    users: 1
+    spawn_rate: 1
     runtime: 10
-  tags: [load]
+    iterations: 3
+  tags: [iterations]
 ```
 
 From that directory, select one workload for the Python test file:
 
 ```shell
-pytest test_performance.py --scenario_file=scenarios.yaml --scenario_name=smoke
+pytest test_example.py --scenario_file=example_scenarios.YAML --scenario_name=smoke
 ```
 
 Or ask Grasshopper to collect the YAML file and select scenarios by tag:
 
 ```shell
-pytest scenarios.yaml --tags=smoke
+pytest example_scenarios.YAML --tags=smoke
 ```
 
 Without `--tags`, every scenario in the file runs. Each scenario name is also an
 implicit tag. Tag expressions use [tag-matcher](https://pypi.org/project/tag-matcher/).
 Each selected scenario runs the test file, including its parametrized test cases.
 
-Use `grasshopper_scenario_args` for application-specific values. The
-[extended scenario example](../example/example_scenarios.YAML) also shows weighted
-composite journeys and argument overrides. Adapt its external target before use.
+The `iterations` scenario stops after three task iterations or ten seconds,
+whichever comes first. Both examples keep the public API workload small.
+Use `grasshopper_scenario_args` for application-specific values, as described below.
 
 ## Journey settings
 
@@ -78,8 +77,8 @@ journey needs values from YAML, environment variables, or a configuration file,
 pass them to the journey before launching:
 
 ```python
-CatalogJourney.replace_incoming_scenario_args(complete_configuration)
-environment = Grasshopper.launch_test(CatalogJourney, **complete_configuration)
+ExampleJourney.replace_incoming_scenario_args(complete_configuration)
+environment = Grasshopper.launch_test(ExampleJourney, **complete_configuration)
 ```
 
 Inside the journey, read values through `self.scenario_args`, for example
@@ -93,7 +92,7 @@ When the same key appears in several places, the first source in this list wins:
 2. Environment variables.
 3. The selected YAML scenario.
 4. A Grasshopper configuration file.
-5. Framework defaults.
+5. The `global_defaults` fixture (framework or suite defaults).
 
 Read values by lowercase key, for example `complete_configuration["users"]`.
 Built-in environment settings use uppercase names such as `USERS` and `RUNTIME`:
@@ -135,7 +134,6 @@ scenario:
 ```
 
 For custom command-line options, use pytest's `pytest_addoption` hook and read the
-value in a fixture, then pass it into the journey. The
-[configuration fixture example](../example/conftest.py) demonstrates this pattern.
+value in a fixture, then pass it into the journey.
 Thresholds accept dictionaries in Python/YAML and JSON strings in command-line
 or environment settings; see [timing thresholds](checks-and-reporting.md#timing-thresholds).

@@ -31,7 +31,8 @@ Use Python 3.11+ on Linux, macOS, or WSL. Native Windows is not currently suppor
 by the test runner's signal-based shutdown. The compatibility checks cover
 Locust 2.47.0 on Python 3.11–3.15, plus Locust 2.43.3 on Python 3.11.
 
-This demo starts its own local API. Clone the repository and run it:
+This demo calls [httpbin](https://httpbin.org/), a public HTTP testing API.
+Clone the repository and run it:
 
 ```shell
 git clone https://github.com/alteryx/locust-grasshopper.git
@@ -39,15 +40,24 @@ cd locust-grasshopper
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
-cd example/quickstart
+cd example
 pytest
 ```
 
-The test runs three virtual users for three seconds. It requires successful
-responses, a non-empty catalog, and a p95 response time at or below 500 ms. You
-should see threshold and check reports followed by a `1 passed` summary.
-The local API stops automatically.
-No Docker, running application, or metrics service is needed.
+The test runs one virtual user for three seconds, with a one-second pause between
+requests. It requires successful responses, a correctly echoed request URL, and
+a p95 response time at or below 2000 ms. You should see threshold and check reports
+followed by a `1 passed` summary. Internet access is required; no local server,
+Docker, or metrics service is needed.
+
+The same journey also has a [YAML scenario file](https://github.com/alteryx/locust-grasshopper/blob/main/example/example_scenarios.YAML):
+
+```shell
+pytest example_scenarios.YAML --tags=smoke
+```
+
+Change the journey's `host`, endpoint, and assertions to target your application.
+Use your own test environment when increasing the workload.
 
 These guides match the repository version. PyPI 1.4.14 does not include the
 pytest startup fix used here, so use the source installation above when
@@ -71,7 +81,7 @@ Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshop
 
 When your test asserts it. Grasshopper records checks and threshold results;
 your pytest assertions decide whether the test passes. The
-[quickstart test](https://github.com/alteryx/locust-grasshopper/blob/main/example/quickstart/test_performance.py)
+[quickstart test](https://github.com/alteryx/locust-grasshopper/blob/main/example/test_example.py)
 demonstrates this, including checks for missing traffic and journey errors.
 
 ## Contributing
