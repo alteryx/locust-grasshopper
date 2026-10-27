@@ -2,20 +2,28 @@
 
 **Build a repeatable performance test suite for your application.**
 
-Grasshopper is a Python load testing framework that extends
-[Locust](https://locust.io/) with [pytest](https://docs.pytest.org/). It helps
-performance testers and SDETs reuse fixtures, run API workloads, and check
-response times and failures as part of their test suite.
+Grasshopper is an open source Python performance testing framework that combines
+[Locust](https://locust.io/) load generation with [pytest](https://docs.pytest.org/)
+fixtures, assertions, and test execution. It adds configurable latency thresholds,
+named checks, workflow timing, and InfluxDB and Datadog metrics reporting for
+repeatable API load tests.
 
 ## Why use Grasshopper?
 
 Locust runs your virtual users and records request statistics. Grasshopper adds
 the test-suite workflow around it:
 
-- **Reusable setup:** pytest fixtures for application setup, authentication, and test data.
-- **Repeatable workloads:** YAML scenarios, tags, load shapes, and weighted user journeys.
-- **Pass/fail criteria:** response checks, custom timings, and timing thresholds you can assert in pytest.
-- **Reporting:** console results, pytest's JUnit output for CI, and optional InfluxDB or Datadog metrics.
+- **[pytest load testing](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md):**
+  reuse fixtures for setup, authentication, and test data; assert results and produce JUnit reports for CI.
+- **[Repeatable API workloads](https://github.com/alteryx/locust-grasshopper/blob/main/docs/configuration.md):**
+  configure YAML scenarios, tags, load shapes, and weighted Locust journeys.
+- **[Latency thresholds](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#timing-thresholds) and [checks](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#response-and-workflow-checks):**
+  set response-time budgets and assert pass/fail results in pytest.
+- **[Workflow timing](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#time-a-multi-request-workflow):**
+  measure latency across multiple API requests using custom trends.
+- **Metrics reporting:** view console results or send metrics to
+  [InfluxDB](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#influxdb-and-grafana) and
+  [Datadog](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md#datadog).
 
 ## Quickstart
 
@@ -40,7 +48,10 @@ successful responses and a p95 response time at or below 500 ms. You should see
 the threshold results and a `2 passed` summary. The local API stops automatically.
 No Docker, running application, or metrics service is needed.
 
-To add Grasshopper to an existing project, install `locust-grasshopper` with pip.
+To add Grasshopper to an existing project, run
+`python -m pip install locust-grasshopper` and
+[configure pytest](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md#configure-pytest).
+Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshopper/#history).
 
 **Next:** [adapt the demo to your application](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md).
 
