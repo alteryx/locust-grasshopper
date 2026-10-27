@@ -355,7 +355,7 @@ class Grasshopper:
             minimum_soft_open_file_limit = 10000
             try:
                 initial_soft, initial_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-                logger.info(
+                logger.debug(
                     f"Current open files limits - soft: {initial_soft}, hard: {initial_hard}"
                 )
 
@@ -374,7 +374,7 @@ class Grasshopper:
                     except Exception as e:
                         logger.warning(f"Could not increase hard limit directly: {e}")
                 else:
-                    logger.info(
+                    logger.debug(
                         f"Hard limit of {initial_hard} is in line with minimum required limit of {minimum_hard_open_file_limit}"
                     )
 
@@ -397,12 +397,12 @@ class Grasshopper:
                     except Exception as e:
                         logger.warning(f"Could not increase soft limit directly: {e}")
                 else:
-                    logger.info(
+                    logger.debug(
                         f"Soft limit of {current_soft_limit} is in line with minimum required limit of {minimum_soft_open_file_limit}"
                     )
 
                 final_soft, final_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-                logger.info(
+                logger.debug(
                     f"Final open files limits - soft: {final_soft}, hard: {final_hard}"
                 )
                 if final_soft < minimum_soft_open_file_limit:
