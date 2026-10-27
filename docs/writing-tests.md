@@ -30,6 +30,21 @@ classes or a mapping such as `{BrowseJourney: 3, CheckoutJourney: 1}`. These wei
 control the mix of virtual users, while Locust task weights control actions within
 a journey.
 
+## Configure pytest
+
+The demo's `pytest.ini` loads Grasshopper before other pytest plugins. Keep this
+setting when copying the demo, or add it to your existing suite:
+
+```ini
+[pytest]
+addopts = -p locust_grasshopper
+```
+
+Keep any existing `addopts` alongside it. Grasshopper sets up gevent before other
+plugins import HTTP clients, so you can run the suite with ordinary `pytest`.
+If you cannot change the pytest configuration, use
+`python -m gevent.monkey --module pytest` to initialize gevent before pytest starts.
+
 ## Point the suite at your application
 
 Copy the three quickstart files into your own test directory. Replace the demo
@@ -62,7 +77,7 @@ incoming scenario arguments take precedence.
 From your test directory, use the same entry point as the quickstart:
 
 ```shell
-python -m gevent.monkey --module pytest --users=10 --spawn_rate=5 --runtime=10
+pytest --users=10 --spawn_rate=5 --runtime=10
 ```
 
 This starts up to ten users at five users per second, for ten seconds **per test
@@ -91,7 +106,7 @@ it. Restore the value afterward.
 Produce a report your CI system can collect with pytest's built-in JUnit support:
 
 ```shell
-python -m gevent.monkey --module pytest --junitxml=results.xml
+pytest --junitxml=results.xml
 ```
 
 Pytest exits nonzero when an assertion fails. Your application must be available

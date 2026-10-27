@@ -23,7 +23,8 @@ three-second runtime. Command-line settings, including that `addopts` line, take
 precedence over YAML and environment settings. **Remove the quickstart's `addopts`
 line before trying the YAML or environment examples below.**
 
-List all options with `python -m gevent.monkey --module pytest --help`. Load shapes
+List all options with `pytest --help` after
+[configuring pytest](writing-tests.md#configure-pytest). Load shapes
 can override workload settings; see the [available shapes](../src/grasshopper/lib/util/shapes.py).
 
 ## YAML scenarios
@@ -52,13 +53,13 @@ load:
 From that directory, select one workload for the Python test file:
 
 ```shell
-python -m gevent.monkey --module pytest test_performance.py --scenario_file=scenarios.yaml --scenario_name=smoke
+pytest test_performance.py --scenario_file=scenarios.yaml --scenario_name=smoke
 ```
 
 Or ask Grasshopper to collect the YAML file and select scenarios by tag:
 
 ```shell
-python -m gevent.monkey --module pytest scenarios.yaml --tags=smoke
+pytest scenarios.yaml --tags=smoke
 ```
 
 Without `--tags`, every scenario in the file runs. Each scenario name is also an
@@ -83,7 +84,7 @@ Read values by lowercase key, for example `complete_configuration["users"]`.
 Built-in environment settings use uppercase names such as `USERS` and `RUNTIME`:
 
 ```shell
-USERS=5 RUNTIME=10 python -m gevent.monkey --module pytest
+USERS=5 RUNTIME=10 pytest
 ```
 
 Custom environment values use the `GH_` prefix: `GH_TENANT_ID=demo` becomes

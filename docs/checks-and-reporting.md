@@ -100,7 +100,7 @@ docker compose -f example/observability_infrastructure/docker-compose.yml up -d
 
 Grafana is available at `http://localhost:3000` with initial credentials
 `admin` / `admin`. From your test directory, run with
-`python -m gevent.monkey --module pytest --influx_host=localhost`.
+`pytest --influx_host=localhost`.
 
 Request `context` values become extra InfluxDB tags, for example:
 

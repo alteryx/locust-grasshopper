@@ -32,7 +32,7 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
 cd example/quickstart
-python -m gevent.monkey --module pytest
+pytest
 ```
 
 The two tests each run three virtual users for three seconds. They require
@@ -40,7 +40,6 @@ successful responses and a p95 response time at or below 500 ms. You should see
 the threshold results and a `2 passed` summary. The local API stops automatically.
 No Docker, running application, or metrics service is needed.
 
-The `gevent.monkey` entry point sets up cooperative I/O before pytest loads.
 To add Grasshopper to an existing project, install `locust-grasshopper` with pip.
 
 **Next:** [adapt the demo to your application](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md).
@@ -68,7 +67,7 @@ dependencies and run the checks relevant to your change:
 
 ```shell
 python -m pip install -e '.[dev]'
-python -m gevent.monkey --module pytest tests/unit
+pytest tests/unit
 ruff check .
 ruff format --check .
 ```
