@@ -12,11 +12,17 @@ import uuid
 import pytest
 import tagmatcher
 import yaml
+from gevent import monkey
 from grasshopper.lib.configuration.gh_configuration import (
     ConfigurationConstants,
     GHConfiguration,
 )
 from grasshopper.lib.util.decorators import deprecate
+
+# Load this plugin with -p locust_grasshopper before HTTP client plugins.
+# Honor Locust's opt-out for callers that manage monkey patching themselves.
+if not os.getenv("LOCUST_SKIP_MONKEY_PATCH"):
+    monkey.patch_all()
 
 logger = logging.getLogger(__name__)
 
