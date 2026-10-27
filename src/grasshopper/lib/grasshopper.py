@@ -40,11 +40,11 @@ class Grasshopper:
 
     def log(self) -> None:
         """Log all the configuration values."""
-        logger.info("--- Grasshopper configuration ---")
+        logger.debug("--- Grasshopper configuration ---")
         for k, v in self.global_configuration.items():
             v = BaseJourney.normalize_url(v) if k == "target_url" else v
-            logger.info(f"{k}: [{v}]")
-        logger.info("--- /Grasshopper configuration ---")
+            logger.debug(f"{k}: [{v}]")
+        logger.debug("--- /Grasshopper configuration ---")
 
     @property
     def influx_configuration(self) -> dict[str, Optional[Union[bool, str]]]:
