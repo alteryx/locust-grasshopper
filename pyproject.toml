@@ -5,16 +5,19 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "locust-grasshopper"
 version = "1.4.14" # Managed by bump2version
-readme = { file = "README.md", content-type = "text/markdown" }
-description = "a load testing tool extended from locust"
+dynamic = ["readme"]
+description = "Python API load testing with Locust, pytest, and latency thresholds"
 classifiers = [
+    "Environment :: Console",
     "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.15",
-    "Operating System :: OS Independent",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Topic :: Software Development :: Testing",
@@ -29,7 +32,18 @@ authors = [
 maintainers = [
     { name = "Alteryx, Inc.", email = "open_source_support@alteryx.com" },
 ]
-keywords = ["load testing", "performance", "locust", "grasshopper"]
+keywords = [
+    "locust",
+    "pytest",
+    "pytest plugin",
+    "load testing",
+    "performance testing",
+    "performance regression testing",
+    "api testing",
+    "latency thresholds",
+    "influxdb",
+    "datadog",
+]
 license = { file = "LICENSE" }
 requires-python = ">=3.11,<4"
 dependencies = [
@@ -58,7 +72,9 @@ dev = [
 ]
 
 [project.urls]
-"repository" = "https://github.com/alteryx/locust-grasshopper"
+"Documentation" = "https://github.com/alteryx/locust-grasshopper/blob/main/README.md#documentation"
+"Repository" = "https://github.com/alteryx/locust-grasshopper"
+"Issues" = "https://github.com/alteryx/locust-grasshopper/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

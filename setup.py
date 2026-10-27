@@ -1,20 +1,20 @@
-"""Grasshopper Framework Package.
+"""Build package metadata with absolute README links for PyPI."""
 
-Owned by Team Shield.
-
-Package for framework that combines locust, pytest and some supporting utilities to
-provide a fully featured, python based load testing options for API clients.
-
-Note that the only things we want handled in this setup method is setting the version,
-the only thing that we are currently doing dynamically (in this case version).
-All other configuration for the package is located in the setup.cfg, per the most recent
-guidance on python packaging best practices:
-https://packaging.python.org/en/latest/tutorials/packaging-projects/
-
-"""
+import re
+from pathlib import Path
+from urllib.parse import urljoin
 
 from setuptools import setup
 
 setup(
+    long_description=re.sub(
+        r"(?<=\]\()[^)]+(?=\))",
+        lambda match: urljoin(
+            "https://github.com/alteryx/locust-grasshopper/blob/main/README.md",
+            match.group(),
+        ),
+        Path(__file__).with_name("README.md").read_text(encoding="utf-8"),
+    ),
+    long_description_content_type="text/markdown",
     entry_points={"pytest11": ["locust_grasshopper = grasshopper.lib.fixtures"]},
 )
