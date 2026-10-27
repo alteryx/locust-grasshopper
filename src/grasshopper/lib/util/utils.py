@@ -132,14 +132,22 @@ def check(
             env.runner.quit()
 
 
+class _ConsoleReport:
+    """Render when a log handler emits, after pytest restores terminal output."""
+
+    def __init__(self, table: Table) -> None:
+        self.table = table
+
+    def __str__(self) -> str:
+        console = Console(file=sys.__stdout__)
+        with console.capture() as capture:
+            console.print(self.table)
+        return capture.get().rstrip()
+
+
 def _log_report(table: Table) -> None:
-    """Keep a report together in pytest logs, with the real terminal's colors."""
-    # Pytest captures sys.stdout; use the original stream for terminal detection.
-    # Rich also honors NO_COLOR and FORCE_COLOR for redirected output.
-    console = Console(file=sys.__stdout__)
-    with console.capture() as capture:
-        console.print(table)
-    logger.info("\n%s", capture.get().rstrip())
+    """Keep each report together and defer color detection until log emission."""
+    logger.info("\n%s", _ConsoleReport(table))
 
 
 def report_thresholds_to_console(trend_dict: dict[str, dict[str, Any]]) -> None:

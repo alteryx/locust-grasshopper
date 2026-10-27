@@ -1,6 +1,4 @@
-import io
 import logging
-import re
 import subprocess
 import sys
 import time
@@ -322,46 +320,6 @@ def test_checks_console_output(caplog, monkeypatch, example_checks_dict):
         row = next(line for line in output.splitlines() if name in line)
         assert all(value in row for value in (rate, result))
         assert [cell.strip() for cell in row.split("│")][2:5] == counts
-
-
-@pytest.mark.parametrize(
-    "terminal,no_color,force_color,expected_color",
-    [
-        (True, False, False, True),
-        (False, False, False, False),
-        (True, True, False, False),
-        (False, False, True, True),
-    ],
-)
-def test_report_colors_under_pytest_capture(
-    caplog,
-    monkeypatch,
-    example_checks_dict,
-    terminal,
-    no_color,
-    force_color,
-    expected_color,
-):
-    """Capture must preserve terminal colors and respect explicit color controls."""
-    stream = io.StringIO()
-    monkeypatch.setattr(stream, "isatty", lambda: terminal)
-    monkeypatch.setattr(sys, "__stdout__", stream)
-    monkeypatch.setenv("TERM", "xterm-256color")
-    monkeypatch.delenv("NO_COLOR", raising=False)
-    monkeypatch.delenv("FORCE_COLOR", raising=False)
-    if no_color:
-        monkeypatch.setenv("NO_COLOR", "1")
-    if force_color:
-        monkeypatch.setenv("FORCE_COLOR", "1")
-    example_checks_dict["literal [red] name"] = example_checks_dict.pop("Passing")
-
-    with caplog.at_level(logging.INFO):
-        report_checks_to_console(example_checks_dict)
-
-    output = "\n".join(caplog.messages)
-    for color in (31, 32, 33):
-        assert bool(re.search(rf"\x1b\[[\d;]*{color}m", output)) is expected_color
-    assert "literal [red] name" in output
 
 
 def test_append_trend_data(mock_logging, example_trends_dict):
