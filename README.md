@@ -2,11 +2,11 @@
 
 **Build a repeatable performance test suite for your application.**
 
-Grasshopper is an open source Python performance testing framework that combines
-[Locust](https://locust.io/) load generation with [pytest](https://docs.pytest.org/)
-fixtures, assertions, and test execution. It adds configurable latency thresholds,
-named checks, workflow timing, and InfluxDB and Datadog metrics reporting for
-repeatable API load tests.
+locust-grasshopper is an open source Python library and [pytest](https://docs.pytest.org/)
+plugin for API load testing with [Locust](https://locust.io/). It combines configurable
+workloads with pytest fixtures and assertions to enforce performance requirements
+in CI. It adds latency thresholds, named checks, workflow timing, and optional
+InfluxDB and Datadog metrics reporting.
 
 ## Why use Grasshopper?
 
@@ -73,7 +73,7 @@ Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshop
 
 | Guide | What you will learn |
 | --- | --- |
-| [Write a performance test suite](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md) | Reuse pytest fixtures, change the workload, and produce CI results. |
+| [Write a performance test suite](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md) | Find the main APIs, reuse pytest fixtures, change the workload, and produce CI results. |
 | [Configure load tests and YAML scenarios](https://github.com/alteryx/locust-grasshopper/blob/main/docs/configuration.md) | Set users and runtime, select scenarios, and pass configuration into journeys. |
 | [Checks, timing thresholds, and reporting](https://github.com/alteryx/locust-grasshopper/blob/main/docs/checks-and-reporting.md) | Define success, measure workflows, and send metrics to InfluxDB or Datadog. |
 

@@ -7,6 +7,30 @@ Grasshopper runs Locust journeys from pytest tests. Use fixtures for setup and
 test data, journeys for repeated user actions, and assertions for the results
 your application must meet.
 
+## Public API overview
+
+Import the main classes and helpers from these modules:
+
+```python
+from grasshopper.lib.grasshopper import Grasshopper
+from grasshopper.lib.journeys.base_journey import BaseJourney
+from grasshopper.lib.util.utils import check, custom_trend
+```
+
+| API | Purpose |
+| --- | --- |
+| `BaseJourney` | Extend this Locust `HttpUser` subclass to define a host, tasks, wait time, and default thresholds. |
+| `complete_configuration` | Request this pytest fixture as a test argument to receive merged configuration, including the load shape. No import is needed. |
+| `Grasshopper.launch_test(ExampleJourney, **complete_configuration)` | Run one journey, a list of journeys, or a mapping of journeys to weights; return the Locust environment with statistics and results. |
+| `check(name, condition, env=self.environment)` | Record a named pass/fail check inside a journey. Assert its results in pytest to fail the test. |
+| `@custom_trend("workflow name")` | Measure a journey method's elapsed time and record it as a Locust request statistic with type `CUSTOM`. |
+
+Pass configuration to `launch_test` for workload settings. To also make values
+available inside a journey through `self.scenario_args`, call
+`ExampleJourney.replace_incoming_scenario_args(complete_configuration)` before
+launching. See [journey settings](configuration.md#journey-settings) and
+[checks and reporting](checks-and-reporting.md) for details.
+
 ## Start with the public API demo
 
 Run the [quickstart](../README.md#quickstart), then open its four files in `example/`:

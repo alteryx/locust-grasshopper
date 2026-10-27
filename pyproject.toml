@@ -35,8 +35,10 @@ maintainers = [
 keywords = [
     "locust",
     "pytest",
+    "pytest plugin",
     "load testing",
     "performance testing",
+    "performance regression testing",
     "api testing",
     "latency thresholds",
     "influxdb",
