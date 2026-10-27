@@ -86,12 +86,13 @@ For reusable workload definitions, see [YAML scenarios](configuration.md#yaml-sc
 
 ## Make the results useful in CI
 
-The demo asserts four things after each workload:
+The demo asserts five things after each workload:
 
 1. No journey errors were recorded.
 2. At least one request completed.
-3. No requests failed, including the response-body validation in the journey.
-4. The configured p95 timing threshold passed.
+3. No HTTP requests failed.
+4. The `catalog is not empty` check ran and had no failures.
+5. The configured p95 timing threshold passed.
 
 Keep explicit assertions when adapting it. Locust records task exceptions, and
 Grasshopper reports thresholds; neither substitutes for the pytest assertions.

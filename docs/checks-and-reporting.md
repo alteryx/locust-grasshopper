@@ -40,7 +40,8 @@ These settings override the journey's defaults.
 
 ## Response and workflow checks
 
-Call `check` inside a journey to record a named pass/fail result:
+Call `check` inside a journey to record a named pass/fail result. The quickstart
+uses this check to verify that the product catalog contains items:
 
 ```python
 from grasshopper.lib.util.utils import check
@@ -48,7 +49,7 @@ from grasshopper.lib.util.utils import check
 response = self.client.get("/products")
 check(
     "catalog is not empty",
-    bool(response.json().get("items")),
+    response.status_code == 200 and bool(response.json().get("items")),
     env=self.environment,
     tags={"journey": "catalog"},
 )
