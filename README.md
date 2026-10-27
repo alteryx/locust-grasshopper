@@ -14,6 +14,8 @@ Here are some key functionalities that this project extends on Locust:
   (InfluxDB and Datadog are supported)
 
 ## Installation
+Requires Python 3.11 or newer. Supported Locust versions are 2.43.3 through 2.47.x.
+
 This package can be installed via pip: `pip install locust-grasshopper`
 
 ## Example Load Test

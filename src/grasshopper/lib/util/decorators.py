@@ -2,8 +2,22 @@
 
 import functools
 import logging
+from collections.abc import Callable
+from typing import Generic, TypeVar
 
 logger = logging.getLogger()
+
+T = TypeVar("T")
+
+
+class classproperty(Generic[T]):
+    """Evaluate a property on its accessing class, including subclasses."""
+
+    def __init__(self, getter: Callable[[type], T]) -> None:
+        self.getter = getter
+
+    def __get__(self, instance: object, owner: type | None = None) -> T:
+        return self.getter(owner if owner is not None else type(instance))
 
 
 def deprecate(deprecated, redirect):

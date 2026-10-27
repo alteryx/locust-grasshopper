@@ -1,3 +1,6 @@
+import logging
+import subprocess
+import sys
 import time
 from unittest.mock import MagicMock
 
@@ -15,6 +18,43 @@ from grasshopper.lib.util.utils import (
     report_thresholds_to_console,
 )
 from termcolor import colored
+
+
+def test_listener_import_contains_only_the_legacy_influxdb_warning():
+    """Import works with strict warnings without changing the caller's filters."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "error::DeprecationWarning",
+            "-c",
+            """
+from gevent import monkey
+monkey.patch_all()
+
+import warnings
+import grasshopper.lib.util.listeners
+
+# The same warning outside the import must still reach the caller.
+try:
+    warnings.warn_explicit(
+        "datetime.datetime.utcfromtimestamp() is deprecated",
+        DeprecationWarning,
+        filename="influxdb/line_protocol.py",
+        lineno=16,
+        module="influxdb.line_protocol",
+    )
+except DeprecationWarning:
+    pass
+else:
+    raise AssertionError("The InfluxDB import leaked its warning filter")
+""",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 @pytest.fixture
@@ -64,7 +104,7 @@ def example_checks_dict():
             "failed": 0,
             "total": 3,
             "verdict": CheckConstants.VERDICT_ALL_PASSED,
-            "percentage_passed_display": "100.0%",
+            "percentage_passed_display": 100.0,
             "warning_threshold": 1,
         },
         "Failing": {
@@ -72,7 +112,7 @@ def example_checks_dict():
             "failed": 3,
             "total": 3,
             "verdict": CheckConstants.VERDICT_FAILED,
-            "percentage_passed_display": "0.0%",
+            "percentage_passed_display": 0.0,
             "warning_threshold": 1,
         },
         "Warning": {
@@ -80,7 +120,7 @@ def example_checks_dict():
             "failed": 1,
             "total": 3,
             "verdict": CheckConstants.VERDICT_PASSED_RATE_OVER_THRESHOLD,
-            "percentage_passed_display": "66.67%",
+            "percentage_passed_display": 66.67,
             "warning_threshold": 0.5,
         },
     }
@@ -237,72 +277,49 @@ def test_highlight_print(mock_logging):
     mock_logging.assert_called_with(expected)
 
 
-def test_threshold_console_output(mock_logging, example_trends_dict):
+def test_threshold_console_output(caplog, monkeypatch, example_trends_dict):
     # This would be set in _append_trend_data
     example_trends_dict["Trend One"]["thresholds"][0]["succeeded"] = True
     example_trends_dict["Trend One"]["thresholds"][1]["succeeded"] = False
     example_trends_dict["Trend Two"]["thresholds"][0]["succeeded"] = True
     example_trends_dict["Trend Two"]["thresholds"][1]["succeeded"] = False
 
-    report_thresholds_to_console(example_trends_dict)
+    monkeypatch.setenv("NO_COLOR", "1")
+    with caplog.at_level(logging.INFO):
+        report_thresholds_to_console(example_trends_dict)
 
-    call_strings = [
-        "-------------------------------- THRESHOLD REPORT "
-        "--------------------------------",
-        "{:<45} {:<10} {:<10} {:<10}".format(
-            "Trend_Name", "Percentile", "Limit", "Actual"
-        ),
-        colored(
-            "{:<45} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "600ms"),
-            "green",
-            attrs=["bold"],
-        ),
-        colored(
-            "{:<45} {:<10} {:<10} {:<10}".format("Trend One", 90, "1000ms", "1200ms"),
-            "red",
-            attrs=["bold"],
-        ),
-        colored(
-            "{:<45} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "1400ms"),
-            "green",
-            attrs=["bold"],
-        ),
-        colored(
-            "{:<45} {:<10} {:<10} {:<10}".format("Trend Two", 90, "2000ms", "2800ms"),
-            "red",
-            attrs=["bold"],
-        ),
-    ]
-    for i in range(len(call_strings)):
-        assert mock_logging.call_args_list[i][0][0] == call_strings[i]
+    assert len(caplog.records) == 1
+    output = caplog.messages[0]
+    for name, limit, actual, result in [
+        ("Trend One", "1000 ms", "600 ms", "PASS"),
+        ("Trend One", "1000 ms", "1200 ms", "FAIL"),
+        ("Trend Two", "2000 ms", "1400 ms", "PASS"),
+        ("Trend Two", "2000 ms", "2800 ms", "FAIL"),
+    ]:
+        assert any(
+            all(
+                value in line
+                for value in (name, "CUSTOM", "90%", limit, actual, result)
+            )
+            for line in output.splitlines()
+        )
 
 
-def test_checks_console_output(mock_logging, example_checks_dict):
-    report_checks_to_console(example_checks_dict)
-    call_strings = [
-        "------------------------------------------------------- CHECKS REPORT "
-        "-------------------------------------------------------",
-        "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
-            "Check_Name", "Passed", "Failed", "Total", "Percentage"
-        ),
-        colored(
-            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Passing", 3, 0, 3, "100.0%"),
-            "green",
-            attrs=["bold"],
-        ),
-        colored(
-            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Failing", 0, 3, 3, "0.0%"),
-            "red",
-            attrs=["bold"],
-        ),
-        colored(
-            "{:<80} {:<10} {:<10} {:<10} {:<10}".format("Warning", 2, 1, 3, "66.67%"),
-            "yellow",
-            attrs=["bold"],
-        ),
-    ]
-    for i in range(len(call_strings)):
-        assert mock_logging.call_args_list[i][0][0] == call_strings[i]
+def test_checks_console_output(caplog, monkeypatch, example_checks_dict):
+    monkeypatch.setenv("NO_COLOR", "1")
+    with caplog.at_level(logging.INFO):
+        report_checks_to_console(example_checks_dict)
+
+    assert len(caplog.records) == 1
+    output = caplog.messages[0]
+    for name, counts, rate, result in [
+        ("Passing", ["3", "0", "3"], "100.0%", "PASS"),
+        ("Failing", ["0", "3", "3"], "0.0%", "FAIL"),
+        ("Warning", ["2", "1", "3"], "66.67%", "WARN"),
+    ]:
+        row = next(line for line in output.splitlines() if name in line)
+        assert all(value in row for value in (rate, result))
+        assert [cell.strip() for cell in row.split("│")][2:5] == counts
 
 
 def test_append_trend_data(mock_logging, example_trends_dict):
@@ -316,16 +333,16 @@ def test_append_trend_data(mock_logging, example_trends_dict):
     attrs = {"get_response_time_percentile.return_value": 1100}
     env.stats.get = MagicMock(return_value=MagicMock(**attrs))
     listeners._append_trend_data(env)
-    assert mock_logging.call_count == 7
+    assert mock_logging.call_count == 1
 
 
 def test_append_checks_data(mock_logging, example_checks_dict):
     env = MagicMock()
     listeners = GrasshopperListeners(environment=env)
     listeners._append_checks_data(env)
-    mock_logging.assert_called_with("No checks data to report.")
+    mock_logging.assert_called_with("No named Grasshopper checks were recorded.")
     mock_logging.reset_mock()
 
     env.stats.checks = example_checks_dict
     listeners._append_checks_data(env)
-    assert mock_logging.call_count == 6
+    assert mock_logging.call_count == 1

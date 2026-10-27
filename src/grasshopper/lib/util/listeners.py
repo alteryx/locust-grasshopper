@@ -4,6 +4,7 @@ The listeners module contains all the custom listeners that we have defined for 
 """
 
 import logging
+import warnings
 from datetime import datetime, timezone
 
 from grasshopper.lib.util.check_constants import CheckConstants
@@ -14,7 +15,17 @@ from grasshopper.lib.util.utils import (
 )
 from locust import events
 from locust.env import Environment
-from locust_influxdb_listener import InfluxDBListener, InfluxDBSettings
+
+# The archived influxdb client uses utcfromtimestamp(0) for its epoch constant.
+# Limit this workaround to that warning during import; preserve caller filters.
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        message=r"datetime\.datetime\.utcfromtimestamp\(\) is deprecated",
+        category=DeprecationWarning,
+        module=r"influxdb\.line_protocol$",
+    )
+    from locust_influxdb_listener import InfluxDBListener, InfluxDBSettings
 
 logger = logging.getLogger()
 
@@ -51,7 +62,7 @@ class GrasshopperListeners:
                 env=environment, influxDbSettings=influx_db_settings
             )
         else:
-            logger.info(
+            logger.debug(
                 "InfluxDB host was not specified. Skipping influxdb listener "
                 "initialization..."
             )
@@ -68,7 +79,7 @@ class GrasshopperListeners:
                 **datadog_configuration,
             )
         else:
-            logger.info(
+            logger.debug(
                 "DD_API_KEY and DD_ENV were not both specified. "
                 "Skipping Datadog listener initialization..."
             )
@@ -204,4 +215,4 @@ class GrasshopperListeners:
 
             report_checks_to_console(environment.stats.checks)
         else:
-            logger.info("No checks data to report.")
+            logger.info("No named Grasshopper checks were recorded.")
