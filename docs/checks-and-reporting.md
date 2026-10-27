@@ -38,9 +38,7 @@ configuration-supplied budgets.
 
 ## Response and workflow checks
 
-Use Locust's `catch_response=True` to mark a response as failed when its body does
-not meet your requirements; the quickstart shows this pattern. For a separately
-named metric, call `check` inside a journey:
+Call `check` inside a journey to record a named pass/fail result:
 
 ```python
 from grasshopper.lib.util.utils import check
