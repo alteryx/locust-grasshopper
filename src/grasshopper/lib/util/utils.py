@@ -8,8 +8,13 @@ import logging
 import sys
 import time
 from datetime import datetime
+from typing import Any
 
 from grasshopper.lib.util.check_constants import CheckConstants
+from rich import box
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 from termcolor import colored
 
 logger = logging.getLogger()
@@ -127,60 +132,65 @@ def check(
             env.runner.quit()
 
 
-def report_thresholds_to_console(trend_dict):
-    """Print all the thresholds to the console in a pretty table."""
-    length = 32
-    logger.info("-" * length + " THRESHOLD REPORT " + "-" * length)
-    logger.info(
-        "{:<45} {:<10} {:<10} {:<10}".format(
-            "Trend_Name", "Percentile", "Limit", "Actual"
-        )
-    )
+def _log_report(table: Table) -> None:
+    """Keep a report together in pytest logs, with the real terminal's colors."""
+    # Pytest captures sys.stdout; use the original stream for terminal detection.
+    # Rich also honors NO_COLOR and FORCE_COLOR for redirected output.
+    console = Console(file=sys.__stdout__)
+    with console.capture() as capture:
+        console.print(table)
+    logger.info("\n%s", capture.get().rstrip())
+
+
+def report_thresholds_to_console(trend_dict: dict[str, dict[str, Any]]) -> None:
+    """Report timing budgets and explicit pass/fail results."""
+    table = Table(title="Timing thresholds", box=box.ROUNDED, header_style="bold cyan")
+    table.add_column("Trend")
+    table.add_column("Type")
+    for heading in ("Percentile", "Limit", "Actual"):
+        table.add_column(heading, justify="right")
+    table.add_column("Result")
     for trend_name, trend_values in trend_dict.items():
-        if "thresholds" in trend_values:
-            for threshold_item in trend_values["thresholds"]:
-                formatted_result_string = "{:<45} {:<10} {:<10} {:<10}".format(
-                    trend_name,
-                    int(threshold_item["percentile"] * 100),
-                    f"{threshold_item['less_than_in_ms']}ms",
-                    f"{int(threshold_item['actual_value_in_ms'])}ms",
-                )
-                if threshold_item["succeeded"]:
-                    logger.info(
-                        colored(formatted_result_string, "green", attrs=["bold"])
-                    )
-                else:
-                    logger.info(colored(formatted_result_string, "red", attrs=["bold"]))
-    logger.info("-" * 82)
+        for threshold in trend_values.get("thresholds", []):
+            passed = threshold["succeeded"]
+            table.add_row(
+                Text(trend_name),
+                Text(threshold["http_method"]),
+                f"{threshold['percentile'] * 100:g}%",
+                f"{threshold['less_than_in_ms']:g} ms",
+                f"{threshold['actual_value_in_ms']:g} ms",
+                Text(
+                    "PASS" if passed else "FAIL",
+                    style="bold green" if passed else "bold red",
+                ),
+            )
+    _log_report(table)
 
 
-def report_checks_to_console(checks_dict):
-    """Print all the checks to the console in a pretty table."""
-    color_map = {
-        CheckConstants.VERDICT_ALL_PASSED: "green",
-        CheckConstants.VERDICT_PASSED_RATE_OVER_THRESHOLD: "yellow",
-        CheckConstants.VERDICT_FAILED: "red",
+def report_checks_to_console(checks_dict: dict[str, dict[str, Any]]) -> None:
+    """Report named checks with counts, pass rates, and readable verdicts."""
+    verdicts = {
+        CheckConstants.VERDICT_ALL_PASSED: ("PASS", "bold green"),
+        CheckConstants.VERDICT_PASSED_RATE_OVER_THRESHOLD: ("WARN", "bold yellow"),
+        CheckConstants.VERDICT_FAILED: ("FAIL", "bold red"),
     }
-    length = 55
-    logger.info("-" * length + " CHECKS REPORT " + "-" * length)
-    logger.info(
-        "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
-            "Check_Name", "Passed", "Failed", "Total", "Percentage"
+    table = Table(title="Named checks", box=box.ROUNDED, header_style="bold cyan")
+    table.add_column("Check")
+    for heading in ("Passed", "Failed", "Total", "Pass rate"):
+        table.add_column(heading, justify="right")
+    table.add_column("Result")
+    for name, check_result in checks_dict.items():
+        verdict, style = verdicts.get(check_result["verdict"], ("UNKNOWN", "dim"))
+        percent = str(check_result["percentage_passed_display"]).rstrip("%")
+        table.add_row(
+            Text(name),
+            str(check_result["passed"]),
+            str(check_result["failed"]),
+            str(check_result["total"]),
+            f"{percent}%",
+            Text(verdict, style=style),
         )
-    )
-    for check_key, check_value in checks_dict.items():
-        passed, failed, total, percent = (
-            check_value["passed"],
-            check_value["failed"],
-            check_value["total"],
-            check_value["percentage_passed_display"],
-        )
-        result_string = "{:<80} {:<10} {:<10} {:<10} {:<10}".format(
-            check_key, passed, failed, total, percent
-        )
-        color_to_print = color_map.get(check_value["verdict"]) or "white"
-        logger.info(colored(result_string, color_to_print, attrs=["bold"]))
-    logger.info("-" * 125)
+    _log_report(table)
 
 
 def epoch_time():
