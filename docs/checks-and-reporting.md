@@ -69,7 +69,9 @@ assertions so an early stop also produces a failing test.
 ## Time a multi-request workflow
 
 Add a `custom_trend` decorator to a journey method to measure its total duration.
-For example, add this task to your journey, with the imports at module level:
+For an application with `/products` and `/categories` endpoints, add this task to
+your journey, with the imports at module level. Adapt the paths to your application;
+the local demo serves only `/products`.
 
 ```python
 from grasshopper.lib.util.utils import custom_trend

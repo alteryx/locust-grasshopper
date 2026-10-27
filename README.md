@@ -49,9 +49,12 @@ should see threshold and check reports followed by a `1 passed` summary.
 The local API stops automatically.
 No Docker, running application, or metrics service is needed.
 
-To add Grasshopper to an existing project, run
-`python -m pip install locust-grasshopper` and
-[configure pytest](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md#configure-pytest).
+These guides match the repository version. PyPI 1.4.14 does not include the
+pytest startup fix used here, so use the source installation above when
+following these examples.
+
+To install a published release in an existing project, run
+`python -m pip install locust-grasshopper`.
 Published versions are listed on [PyPI](https://pypi.org/project/locust-grasshopper/#history).
 
 **Next:** [adapt the demo to your application](https://github.com/alteryx/locust-grasshopper/blob/main/docs/writing-tests.md).

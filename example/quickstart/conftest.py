@@ -10,15 +10,15 @@ from gevent.pywsgi import WSGIServer
 
 
 def application(environ: WSGIEnvironment, start_response: StartResponse) -> list[bytes]:
-    """Serve two small JSON endpoints with simulated application work."""
-    catalog = {
-        "/products": {"items": [{"id": 1, "name": "Coffee mug"}]},
-        "/categories": {"items": ["Home", "Office"]},
-    }
-    payload = catalog.get(environ["PATH_INFO"])
-    status = "200 OK" if payload is not None else "404 Not Found"
+    """Serve a product catalog with simulated application work."""
+    if environ["PATH_INFO"] == "/products":
+        status = "200 OK"
+        payload = {"items": [{"id": 1, "name": "Coffee mug"}]}
+    else:
+        status = "404 Not Found"
+        payload = {"error": "Not found"}
     gevent.sleep(0.01)
-    body = json.dumps(payload or {"error": "Not found"}).encode()
+    body = json.dumps(payload).encode()
     start_response(
         status,
         [("Content-Type", "application/json"), ("Content-Length", str(len(body)))],

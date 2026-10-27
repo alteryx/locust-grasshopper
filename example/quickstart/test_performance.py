@@ -35,7 +35,7 @@ def test_catalog_performance(
 
     # Locust records journey errors instead of raising them in the pytest test.
     assert not environment.runner.exceptions, environment.runner.exceptions
-    stats = environment.stats.get("/products", "GET")
+    stats = environment.stats.total
     assert stats.num_requests > 0, "The workload did not make any requests"
     assert stats.num_failures == 0, environment.stats.errors
     catalog_check = environment.stats.checks["catalog is not empty"]
