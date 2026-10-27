@@ -7,6 +7,10 @@ Grasshopper adds named checks and timing thresholds to Locust statistics. Use
 pytest assertions on the results to enforce your application's requirements.
 InfluxDB and Datadog are optional; local console reporting works without either.
 
+Console reports use Rich tables with green PASS, yellow WARN, and red FAIL labels.
+Colors are automatic in a terminal. If your IDE or CI captures output, use
+`FORCE_COLOR=1 pytest` to enable them, or `NO_COLOR=1 pytest` to turn colors off.
+
 ## Timing thresholds
 
 The [quickstart](../example/quickstart/test_performance.py) declares thresholds in
