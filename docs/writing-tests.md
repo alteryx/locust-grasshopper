@@ -14,12 +14,12 @@ Run the [quickstart](../README.md#quickstart), then open its three files:
 | File | Responsibility |
 | --- | --- |
 | [conftest.py](../example/quickstart/conftest.py) | Start a local API on an available loopback port and stop it after the suite. |
-| [test_performance.py](../example/quickstart/test_performance.py) | Run the same journey against two endpoints and assert the results. |
+| [test_performance.py](../example/quickstart/test_performance.py) | Run a catalog workload and assert the results. |
 | [pytest.ini](../example/quickstart/pytest.ini) | Set a short workload and show results in the terminal. |
 
 In the test, `CatalogJourney` extends `BaseJourney`, a Locust `HttpUser` subclass.
-Its `@task` method repeatedly requests the selected endpoint. Pytest parametrization
-runs `/products` and `/categories` as separate test cases.
+Its `@task` method repeatedly requests `/products`. The journey's `defaults`
+declare a 500 ms budget for the 95th percentile of response times.
 
 `Grasshopper.launch_test(CatalogJourney, **complete_configuration)` starts the
 workload and returns a Locust environment containing the results. Always pass the
@@ -63,14 +63,11 @@ def local_api() -> str:
 
 Set `APP_BASE_URL` to your test environment before running pytest. The fixture
 keeps the name used by the demo; you can rename it together with the test argument.
-Adapt the endpoint list, expected response body, timing budget, and wait time to
+Adapt the endpoint, expected response body, timing budget, and wait time to
 your application. Add fixtures for authentication or test data as needed.
 
-Pass fixture values into the journey through the dictionary already supplied to
-`CatalogJourney.replace_incoming_scenario_args(...)`. For example, add a
-`"tenant_id": tenant_id` entry and read it in a task with
-`self.scenario_args["tenant_id"]`. Journey `defaults` provide fallback values;
-incoming scenario arguments take precedence.
+For application-specific values supplied through configuration, see
+[journey settings](configuration.md#journey-settings).
 
 ## Change the workload
 

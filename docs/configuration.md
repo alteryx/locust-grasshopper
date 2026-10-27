@@ -5,7 +5,7 @@
 
 Grasshopper merges workload and application settings into the
 `complete_configuration` pytest fixture, a dictionary-like `GHConfiguration`.
-Pass it to `Grasshopper.launch_test` and to your journey's scenario arguments.
+Pass it to `Grasshopper.launch_test` to configure the workload.
 
 ## Workload options
 
@@ -20,8 +20,9 @@ Pass it to `Grasshopper.launch_test` and to your journey's scenario arguments.
 
 The quickstart overrides these defaults in `pytest.ini` with three users and a
 three-second runtime. Command-line settings, including that `addopts` line, take
-precedence over YAML and environment settings. **Remove the quickstart's `addopts`
-line before trying the YAML or environment examples below.**
+precedence over YAML and environment settings. Before trying the YAML or
+environment examples below, remove the `--users`, `--spawn_rate`, and `--runtime`
+options, keeping `addopts = -p locust_grasshopper`.
 
 List all options with `pytest --help` after
 [configuring pytest](writing-tests.md#configure-pytest). Load shapes
@@ -69,6 +70,20 @@ Each selected scenario runs the test file, including its parametrized test cases
 Use `grasshopper_scenario_args` for application-specific values. The
 [extended scenario example](../example/example_scenarios.YAML) also shows weighted
 composite journeys and argument overrides. Adapt its external target before use.
+
+## Journey settings
+
+Journey `defaults` define application settings and thresholds in code. If your
+journey needs values from YAML, environment variables, or a configuration file,
+pass them to the journey before launching:
+
+```python
+CatalogJourney.replace_incoming_scenario_args(complete_configuration)
+environment = Grasshopper.launch_test(CatalogJourney, **complete_configuration)
+```
+
+Inside the journey, read values through `self.scenario_args`, for example
+`self.scenario_args["tenant_id"]`. Incoming settings override the journey's defaults.
 
 ## Configuration precedence
 

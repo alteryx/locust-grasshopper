@@ -43,9 +43,9 @@ cd example/quickstart
 pytest
 ```
 
-The two tests each run three virtual users for three seconds. They require
-successful responses and a p95 response time at or below 500 ms. You should see
-the threshold results and a `2 passed` summary. The local API stops automatically.
+The test runs three virtual users for three seconds. It requires successful
+responses and a p95 response time at or below 500 ms. You should see the threshold
+results and a `1 passed` summary. The local API stops automatically.
 No Docker, running application, or metrics service is needed.
 
 To add Grasshopper to an existing project, run

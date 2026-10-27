@@ -9,13 +9,15 @@ InfluxDB and Datadog are optional; local console reporting works without either.
 
 ## Timing thresholds
 
-The [quickstart](../example/quickstart/test_performance.py) passes a `thresholds`
-dictionary into the journey's scenario arguments. This entry sets a 500 ms budget
-for the 95th percentile of `GET /products` response times:
+The [quickstart](../example/quickstart/test_performance.py) declares thresholds in
+`CatalogJourney.defaults`. This sets a 500 ms budget for the 95th percentile of
+`GET /products` response times:
 
 ```python
-thresholds = {
-    "/products": {"type": "GET", "percentile": 0.95, "limit": 500},
+defaults = {
+    "thresholds": {
+        "/products": {"type": "GET", "percentile": 0.95, "limit": 500},
+    },
 }
 ```
 
@@ -32,9 +34,9 @@ assert threshold["succeeded"], threshold
 
 Also assert that requests completed and that errors are acceptable, as the demo
 does. To define budgets in YAML, put the threshold dictionary under
-`grasshopper_scenario_args.thresholds` and pass `complete_configuration` to the
-journey. Remove the quickstart's hardcoded `thresholds` entry when switching to
-configuration-supplied budgets.
+`grasshopper_scenario_args.thresholds` and
+[pass the configuration to the journey](configuration.md#journey-settings).
+These settings override the journey's defaults.
 
 ## Response and workflow checks
 
