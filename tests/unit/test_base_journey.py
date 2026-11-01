@@ -10,6 +10,21 @@ def base_journey():
     BaseJourney.reset_class_attributes()
 
 
+def test_incoming_scenario_args_follow_subclass_updates():
+    class ParentJourney(BaseJourney):
+        abstract = True
+
+    class ChildJourney(ParentJourney):
+        abstract = True
+
+    ParentJourney.replace_incoming_scenario_args({"name": "parent"})
+    ChildJourney.replace_incoming_scenario_args({"name": "child"})
+    ChildJourney.update_incoming_scenario_args({"region": "test"})
+
+    assert ParentJourney.incoming_scenario_args == {"name": "parent"}
+    assert ChildJourney.incoming_scenario_args == {"name": "child", "region": "test"}
+
+
 def test_set_tags_via_defaults():
     journey = BaseJourney(MagicMock())
     journey.defaults = {"tags": {"foo": "bar"}}

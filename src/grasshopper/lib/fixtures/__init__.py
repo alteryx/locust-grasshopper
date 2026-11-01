@@ -12,11 +12,17 @@ import uuid
 import pytest
 import tagmatcher
 import yaml
+from gevent import monkey
 from grasshopper.lib.configuration.gh_configuration import (
     ConfigurationConstants,
     GHConfiguration,
 )
 from grasshopper.lib.util.decorators import deprecate
+
+# Load this plugin with -p locust_grasshopper before HTTP client plugins.
+# Honor Locust's opt-out for callers that manage monkey patching themselves.
+if not os.getenv("LOCUST_SKIP_MONKEY_PATCH"):
+    monkey.patch_all()
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +87,9 @@ def grasshopper_config_file_args(request):
         config.update(**scenario_vals)
 
     except pytest.FixtureLookupError:
-        logger.warning(
-            "CONFIG FIXTURE: Skipping loading from grasshopper configuration file "
-            "because fixture 'grasshopper_config_file_path` not found. You can safely "
-            "ignore this warning if you were not intending to use a grasshopper "
-            "configuration file."
+        logger.debug(
+            "CONFIG FIXTURE: No optional configuration file specified "
+            "(grasshopper_config_file_path fixture not defined)."
         )
     except FileNotFoundError:
         logger.warning(

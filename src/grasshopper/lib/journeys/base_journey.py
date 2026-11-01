@@ -12,6 +12,7 @@ from uuid import uuid4
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.util.decorators import classproperty
 from locust import HttpUser
 
 # This is an inbuilt logger, renamed for clarity of purpose.
@@ -58,8 +59,7 @@ class BaseJourney(HttpUser):
         )
         self.tags = {}
 
-    @classmethod
-    @property
+    @classproperty
     def incoming_scenario_args(cls):
         return cls._incoming_test_parameters
 

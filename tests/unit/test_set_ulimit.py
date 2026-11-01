@@ -34,13 +34,13 @@ def test_set_ulimit_already_high():
 
         mock_resource.getrlimit.assert_called_with(mock_resource.RLIMIT_NOFILE)
         mock_resource.setrlimit.assert_not_called()
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Current open files limits - soft: 15000, hard: 20000"
         )
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Hard limit of 20000 is in line with minimum required limit of 10000"
         )
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Soft limit of 15000 is in line with minimum required limit of 10000"
         )
 
@@ -69,7 +69,7 @@ def test_set_ulimit_increase_both_success():
         patch("grasshopper.lib.grasshopper.logger") as mock_logger,
     ):
         Grasshopper.set_ulimit()
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Current open files limits - soft: 2000, hard: 5000"
         )
 
@@ -128,7 +128,7 @@ def test_set_ulimit_hard_fails_soft_success():
         )
         mock_logger.info.assert_any_call("Open files soft limit increased to 10000")
 
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Final open files limits - soft: 10000, hard: 5000"
         )
 
@@ -162,8 +162,8 @@ def test_set_ulimit_hard_success_soft_fails():
     ):
         Grasshopper.set_ulimit()
 
-        # Info log before changes
-        mock_logger.info.assert_any_call(
+        # Initial limits before changes
+        mock_logger.debug.assert_any_call(
             "Current open files limits - soft: 2000, hard: 5000"
         )
         # Successful hard limit increase
@@ -180,7 +180,7 @@ def test_set_ulimit_hard_success_soft_fails():
             "Could not increase soft limit directly: Soft limit adjustment denied"
         )
 
-        mock_logger.info.assert_any_call(
+        mock_logger.debug.assert_any_call(
             "Final open files limits - soft: 2000, hard: 10000"
         )
 
