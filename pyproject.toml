@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "locust-grasshopper"
-version = "1.4.14" # Managed by bump2version
+version = "1.4.15" # Managed by bump2version
 dynamic = ["readme"]
 description = "Python API load testing with Locust, pytest, and latency thresholds"
 classifiers = [
