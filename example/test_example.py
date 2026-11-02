@@ -1,48 +1,41 @@
+"""A small performance test against httpbin's public HTTP demo API."""
+
+from grasshopper.lib.configuration.gh_configuration import GHConfiguration
 from grasshopper.lib.grasshopper import Grasshopper
 from grasshopper.lib.journeys.base_journey import BaseJourney
 from grasshopper.lib.util.utils import check
-from locust import between, task
+from locust import constant, task
 
 
 class ExampleJourney(BaseJourney):
-    """An example journey class with a simple task"""
+    """Request a URL and check that the API echoes it back."""
 
-    # number of seconds to wait between each task
-    wait_time = between(min_wait=1, max_wait=4)
+    host = "https://httpbin.org"
+    wait_time = constant(1)
+    defaults = {
+        "thresholds": {"/get": {"type": "GET", "percentile": 0.95, "limit": 2000}}
+    }
 
-    # `host` is automatically prepended to all request endpoint
-    # urls when using `self.client` requests. It is also set as the
-    # global "environment" tag in timeseries metrics
-    host = "https://google.com"
-
-    # lower precedence scenario_args dict, merged in on startup
-    defaults = {"foo": "bar", "scenario_name": "default_example_scenario"}
-
-    # a locust task, repeated over and over again until the test finishes
     @task
-    def example_task(self):
-        """a simple get google images HTTP request"""
-        self.log_prefix.info(
-            f"Beginning example task with scenario_name: {self.scenario_args.get('scenario_name')} param `foo`= `{self.scenario_args.get('foo')}`"
-        )
-        # aggregate all metrics for this request under the name "get google images"
-        # if name is not specified, then the full url will be the name of the metric
-        response = self.client.get(
-            "/imghp", name="get google images", context={"extra": "tag"}
-        )
-        self.log_prefix.info(f"google images responded with a {response.status_code}.")
+    def get_example(self) -> None:
+        response = self.client.get("/get")
         check(
-            "google images responded with a 200",
-            response.status_code == 200,
+            "request URL is echoed",
+            response.status_code == 200 and response.json().get("url") == response.url,
             env=self.environment,
         )
 
 
-def test_run_example_journey(complete_configuration, example_configuration_values):
-    ExampleJourney.update_incoming_scenario_args(example_configuration_values)
-    ExampleJourney.update_incoming_scenario_args(complete_configuration)
-    locust_env = Grasshopper.launch_test(
-        ExampleJourney,
-        **complete_configuration,
-    )
-    return locust_env
+def test_run_example_journey(complete_configuration: GHConfiguration) -> None:
+    environment = Grasshopper.launch_test(ExampleJourney, **complete_configuration)
+
+    # Locust records journey errors instead of raising them in the pytest test.
+    assert not environment.runner.exceptions, environment.runner.exceptions
+    stats = environment.stats.total
+    assert stats.num_requests > 0, "The workload did not make any requests"
+    assert stats.num_failures == 0, environment.stats.errors
+    echo_check = environment.stats.checks["request URL is echoed"]
+    assert echo_check["total"] > 0
+    assert echo_check["failed"] == 0, echo_check
+    threshold = environment.stats.trends["/get"]["thresholds"][0]
+    assert threshold["succeeded"], threshold
