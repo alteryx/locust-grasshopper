@@ -42,6 +42,7 @@ def test_datadog_configuration_requires_api_key_and_environment(
 def test_datadog_listener_emits_request_metrics(monkeypatch):
     env = MagicMock()
     env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
     response_mock = MagicMock()
     response_mock.read.return_value = b"{}"
     response_mock.__enter__.return_value = response_mock
@@ -65,12 +66,11 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         response_length=0,
         response=MagicMock(status_code=201),
         context={
-            "cuj": "connections",
             "test_type": "load",
             "job_id": "job-123",
             "workspace_token": "do-not-emit",
         },
-        exception=None,
+        exception=RuntimeError("request failed"),
     )
     listener.flush()
 
@@ -103,11 +103,13 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         '"metric": "grasshopper.locust_requests.response_time_distribution"'
         in distribution_payload
     )
+    assert '"metric": "grasshopper.locust_requests.error"' in series_payload
     assert '"type": "distribution"' in distribution_payload
     assert request_distribution["points"][0][1] == [123.4]
     assert '"service:shield-trifacta"' in series_payload
     assert '"code:201"' in series_payload
-    assert '"cuj:connections"' in series_payload
+    assert '"cuj:workflow_cuj_spike_test"' in series_payload
+    assert '"cuj:workflow_cuj_spike_test"' in distribution_payload
     assert '"test_type:load"' in series_payload
     assert "job-123" not in series_payload
     assert "do-not-emit" not in series_payload

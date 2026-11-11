@@ -79,11 +79,23 @@ class DatadogApiListener:
         """Convert a Locust request event into Datadog request metrics."""
         status_code = getattr(response, "status_code", None)
         timestamp = self._unix_timestamp()
+        configuration = getattr(
+            getattr(self.environment, "grasshopper", None),
+            "global_configuration",
+            {},
+        )
+        scenario_name = (
+            configuration.get("scenario_name")
+            if isinstance(configuration, dict)
+            else None
+        )
         context_tags = {
             key: context.get(key)
-            for key in ("cuj", "test_type", "dataset_size", "input_type", "success")
+            for key in ("test_type", "dataset_size", "input_type", "success")
             if context and context.get(key) is not None
         }
+        if scenario_name:
+            context_tags["cuj"] = str(scenario_name)
         tags = (
             self.default_tags
             | context_tags
