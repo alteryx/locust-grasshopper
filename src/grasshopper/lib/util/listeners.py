@@ -5,6 +5,7 @@ The listeners module contains all the custom listeners that we have defined for 
 
 import logging
 import warnings
+from collections.abc import Mapping
 from datetime import datetime, timezone
 
 import gevent
@@ -110,8 +111,11 @@ class GrasshopperListeners:
         """Return low-cardinality tags for environment-level load metrics."""
         configuration = getattr(environment.grasshopper, "global_configuration", {})
         test_type = configuration.get("test_type") or "exploratory"
-        cuj = configuration.get("cuj") or configuration.get("scenario_name") or "overall"
-        return {"cuj": str(cuj), "test_type": str(test_type), "scope": "environment"}
+        tags = {"test_type": str(test_type), "scope": "environment"}
+        scenario_name = configuration.get("scenario_name")
+        if scenario_name:
+            tags["cuj"] = str(scenario_name)
+        return tags
 
     @staticmethod
     def _configured_users(environment):
@@ -136,7 +140,9 @@ class GrasshopperListeners:
         runner = getattr(environment, "runner", None)
         if runner is None or not isinstance(getattr(runner, "user_count", None), int):
             return
-        self._user_metrics_greenlet = gevent.spawn(self._sample_active_users, environment)
+        self._user_metrics_greenlet = gevent.spawn(
+            self._sample_active_users, environment
+        )
 
     def _sample_active_users(self, environment):
         while True:
@@ -160,6 +166,15 @@ class GrasshopperListeners:
             tags=self._user_metric_tags(environment),
         )
 
+    @staticmethod
+    def _check_metric_cuj(environment):
+        """Resolve a check metric CUJ from the selected scenario name."""
+        configuration = getattr(environment.grasshopper, "global_configuration", {})
+        if not isinstance(configuration, Mapping):
+            return None
+        cuj = configuration.get("scenario_name")
+        return str(cuj) if cuj is not None else None
+
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
         environment_base_url = self.locust_environment.host
@@ -175,12 +190,17 @@ class GrasshopperListeners:
                 "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
+        datadog_tags = tags.copy()
+        datadog_tags.pop("cuj", None)
+        cuj = self._check_metric_cuj(self.locust_environment)
+        if cuj is not None:
+            datadog_tags["cuj"] = cuj
         self._send_to_datadog(
             "check metric",
             "record_check",
             check_name=check_name,
             check_passed=check_passed,
-            extra_tags=tags,
+            extra_tags=datadog_tags,
             time=time,
         )
 

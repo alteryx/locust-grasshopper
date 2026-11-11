@@ -99,7 +99,10 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     )
     assert '"metric": "grasshopper.locust_requests.count"' in series_payload
     assert '"metric": "grasshopper.locust_requests.response_time"' in series_payload
-    assert '"metric": "grasshopper.locust_requests.response_time_distribution"' in distribution_payload
+    assert (
+        '"metric": "grasshopper.locust_requests.response_time_distribution"'
+        in distribution_payload
+    )
     assert '"type": "distribution"' in distribution_payload
     assert request_distribution["points"][0][1] == [123.4]
     assert '"service:shield-trifacta"' in series_payload
@@ -209,6 +212,7 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     env = MagicMock()
     env.grasshopper.global_configuration = {
         "users": 10,
+        "scenario_name": "workflow_cuj",
         "test_type": "load",
     }
     env.runner.user_count = 3
@@ -226,12 +230,31 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     assert calls[0].kwargs["measurement"] == "locust_users"
     assert calls[0].kwargs["fields"] == {"configured": 10}
     assert calls[0].kwargs["tags"] == {
-        "cuj": "overall",
+        "cuj": "workflow_cuj",
         "test_type": "load",
         "scope": "environment",
     }
     assert calls[-1].kwargs["fields"] == {"active": 0}
     greenlet.kill.assert_called_once_with(block=False)
+
+
+def test_user_load_metrics_omit_cuj_without_scenario_name(monkeypatch):
+    env = MagicMock()
+    env.grasshopper.global_configuration = {"users": 10, "test_type": "load"}
+    env.runner.user_count = 3
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    greenlet = MagicMock()
+    monkeypatch.setattr(
+        "grasshopper.lib.util.listeners.gevent.spawn", lambda *args: greenlet
+    )
+
+    listeners._start_user_metrics(env)
+
+    assert listeners.datadog_listener.record_custom_point.call_args.kwargs["tags"] == {
+        "test_type": "load",
+        "scope": "environment",
+    }
 
 
 def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
@@ -257,3 +280,55 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
         "journey": "connections",
         "job_type": "batch",
     }
+
+
+def test_flush_check_to_dbs_adds_scenario_cuj_only_to_datadog():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    listeners.influxdb_listener = MagicMock()
+
+    listeners.flush_check_to_dbs("workflow created", True, {})
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert datadog_tags["cuj"] == "workflow_cuj_spike_test"
+    influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
+    assert "cuj" not in influx_tags
+
+
+def test_flush_check_to_dbs_uses_scenario_name_for_cuj():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "composite_scenario"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs(
+        "workflow created", True, {"cuj": "workflow_cuj_spike_test"}
+    )
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert datadog_tags["cuj"] == "composite_scenario"
+
+
+def test_flush_check_to_dbs_omits_cuj_when_scenario_name_is_unavailable():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs(
+        "workflow created", True, {"cuj": "should_not_be_used"}
+    )
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert "cuj" not in datadog_tags

@@ -4,7 +4,6 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
-from importlib.metadata import PackageNotFoundError, version
 from urllib import error, request
 
 import gevent
@@ -42,16 +41,6 @@ class DatadogApiListener:
         self.series_buffer = []
         self.distribution_buffer = []
         self._flush_greenlet = None
-        try:
-            grasshopper_version = version("locust-grasshopper")
-        except PackageNotFoundError:
-            grasshopper_version = "unknown"
-        logger.info(
-            "Initialized Grasshopper Datadog listener version=%s site=%s "
-            "distribution_endpoint=/api/v1/distribution_points",
-            grasshopper_version,
-            self.site,
-        )
         environment.events.request.add_listener(self.on_request)
 
     def close(self):
@@ -95,13 +84,17 @@ class DatadogApiListener:
             for key in ("cuj", "test_type", "dataset_size", "input_type", "success")
             if context and context.get(key) is not None
         }
-        tags = self.default_tags | context_tags | {
-            "name": name,
-            "request_name": name,
-            "request_type": request_type,
-            "environment": getattr(self.environment, "host", None),
-            "code": str(status_code) if status_code is not None else None,
-        }
+        tags = (
+            self.default_tags
+            | context_tags
+            | {
+                "name": name,
+                "request_name": name,
+                "request_type": request_type,
+                "environment": getattr(self.environment, "host", None),
+                "code": str(status_code) if status_code is not None else None,
+            }
+        )
 
         self._buffer_metric("locust_requests.count", 1, "count", tags, timestamp)
         self._buffer_metric(
@@ -223,11 +216,6 @@ class DatadogApiListener:
         while self.distribution_buffer:
             batch = self.distribution_buffer[: self.batch_size]
             del self.distribution_buffer[: self.batch_size]
-            logger.info(
-                "Submitting %s Datadog distribution observations to `%s`.",
-                len(batch),
-                self.site,
-            )
             self._submit_distributions(batch)
 
     def _submit_series(self, series_batch: list[dict]):
@@ -279,13 +267,6 @@ class DatadogApiListener:
         try:
             with request.urlopen(api_request, timeout=15) as response:
                 response.read()
-                logger.info(
-                    "Submitted %s Datadog distribution observations to `%s` "
-                    "(HTTP %s).",
-                    len(distribution_batch),
-                    self.site,
-                    response.status,
-                )
         except error.HTTPError as exc:
             logger.warning(
                 "Datadog distribution submission failed with HTTP %s for `%s`: %s",
