@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,9 +91,17 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         for request in requests
         if request.full_url.endswith("/distribution_points")
     )
+    distribution_series = json.loads(distribution_payload)["series"]
+    request_distribution = next(
+        series
+        for series in distribution_series
+        if series["metric"] == "grasshopper.locust_requests.response_time_distribution"
+    )
     assert '"metric": "grasshopper.locust_requests.count"' in series_payload
     assert '"metric": "grasshopper.locust_requests.response_time"' in series_payload
     assert '"metric": "grasshopper.locust_requests.response_time_distribution"' in distribution_payload
+    assert '"type": "distribution"' in distribution_payload
+    assert request_distribution["points"][0][1] == [123.4]
     assert '"service:shield-trifacta"' in series_payload
     assert '"code:201"' in series_payload
     assert '"cuj:connections"' in series_payload
