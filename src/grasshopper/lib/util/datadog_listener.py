@@ -39,6 +39,7 @@ class DatadogApiListener:
         self.batch_size = batch_size
         self.close_timeout = close_timeout
         self.series_buffer = []
+        self.distribution_buffer = []
         self._flush_greenlet = None
         environment.events.request.add_listener(self.on_request)
 
@@ -49,7 +50,7 @@ class DatadogApiListener:
         except (AttributeError, ValueError):
             pass
 
-        if not self.series_buffer:
+        if not self.series_buffer and not self.distribution_buffer:
             return
 
         self._schedule_flush()
@@ -78,8 +79,14 @@ class DatadogApiListener:
         """Convert a Locust request event into Datadog request metrics."""
         status_code = getattr(response, "status_code", None)
         timestamp = self._unix_timestamp()
-        tags = self.default_tags | {
+        context_tags = {
+            key: context.get(key)
+            for key in ("cuj", "test_type", "dataset_size", "input_type", "success")
+            if context and context.get(key) is not None
+        }
+        tags = self.default_tags | context_tags | {
             "name": name,
+            "request_name": name,
             "request_type": request_type,
             "environment": getattr(self.environment, "host", None),
             "code": str(status_code) if status_code is not None else None,
@@ -88,6 +95,9 @@ class DatadogApiListener:
         self._buffer_metric("locust_requests.count", 1, "count", tags, timestamp)
         self._buffer_metric(
             "locust_requests.response_time", response_time, "gauge", tags, timestamp
+        )
+        self._buffer_distribution(
+            "locust_requests.response_time_distribution", response_time, tags, timestamp
         )
         if response_length is not None:
             self._buffer_metric(
@@ -168,6 +178,25 @@ class DatadogApiListener:
         if len(self.series_buffer) >= self.batch_size:
             self._schedule_flush()
 
+    def _buffer_distribution(
+        self, metric_name: str, value: float, tags: dict, timestamp: int | None = None
+    ):
+        """Append one Datadog distribution point for percentile aggregation."""
+        metric_path = (
+            f"{self.namespace}.{metric_name}" if self.namespace else metric_name
+        )
+        self.distribution_buffer.append(
+            {
+                "metric": metric_path,
+                "points": [[timestamp or self._unix_timestamp(), [value]]],
+                "tags": [
+                    f"{key}:{value}" for key, value in tags.items() if value is not None
+                ],
+            }
+        )
+        if len(self.distribution_buffer) >= self.batch_size:
+            self._schedule_flush()
+
     def _schedule_flush(self):
         """Run Datadog HTTP I/O outside the Locust request path."""
         if self._flush_greenlet is None or self._flush_greenlet.ready():
@@ -179,6 +208,10 @@ class DatadogApiListener:
             batch = self.series_buffer[: self.batch_size]
             del self.series_buffer[: self.batch_size]
             self._submit_series(batch)
+        while self.distribution_buffer:
+            batch = self.distribution_buffer[: self.batch_size]
+            del self.distribution_buffer[: self.batch_size]
+            self._submit_distributions(batch)
 
     def _submit_series(self, series_batch: list[dict]):
         """Submit one already-built Datadog series batch."""
@@ -210,6 +243,40 @@ class DatadogApiListener:
         except (OSError, TimeoutError, error.URLError) as exc:
             logger.warning(
                 "Failed to submit Datadog metrics batch to `%s`: %s",
+                self.site,
+                exc,
+            )
+
+    def _submit_distributions(self, distribution_batch: list[dict]):
+        """Submit a Datadog distribution payload."""
+        payload = json.dumps({"series": distribution_batch}).encode("utf-8")
+        api_request = request.Request(
+            f"https://api.{self.site}/api/v1/distribution_points",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "DD-API-KEY": self.api_key,
+            },
+            method="POST",
+        )
+        try:
+            with request.urlopen(api_request, timeout=15) as response:
+                response.read()
+                logger.info(
+                    "Submitted %s Datadog distribution series to `%s`.",
+                    len(distribution_batch),
+                    self.site,
+                )
+        except error.HTTPError as exc:
+            logger.warning(
+                "Datadog distribution submission failed with HTTP %s for `%s`: %s",
+                exc.code,
+                self.site,
+                exc.read().decode("utf-8", errors="replace"),
+            )
+        except (OSError, TimeoutError, error.URLError) as exc:
+            logger.warning(
+                "Failed to submit Datadog distribution batch to `%s`: %s",
                 self.site,
                 exc,
             )

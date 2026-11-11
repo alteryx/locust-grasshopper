@@ -64,7 +64,8 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         response_length=0,
         response=MagicMock(status_code=201),
         context={
-            "journey": "example",
+            "cuj": "connections",
+            "test_type": "load",
             "job_id": "job-123",
             "workspace_token": "do-not-emit",
         },
@@ -72,17 +73,56 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     )
     listener.flush()
 
-    request_obj = urlopen_mock.call_args.args[0]
-    assert request_obj.full_url == "https://api.datadoghq.com/api/v1/series"
-    assert request_obj.headers["Dd-api-key"] == "secret"
-    payload = request_obj.data.decode("utf-8")
-    assert '"metric": "grasshopper.locust_requests.count"' in payload
-    assert '"metric": "grasshopper.locust_requests.response_time"' in payload
-    assert '"service:shield-trifacta"' in payload
-    assert '"code:201"' in payload
-    assert "journey:example" not in payload
-    assert "job-123" not in payload
-    assert "do-not-emit" not in payload
+    requests = [call.args[0] for call in urlopen_mock.call_args_list]
+    assert {request.full_url for request in requests} == {
+        "https://api.datadoghq.com/api/v1/series",
+        "https://api.datadoghq.com/api/v1/distribution_points",
+    }
+    for request_obj in requests:
+        assert request_obj.headers["Dd-api-key"] == "secret"
+    series_payload = next(
+        request.data.decode("utf-8")
+        for request in requests
+        if request.full_url.endswith("/series")
+    )
+    distribution_payload = next(
+        request.data.decode("utf-8")
+        for request in requests
+        if request.full_url.endswith("/distribution_points")
+    )
+    assert '"metric": "grasshopper.locust_requests.count"' in series_payload
+    assert '"metric": "grasshopper.locust_requests.response_time"' in series_payload
+    assert '"metric": "grasshopper.locust_requests.response_time_distribution"' in distribution_payload
+    assert '"service:shield-trifacta"' in series_payload
+    assert '"code:201"' in series_payload
+    assert '"cuj:connections"' in series_payload
+    assert '"test_type:load"' in series_payload
+    assert "job-123" not in series_payload
+    assert "do-not-emit" not in series_payload
+
+
+def test_datadog_listener_uses_actual_request_name_tag():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.on_request(
+        request_type="GET",
+        name="list_connections",
+        response_time=10,
+        response_length=0,
+        response=MagicMock(status_code=200),
+        context={},
+        exception=None,
+    )
+
+    request_metric = next(
+        metric
+        for metric in listener.series_buffer
+        if metric["metric"].endswith("locust_requests.count")
+    )
+    assert "name:list_connections" in request_metric["tags"]
+    assert "request_name:list_connections" in request_metric["tags"]
 
 
 def test_datadog_check_name_matches_trace_correlation_format():
@@ -154,6 +194,35 @@ def test_write_metric_point_reports_to_datadog_listener():
         time=timestamp,
         tags={"job_type": "batch"},
     )
+
+
+def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypatch):
+    env = MagicMock()
+    env.grasshopper.global_configuration = {
+        "users": 10,
+        "test_type": "load",
+    }
+    env.runner.user_count = 3
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    greenlet = MagicMock()
+    monkeypatch.setattr(
+        "grasshopper.lib.util.listeners.gevent.spawn", lambda *args: greenlet
+    )
+
+    listeners._start_user_metrics(env)
+    listeners._stop_user_metrics(env)
+
+    calls = listeners.datadog_listener.record_custom_point.call_args_list
+    assert calls[0].kwargs["measurement"] == "locust_users"
+    assert calls[0].kwargs["fields"] == {"configured": 10}
+    assert calls[0].kwargs["tags"] == {
+        "cuj": "overall",
+        "test_type": "load",
+        "scope": "environment",
+    }
+    assert calls[-1].kwargs["fields"] == {"active": 0}
+    greenlet.kill.assert_called_once_with(block=False)
 
 
 def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
