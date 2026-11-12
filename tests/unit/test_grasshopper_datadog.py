@@ -69,6 +69,7 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
             "test_type": "load",
             "dataset_size": "small",
             "input_type": "csv",
+            "dataset_format": "delimited_text",
             "repository_name": "shield-trifacta",
             "workflow_name": "workflow_a",
             "job_type": "batch",
@@ -126,6 +127,7 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"test_type:load"' in series_payload
     assert '"dataset_size:small"' in series_payload
     assert '"input_type:csv"' in series_payload
+    assert '"dataset_format:delimited_text"' in series_payload
     assert '"repository_name:shield-trifacta"' in series_payload
     assert '"workflow_name:workflow_a"' in series_payload
     assert '"job_type:batch"' in series_payload
@@ -139,7 +141,7 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert "do-not-emit" not in series_payload
 
 
-def test_datadog_listener_excludes_dynamic_workflow_names():
+def test_datadog_listener_emits_configured_workflow_name():
     env = MagicMock()
     env.host = "https://perf.example"
     listener = DatadogApiListener(environment=env, api_key="secret")
@@ -147,12 +149,11 @@ def test_datadog_listener_excludes_dynamic_workflow_names():
     listener.record_custom_point(
         "locust_requests",
         {"response_time": 10},
-        tags={"workflow_name": "Weekly 357 Medium -- 100K_VU12"},
+        tags={"workflow_name": "Weekly 357 Medium -- 100K"},
     )
 
     assert (
-        "workflow_name:Weekly 357 Medium -- 100K_VU12"
-        not in listener.series_buffer[0]["tags"]
+        "workflow_name:Weekly 357 Medium -- 100K" in listener.series_buffer[0]["tags"]
     )
 
 

@@ -19,6 +19,7 @@ DATADOG_TAG_KEYS = frozenset(
         "test_type",
         "dataset_size",
         "input_type",
+        "dataset_format",
         "repository_name",
         "workflow_name",
         "file_format",
@@ -36,6 +37,7 @@ DATADOG_TAG_KEYS = frozenset(
 DATADOG_SCENARIO_TAG_KEYS = (
     "dataset_size",
     "input_type",
+    "dataset_format",
     "workflow_name",
     "job_type",
     "jobgroup_status",
@@ -44,21 +46,6 @@ DATADOG_SCENARIO_TAG_KEYS = (
     "execution_engine",
     "workflow_complexity",
 )
-
-_DYNAMIC_WORKFLOW_NAME = re.compile(
-    r"""
-    (?:^|[-_\s])vu\d+(?:$|[-_\s])
-    |\b\d{10,}\b
-    |\b\d{4}[-_]\d{2}[-_]\d{2}(?:[T_\s]\d{2}[:_-]\d{2})?\b
-    |\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b
-    """,
-    re.IGNORECASE | re.VERBOSE,
-)
-
-
-def _is_safe_workflow_name(value):
-    """Exclude execution-specific workflow names from Datadog tags."""
-    return not _DYNAMIC_WORKFLOW_NAME.search(str(value))
 
 
 def _configured_datadog_tags(configuration):
@@ -69,8 +56,6 @@ def _configured_datadog_tags(configuration):
     for key in DATADOG_SCENARIO_TAG_KEYS:
         value = configuration.get(key)
         if not value:
-            continue
-        if key == "workflow_name" and not _is_safe_workflow_name(value):
             continue
         tags[key] = str(value)
     return tags
@@ -160,6 +145,7 @@ class DatadogApiListener:
                 "test_type",
                 "dataset_size",
                 "input_type",
+                "dataset_format",
                 "repository_name",
                 "workflow_name",
                 "job_type",
@@ -169,9 +155,7 @@ class DatadogApiListener:
                 "workflow_complexity",
                 "success",
             )
-            if context
-            and context.get(key) is not None
-            and (key != "workflow_name" or _is_safe_workflow_name(context.get(key)))
+            if context and context.get(key) is not None and context.get(key) != ""
         }
         for key, value in configured_tags.items():
             context_tags.setdefault(key, value)
@@ -242,8 +226,7 @@ class DatadogApiListener:
         metric_tags = self.default_tags | {
             key: value
             for key, value in (tags or {}).items()
-            if key in DATADOG_TAG_KEYS
-            and (key != "workflow_name" or _is_safe_workflow_name(value))
+            if key in DATADOG_TAG_KEYS and value is not None and value != ""
         }
         for field_name, value in fields.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):

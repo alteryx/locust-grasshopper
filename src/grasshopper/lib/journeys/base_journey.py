@@ -12,6 +12,9 @@ from uuid import uuid4
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.util.datadog_listener import (
+    DATADOG_SCENARIO_TAG_KEYS,
+)
 from grasshopper.lib.util.decorators import classproperty
 from grasshopper.lib.util.trace_context import request_name
 from locust import HttpUser
@@ -138,6 +141,13 @@ class BaseJourney(HttpUser):
         self._set_thresholds()
         self.environment.host = self.normalize_url(
             self.scenario_args.get("target_url") or self.host
+        )
+        self.update_tags(
+            {
+                key: str(value)
+                for key in DATADOG_SCENARIO_TAG_KEYS
+                if (value := self.scenario_args.get(key))
+            }
         )
         self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})

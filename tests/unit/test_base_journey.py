@@ -104,6 +104,29 @@ def test_on_start_uses_target_url_when_present():
     assert journey.environment.host == "http://mytarget_url.com/"
 
 
+def test_on_start_adds_bounded_scenario_dimensions_to_tags():
+    BaseJourney.replace_incoming_scenario_args(
+        {
+            "target_url": "http://mytarget_url.com/",
+            "dataset_size": "s",
+            "input_type": "csv",
+            "dataset_format": "delimited_text",
+            "workflow_name": "Weekly 357 Medium -- 100K",
+            "jobgroup_id": "do-not-emit",
+        }
+    )
+    journey = BaseJourney(MagicMock())
+    journey.environment = MagicMock()
+    journey.environment.host = ""
+    journey.on_start()
+
+    assert journey.tags["dataset_size"] == "s"
+    assert journey.tags["input_type"] == "csv"
+    assert journey.tags["dataset_format"] == "delimited_text"
+    assert journey.tags["workflow_name"] == "Weekly 357 Medium -- 100K"
+    assert "jobgroup_id" not in journey.tags
+
+
 def test_update_tags_merges_tags():
     """
     Test that update_tags merges new tags into self.tags.

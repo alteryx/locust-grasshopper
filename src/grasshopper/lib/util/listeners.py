@@ -14,7 +14,6 @@ from grasshopper.lib.util.datadog_listener import (
     DATADOG_TAG_KEYS,
     DatadogApiListener,
     _configured_datadog_tags,
-    _is_safe_workflow_name,
 )
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
@@ -200,8 +199,7 @@ class GrasshopperListeners:
         datadog_tags = {
             key: value
             for key, value in tags.items()
-            if key in DATADOG_TAG_KEYS
-            and (key != "workflow_name" or _is_safe_workflow_name(value))
+            if key in DATADOG_TAG_KEYS and value != ""
         }
         datadog_tags.update(
             {
@@ -248,8 +246,7 @@ class GrasshopperListeners:
         datadog_tags = {
             key: value
             for key, value in metric_tags.items()
-            if key in DATADOG_TAG_KEYS
-            and (key != "workflow_name" or _is_safe_workflow_name(value))
+            if key in DATADOG_TAG_KEYS and value is not None and value != ""
         }
         datadog_tags.pop("cuj", None)
         datadog_tags.pop("scenario_name", None)
