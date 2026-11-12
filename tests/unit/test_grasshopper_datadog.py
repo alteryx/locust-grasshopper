@@ -72,8 +72,13 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
             "repository_name": "shield-trifacta",
             "workflow_name": "workflow_a",
             "job_type": "batch",
+            "jobgroup_status": "COMPLETE",
+            "file_format": "delimited_text",
+            "execution_engine": "amp",
+            "workflow_complexity": "typical",
             "success": True,
             "job_id": "job-123",
+            "jobgroup_id": "3798005",
             "workspace_token": "do-not-emit",
         },
         exception=RuntimeError("request failed"),
@@ -124,9 +129,31 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"repository_name:shield-trifacta"' in series_payload
     assert '"workflow_name:workflow_a"' in series_payload
     assert '"job_type:batch"' in series_payload
+    assert '"jobgroup_status:COMPLETE"' in series_payload
+    assert '"file_format:delimited_text"' in series_payload
+    assert '"execution_engine:amp"' in series_payload
+    assert '"workflow_complexity:typical"' in series_payload
     assert '"success:True"' in series_payload
     assert "job-123" not in series_payload
+    assert "3798005" not in series_payload
     assert "do-not-emit" not in series_payload
+
+
+def test_datadog_listener_excludes_dynamic_workflow_names():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.record_custom_point(
+        "locust_requests",
+        {"response_time": 10},
+        tags={"workflow_name": "Weekly 357 Medium -- 100K_VU12"},
+    )
+
+    assert (
+        "workflow_name:Weekly 357 Medium -- 100K_VU12"
+        not in listener.series_buffer[0]["tags"]
+    )
 
 
 def test_datadog_listener_uses_actual_request_name_tag():
@@ -294,7 +321,17 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     listeners.flush_check_to_dbs(
         "connection health",
         True,
-        {"job_type": "batch", "jobgroup_id": "do-not-emit"},
+        {
+            "dataset_size": "m",
+            "input_type": "csv",
+            "workflow_name": "Weekly 357 Medium -- 100K",
+            "job_type": "batch",
+            "jobgroup_status": "COMPLETE",
+            "file_format": "delimited_text",
+            "execution_engine": "amp",
+            "workflow_complexity": "typical",
+            "jobgroup_id": "do-not-emit",
+        },
     )
 
     listeners.datadog_listener.record_check.assert_called_once()
@@ -305,7 +342,14 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
         "check_name": "connection health",
         "environment": "https://perf.example",
         "journey": "connections",
+        "dataset_size": "m",
+        "input_type": "csv",
+        "workflow_name": "Weekly 357 Medium -- 100K",
         "job_type": "batch",
+        "jobgroup_status": "COMPLETE",
+        "file_format": "delimited_text",
+        "execution_engine": "amp",
+        "workflow_complexity": "typical",
     }
 
 

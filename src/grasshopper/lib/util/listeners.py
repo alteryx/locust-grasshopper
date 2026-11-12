@@ -13,6 +13,8 @@ from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.datadog_listener import (
     DATADOG_TAG_KEYS,
     DatadogApiListener,
+    _configured_datadog_tags,
+    _is_safe_workflow_name,
 )
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
@@ -196,8 +198,24 @@ class GrasshopperListeners:
             )
             self.influxdb_listener.cache.append(point)
         datadog_tags = {
-            key: value for key, value in tags.items() if key in DATADOG_TAG_KEYS
+            key: value
+            for key, value in tags.items()
+            if key in DATADOG_TAG_KEYS
+            and (key != "workflow_name" or _is_safe_workflow_name(value))
         }
+        datadog_tags.update(
+            {
+                key: value
+                for key, value in _configured_datadog_tags(
+                    getattr(
+                        self.locust_environment.grasshopper,
+                        "global_configuration",
+                        {},
+                    )
+                ).items()
+                if key not in datadog_tags
+            }
+        )
         datadog_tags.pop("cuj", None)
         datadog_tags.pop("scenario_name", None)
         scenario_name = self._configured_scenario_name(self.locust_environment)
@@ -228,7 +246,10 @@ class GrasshopperListeners:
             self.influxdb_listener.cache.append(point)
 
         datadog_tags = {
-            key: value for key, value in metric_tags.items() if key in DATADOG_TAG_KEYS
+            key: value
+            for key, value in metric_tags.items()
+            if key in DATADOG_TAG_KEYS
+            and (key != "workflow_name" or _is_safe_workflow_name(value))
         }
         datadog_tags.pop("cuj", None)
         datadog_tags.pop("scenario_name", None)

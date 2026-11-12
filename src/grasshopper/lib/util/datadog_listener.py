@@ -21,6 +21,9 @@ DATADOG_TAG_KEYS = frozenset(
         "input_type",
         "repository_name",
         "workflow_name",
+        "file_format",
+        "execution_engine",
+        "workflow_complexity",
         "job_type",
         "jobgroup_status",
         "request_type",
@@ -29,6 +32,48 @@ DATADOG_TAG_KEYS = frozenset(
         "scope",
     }
 )
+
+DATADOG_SCENARIO_TAG_KEYS = (
+    "dataset_size",
+    "input_type",
+    "workflow_name",
+    "job_type",
+    "jobgroup_status",
+    "repository_name",
+    "file_format",
+    "execution_engine",
+    "workflow_complexity",
+)
+
+_DYNAMIC_WORKFLOW_NAME = re.compile(
+    r"""
+    (?:^|[-_\s])vu\d+(?:$|[-_\s])
+    |\b\d{10,}\b
+    |\b\d{4}[-_]\d{2}[-_]\d{2}(?:[T_\s]\d{2}[:_-]\d{2})?\b
+    |\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def _is_safe_workflow_name(value):
+    """Exclude execution-specific workflow names from Datadog tags."""
+    return not _DYNAMIC_WORKFLOW_NAME.search(str(value))
+
+
+def _configured_datadog_tags(configuration):
+    """Return safe Datadog dimensions from the active scenario configuration."""
+    if not isinstance(configuration, dict):
+        return {}
+    tags = {}
+    for key in DATADOG_SCENARIO_TAG_KEYS:
+        value = configuration.get(key)
+        if not value:
+            continue
+        if key == "workflow_name" and not _is_safe_workflow_name(value):
+            continue
+        tags[key] = str(value)
+    return tags
 
 
 class DatadogApiListener:
@@ -108,6 +153,7 @@ class DatadogApiListener:
             if isinstance(configuration, dict)
             else None
         )
+        configured_tags = _configured_datadog_tags(configuration)
         context_tags = {
             key: context.get(key)
             for key in (
@@ -117,10 +163,18 @@ class DatadogApiListener:
                 "repository_name",
                 "workflow_name",
                 "job_type",
+                "jobgroup_status",
+                "file_format",
+                "execution_engine",
+                "workflow_complexity",
                 "success",
             )
-            if context and context.get(key) is not None
+            if context
+            and context.get(key) is not None
+            and (key != "workflow_name" or _is_safe_workflow_name(context.get(key)))
         }
+        for key, value in configured_tags.items():
+            context_tags.setdefault(key, value)
         if scenario_name:
             context_tags["scenario_name"] = str(scenario_name)
         tags = (
@@ -186,7 +240,10 @@ class DatadogApiListener:
         """Record numeric custom fields as Datadog gauge metrics."""
         timestamp = self._unix_timestamp(time)
         metric_tags = self.default_tags | {
-            key: value for key, value in (tags or {}).items() if key in DATADOG_TAG_KEYS
+            key: value
+            for key, value in (tags or {}).items()
+            if key in DATADOG_TAG_KEYS
+            and (key != "workflow_name" or _is_safe_workflow_name(value))
         }
         for field_name, value in fields.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
