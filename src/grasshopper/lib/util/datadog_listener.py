@@ -11,6 +11,25 @@ from locust.env import Environment
 
 logger = logging.getLogger()
 
+DATADOG_TAG_KEYS = frozenset(
+    {
+        "scenario_name",
+        "check_name",
+        "environment",
+        "test_type",
+        "dataset_size",
+        "input_type",
+        "repository_name",
+        "workflow_name",
+        "job_type",
+        "jobgroup_status",
+        "request_type",
+        "journey",
+        "success",
+        "scope",
+    }
+)
+
 
 class DatadogApiListener:
     """Forward Locust and custom metrics to the Datadog metrics API."""
@@ -91,11 +110,19 @@ class DatadogApiListener:
         )
         context_tags = {
             key: context.get(key)
-            for key in ("test_type", "dataset_size", "input_type", "success")
+            for key in (
+                "test_type",
+                "dataset_size",
+                "input_type",
+                "repository_name",
+                "workflow_name",
+                "job_type",
+                "success",
+            )
             if context and context.get(key) is not None
         }
         if scenario_name:
-            context_tags["cuj"] = str(scenario_name)
+            context_tags["scenario_name"] = str(scenario_name)
         tags = (
             self.default_tags
             | context_tags
@@ -158,7 +185,9 @@ class DatadogApiListener:
     ):
         """Record numeric custom fields as Datadog gauge metrics."""
         timestamp = self._unix_timestamp(time)
-        metric_tags = self.default_tags | (tags or {})
+        metric_tags = self.default_tags | {
+            key: value for key, value in (tags or {}).items() if key in DATADOG_TAG_KEYS
+        }
         for field_name, value in fields.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 self._buffer_metric(

@@ -67,6 +67,12 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         response=MagicMock(status_code=201),
         context={
             "test_type": "load",
+            "dataset_size": "small",
+            "input_type": "csv",
+            "repository_name": "shield-trifacta",
+            "workflow_name": "workflow_a",
+            "job_type": "batch",
+            "success": True,
             "job_id": "job-123",
             "workspace_token": "do-not-emit",
         },
@@ -108,9 +114,17 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert request_distribution["points"][0][1] == [123.4]
     assert '"service:shield-trifacta"' in series_payload
     assert '"code:201"' in series_payload
-    assert '"cuj:workflow_cuj_spike_test"' in series_payload
-    assert '"cuj:workflow_cuj_spike_test"' in distribution_payload
+    assert '"scenario_name:workflow_cuj_spike_test"' in series_payload
+    assert '"scenario_name:workflow_cuj_spike_test"' in distribution_payload
+    assert '"cuj:' not in series_payload
+    assert '"cuj:' not in distribution_payload
     assert '"test_type:load"' in series_payload
+    assert '"dataset_size:small"' in series_payload
+    assert '"input_type:csv"' in series_payload
+    assert '"repository_name:shield-trifacta"' in series_payload
+    assert '"workflow_name:workflow_a"' in series_payload
+    assert '"job_type:batch"' in series_payload
+    assert '"success:True"' in series_payload
     assert "job-123" not in series_payload
     assert "do-not-emit" not in series_payload
 
@@ -220,6 +234,7 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     env.runner.user_count = 3
     listeners = GrasshopperListeners(environment=env)
     listeners.datadog_listener = MagicMock()
+    listeners.influxdb_listener = MagicMock()
     greenlet = MagicMock()
     monkeypatch.setattr(
         "grasshopper.lib.util.listeners.gevent.spawn", lambda *args: greenlet
@@ -232,6 +247,16 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     assert calls[0].kwargs["measurement"] == "locust_users"
     assert calls[0].kwargs["fields"] == {"configured": 10}
     assert calls[0].kwargs["tags"] == {
+        "scenario_name": "workflow_cuj",
+        "test_type": "load",
+        "scope": "environment",
+    }
+    influx_tags = (
+        listeners.influxdb_listener._InfluxDBListener__make_data_point.call_args.kwargs[
+            "tags"
+        ]
+    )
+    assert influx_tags == {
         "cuj": "workflow_cuj",
         "test_type": "load",
         "scope": "environment",
@@ -240,7 +265,7 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     greenlet.kill.assert_called_once_with(block=False)
 
 
-def test_user_load_metrics_omit_cuj_without_scenario_name(monkeypatch):
+def test_user_load_metrics_omit_scenario_name_without_configuration(monkeypatch):
     env = MagicMock()
     env.grasshopper.global_configuration = {"users": 10, "test_type": "load"}
     env.runner.user_count = 3
@@ -269,7 +294,7 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     listeners.flush_check_to_dbs(
         "connection health",
         True,
-        {"job_type": "batch"},
+        {"job_type": "batch", "jobgroup_id": "do-not-emit"},
     )
 
     listeners.datadog_listener.record_check.assert_called_once()
@@ -284,7 +309,7 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     }
 
 
-def test_flush_check_to_dbs_adds_scenario_cuj_only_to_datadog():
+def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
     env = MagicMock()
     env.host = "https://perf.example"
     env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
@@ -297,12 +322,13 @@ def test_flush_check_to_dbs_adds_scenario_cuj_only_to_datadog():
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
     ]
-    assert datadog_tags["cuj"] == "workflow_cuj_spike_test"
+    assert datadog_tags["scenario_name"] == "workflow_cuj_spike_test"
+    assert "cuj" not in datadog_tags
     influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
-    assert "cuj" not in influx_tags
+    assert "scenario_name" not in influx_tags
 
 
-def test_flush_check_to_dbs_uses_scenario_name_for_cuj():
+def test_flush_check_to_dbs_uses_configured_scenario_name():
     env = MagicMock()
     env.host = "https://perf.example"
     env.grasshopper.global_configuration = {"scenario_name": "composite_scenario"}
@@ -316,10 +342,26 @@ def test_flush_check_to_dbs_uses_scenario_name_for_cuj():
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
     ]
-    assert datadog_tags["cuj"] == "composite_scenario"
+    assert datadog_tags["scenario_name"] == "composite_scenario"
+    assert "cuj" not in datadog_tags
 
 
-def test_flush_check_to_dbs_omits_cuj_when_scenario_name_is_unavailable():
+def test_flush_failed_check_uses_configured_scenario_name():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "dataset_load"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs("dataset check", False, {})
+
+    call_kwargs = listeners.datadog_listener.record_check.call_args.kwargs
+    assert call_kwargs["check_passed"] is False
+    assert call_kwargs["extra_tags"]["scenario_name"] == "dataset_load"
+    assert "cuj" not in call_kwargs["extra_tags"]
+
+
+def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():
     env = MagicMock()
     env.host = "https://perf.example"
     env.grasshopper.global_configuration = {}
@@ -334,3 +376,4 @@ def test_flush_check_to_dbs_omits_cuj_when_scenario_name_is_unavailable():
         "extra_tags"
     ]
     assert "cuj" not in datadog_tags
+    assert "scenario_name" not in datadog_tags

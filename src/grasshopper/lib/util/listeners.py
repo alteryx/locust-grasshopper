@@ -10,7 +10,10 @@ from datetime import datetime, timezone
 
 import gevent
 from grasshopper.lib.util.check_constants import CheckConstants
-from grasshopper.lib.util.datadog_listener import DatadogApiListener
+from grasshopper.lib.util.datadog_listener import (
+    DATADOG_TAG_KEYS,
+    DatadogApiListener,
+)
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
@@ -110,6 +113,8 @@ class GrasshopperListeners:
     def _user_metric_tags(environment):
         """Return low-cardinality tags for environment-level load metrics."""
         configuration = getattr(environment.grasshopper, "global_configuration", {})
+        if not isinstance(configuration, Mapping):
+            return {"test_type": "exploratory", "scope": "environment"}
         test_type = configuration.get("test_type") or "exploratory"
         tags = {"test_type": str(test_type), "scope": "environment"}
         scenario_name = configuration.get("scenario_name")
@@ -167,13 +172,13 @@ class GrasshopperListeners:
         )
 
     @staticmethod
-    def _check_metric_cuj(environment):
-        """Resolve a check metric CUJ from the selected scenario name."""
+    def _configured_scenario_name(environment):
+        """Resolve a scenario name from Grasshopper configuration."""
         configuration = getattr(environment.grasshopper, "global_configuration", {})
         if not isinstance(configuration, Mapping):
             return None
-        cuj = configuration.get("scenario_name")
-        return str(cuj) if cuj is not None else None
+        scenario_name = configuration.get("scenario_name")
+        return str(scenario_name) if scenario_name else None
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
@@ -190,11 +195,14 @@ class GrasshopperListeners:
                 "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
-        datadog_tags = tags.copy()
+        datadog_tags = {
+            key: value for key, value in tags.items() if key in DATADOG_TAG_KEYS
+        }
         datadog_tags.pop("cuj", None)
-        cuj = self._check_metric_cuj(self.locust_environment)
-        if cuj is not None:
-            datadog_tags["cuj"] = cuj
+        datadog_tags.pop("scenario_name", None)
+        scenario_name = self._configured_scenario_name(self.locust_environment)
+        if scenario_name is not None:
+            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "check metric",
             "record_check",
@@ -219,13 +227,21 @@ class GrasshopperListeners:
             )
             self.influxdb_listener.cache.append(point)
 
+        datadog_tags = {
+            key: value for key, value in metric_tags.items() if key in DATADOG_TAG_KEYS
+        }
+        datadog_tags.pop("cuj", None)
+        datadog_tags.pop("scenario_name", None)
+        scenario_name = self._configured_scenario_name(self.locust_environment)
+        if scenario_name is not None:
+            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "custom metric",
             "record_custom_point",
             measurement=measurement,
             fields=fields,
             time=time,
-            tags=metric_tags,
+            tags=datadog_tags,
         )
 
     def _send_to_datadog(self, operation: str, method_name: str, *args, **kwargs):
