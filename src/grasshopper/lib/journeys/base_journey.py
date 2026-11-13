@@ -12,7 +12,11 @@ from uuid import uuid4
 import gevent
 import grasshopper.lib.util.listeners  # noqa: F401
 from grasshopper.lib.fixtures.grasshopper_constants import GrasshopperConstants
+from grasshopper.lib.util.datadog_listener import (
+    DATADOG_SCENARIO_TAG_KEYS,
+)
 from grasshopper.lib.util.decorators import classproperty
+from grasshopper.lib.util.trace_context import request_name
 from locust import HttpUser
 
 # This is an inbuilt logger, renamed for clarity of purpose.
@@ -138,12 +142,33 @@ class BaseJourney(HttpUser):
         self.environment.host = self.normalize_url(
             self.scenario_args.get("target_url") or self.host
         )
+        self.update_tags(
+            {
+                key: str(value)
+                for key in DATADOG_SCENARIO_TAG_KEYS
+                if (value := self.scenario_args.get(key))
+            }
+        )
         self.defaults["tags"] = self.tags
         self.update_tags({"environment": self.environment.host})
+        self._install_request_name_context()
 
         # TODO: currently global iterations is stored in the environment stats object
         # TODO: poke around to see if we can move it to a class attribute here
         self.vu_iteration = 0
+
+    def _install_request_name_context(self):
+        """Make each Locust request name available to trace instrumentation."""
+        original_request = self.client.request
+
+        def request_with_trace_name(*args, **kwargs):
+            name = kwargs.get("name") or getattr(self.client, "request_name", None)
+            if name is None and len(args) > 1:
+                name = args[1]
+            with request_name(str(name) if name is not None else None):
+                return original_request(*args, **kwargs)
+
+        self.client.request = request_with_trace_name
 
     def _register_new_vu(self):
         """Increment the user count and return the new vu's number."""

@@ -5,10 +5,16 @@ The listeners module contains all the custom listeners that we have defined for 
 
 import logging
 import warnings
+from collections.abc import Mapping
 from datetime import datetime, timezone
 
+import gevent
 from grasshopper.lib.util.check_constants import CheckConstants
-from grasshopper.lib.util.datadog_listener import DatadogApiListener
+from grasshopper.lib.util.datadog_listener import (
+    DATADOG_TAG_KEYS,
+    DatadogApiListener,
+    _configured_datadog_tags,
+)
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
@@ -42,6 +48,7 @@ class GrasshopperListeners:
         environment.events.test_start.add_listener(self.on_test_start)
         environment.events.test_stop.add_listener(self.on_test_stop_append_metric_data)
         self.locust_environment = environment
+        self._user_metrics_greenlet = None
 
     @events.test_start.add_listener
     def on_test_start(self, environment: Environment, **_kwargs):
@@ -83,10 +90,12 @@ class GrasshopperListeners:
                 "DD_API_KEY and DD_ENV were not both specified. "
                 "Skipping Datadog listener initialization..."
             )
+        self._start_user_metrics(environment)
 
     @events.test_stop.add_listener
     def on_test_stop_append_metric_data(self, environment, **_kwargs):
         """Create a listener which appends metrics to the environment.stats object."""
+        self._stop_user_metrics(environment)
         try:
             self._append_trend_data(environment)
         except Exception as e:  # noqa: BLE001
@@ -100,6 +109,77 @@ class GrasshopperListeners:
                 f"Unexpected exception appending trend data to environment object: {e}"
             )
         self._send_to_datadog("shutdown", "close")
+
+    @staticmethod
+    def _user_metric_tags(environment):
+        """Return low-cardinality tags for environment-level load metrics."""
+        configuration = getattr(environment.grasshopper, "global_configuration", {})
+        if not isinstance(configuration, Mapping):
+            return {"test_type": "exploratory", "scope": "environment"}
+        test_type = configuration.get("test_type") or "exploratory"
+        tags = {"test_type": str(test_type), "scope": "environment"}
+        scenario_name = configuration.get("scenario_name")
+        if scenario_name:
+            tags["cuj"] = str(scenario_name)
+        return tags
+
+    @staticmethod
+    def _configured_users(environment):
+        shape = getattr(environment, "shape_class", None)
+        users = getattr(shape, "users", None)
+        if not isinstance(users, (int, float)):
+            users = getattr(environment.grasshopper, "global_configuration", {}).get(
+                "users"
+            )
+        return users if isinstance(users, (int, float)) else None
+
+    def _start_user_metrics(self, environment):
+        """Publish configured load and sample active users during the run."""
+        configured_users = self._configured_users(environment)
+        if configured_users is not None:
+            self.write_metric_point(
+                "locust_users",
+                {"configured": int(configured_users)},
+                tags=self._user_metric_tags(environment),
+            )
+
+        runner = getattr(environment, "runner", None)
+        if runner is None or not isinstance(getattr(runner, "user_count", None), int):
+            return
+        self._user_metrics_greenlet = gevent.spawn(
+            self._sample_active_users, environment
+        )
+
+    def _sample_active_users(self, environment):
+        while True:
+            runner = getattr(environment, "runner", None)
+            active_users = getattr(runner, "user_count", 0)
+            self.write_metric_point(
+                "locust_users",
+                {"active": int(active_users)},
+                tags=self._user_metric_tags(environment),
+            )
+            gevent.sleep(1)
+
+    def _stop_user_metrics(self, environment):
+        """Stop active-user sampling and publish the terminal zero point."""
+        if self._user_metrics_greenlet is not None:
+            self._user_metrics_greenlet.kill(block=False)
+            self._user_metrics_greenlet = None
+        self.write_metric_point(
+            "locust_users",
+            {"active": 0},
+            tags=self._user_metric_tags(environment),
+        )
+
+    @staticmethod
+    def _configured_scenario_name(environment):
+        """Resolve a scenario name from Grasshopper configuration."""
+        configuration = getattr(environment.grasshopper, "global_configuration", {})
+        if not isinstance(configuration, Mapping):
+            return None
+        scenario_name = configuration.get("scenario_name")
+        return str(scenario_name) if scenario_name else None
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
@@ -116,12 +196,35 @@ class GrasshopperListeners:
                 "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
+        datadog_tags = {
+            key: value
+            for key, value in tags.items()
+            if key in DATADOG_TAG_KEYS and value != ""
+        }
+        datadog_tags.update(
+            {
+                key: value
+                for key, value in _configured_datadog_tags(
+                    getattr(
+                        self.locust_environment.grasshopper,
+                        "global_configuration",
+                        {},
+                    )
+                ).items()
+                if key not in datadog_tags
+            }
+        )
+        datadog_tags.pop("cuj", None)
+        datadog_tags.pop("scenario_name", None)
+        scenario_name = self._configured_scenario_name(self.locust_environment)
+        if scenario_name is not None:
+            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "check metric",
             "record_check",
             check_name=check_name,
             check_passed=check_passed,
-            extra_tags=tags,
+            extra_tags=datadog_tags,
             time=time,
         )
 
@@ -140,13 +243,23 @@ class GrasshopperListeners:
             )
             self.influxdb_listener.cache.append(point)
 
+        datadog_tags = {
+            key: value
+            for key, value in metric_tags.items()
+            if key in DATADOG_TAG_KEYS and value is not None and value != ""
+        }
+        datadog_tags.pop("cuj", None)
+        datadog_tags.pop("scenario_name", None)
+        scenario_name = self._configured_scenario_name(self.locust_environment)
+        if scenario_name is not None:
+            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "custom metric",
             "record_custom_point",
             measurement=measurement,
             fields=fields,
             time=time,
-            tags=metric_tags,
+            tags=datadog_tags,
         )
 
     def _send_to_datadog(self, operation: str, method_name: str, *args, **kwargs):

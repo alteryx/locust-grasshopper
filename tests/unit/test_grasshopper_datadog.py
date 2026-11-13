@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,6 +42,7 @@ def test_datadog_configuration_requires_api_key_and_environment(
 def test_datadog_listener_emits_request_metrics(monkeypatch):
     env = MagicMock()
     env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
     response_mock = MagicMock()
     response_mock.read.return_value = b"{}"
     response_mock.__enter__.return_value = response_mock
@@ -64,25 +66,119 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
         response_length=0,
         response=MagicMock(status_code=201),
         context={
-            "journey": "example",
+            "test_type": "load",
+            "dataset_size": "small",
+            "input_type": "csv",
+            "dataset_format": "delimited_text",
+            "repository_name": "shield-trifacta",
+            "workflow_name": "workflow_a",
+            "job_type": "batch",
+            "jobgroup_status": "COMPLETE",
+            "file_format": "delimited_text",
+            "execution_engine": "amp",
+            "workflow_complexity": "typical",
+            "success": True,
             "job_id": "job-123",
+            "jobgroup_id": "3798005",
             "workspace_token": "do-not-emit",
         },
-        exception=None,
+        exception=RuntimeError("request failed"),
     )
     listener.flush()
 
-    request_obj = urlopen_mock.call_args.args[0]
-    assert request_obj.full_url == "https://api.datadoghq.com/api/v1/series"
-    assert request_obj.headers["Dd-api-key"] == "secret"
-    payload = request_obj.data.decode("utf-8")
-    assert '"metric": "grasshopper.locust_requests.count"' in payload
-    assert '"metric": "grasshopper.locust_requests.response_time"' in payload
-    assert '"service:shield-trifacta"' in payload
-    assert '"code:201"' in payload
-    assert "journey:example" not in payload
-    assert "job-123" not in payload
-    assert "do-not-emit" not in payload
+    requests = [call.args[0] for call in urlopen_mock.call_args_list]
+    assert {request.full_url for request in requests} == {
+        "https://api.datadoghq.com/api/v1/series",
+        "https://api.datadoghq.com/api/v1/distribution_points",
+    }
+    for request_obj in requests:
+        assert request_obj.headers["Dd-api-key"] == "secret"
+    series_payload = next(
+        request.data.decode("utf-8")
+        for request in requests
+        if request.full_url.endswith("/series")
+    )
+    distribution_payload = next(
+        request.data.decode("utf-8")
+        for request in requests
+        if request.full_url.endswith("/distribution_points")
+    )
+    distribution_series = json.loads(distribution_payload)["series"]
+    request_distribution = next(
+        series
+        for series in distribution_series
+        if series["metric"] == "grasshopper.locust_requests.response_time_distribution"
+    )
+    assert '"metric": "grasshopper.locust_requests.count"' in series_payload
+    assert '"metric": "grasshopper.locust_requests.response_time"' in series_payload
+    assert (
+        '"metric": "grasshopper.locust_requests.response_time_distribution"'
+        in distribution_payload
+    )
+    assert '"metric": "grasshopper.locust_requests.error"' in series_payload
+    assert '"type": "distribution"' in distribution_payload
+    assert request_distribution["points"][0][1] == [123.4]
+    assert '"service:shield-trifacta"' in series_payload
+    assert '"code:201"' in series_payload
+    assert '"scenario_name:workflow_cuj_spike_test"' in series_payload
+    assert '"scenario_name:workflow_cuj_spike_test"' in distribution_payload
+    assert '"cuj:' not in series_payload
+    assert '"cuj:' not in distribution_payload
+    assert '"test_type:load"' in series_payload
+    assert '"dataset_size:small"' in series_payload
+    assert '"input_type:csv"' in series_payload
+    assert '"dataset_format:delimited_text"' in series_payload
+    assert '"repository_name:shield-trifacta"' in series_payload
+    assert '"workflow_name:workflow_a"' in series_payload
+    assert '"job_type:batch"' in series_payload
+    assert '"jobgroup_status:COMPLETE"' in series_payload
+    assert '"file_format:delimited_text"' in series_payload
+    assert '"execution_engine:amp"' in series_payload
+    assert '"workflow_complexity:typical"' in series_payload
+    assert '"success:True"' in series_payload
+    assert "job-123" not in series_payload
+    assert "3798005" not in series_payload
+    assert "do-not-emit" not in series_payload
+
+
+def test_datadog_listener_emits_configured_workflow_name():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.record_custom_point(
+        "locust_requests",
+        {"response_time": 10},
+        tags={"workflow_name": "Weekly 357 Medium -- 100K"},
+    )
+
+    assert (
+        "workflow_name:Weekly 357 Medium -- 100K" in listener.series_buffer[0]["tags"]
+    )
+
+
+def test_datadog_listener_uses_actual_request_name_tag():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.on_request(
+        request_type="GET",
+        name="list_connections",
+        response_time=10,
+        response_length=0,
+        response=MagicMock(status_code=200),
+        context={},
+        exception=None,
+    )
+
+    request_metric = next(
+        metric
+        for metric in listener.series_buffer
+        if metric["metric"].endswith("locust_requests.count")
+    )
+    assert "name:list_connections" in request_metric["tags"]
+    assert "request_name:list_connections" in request_metric["tags"]
 
 
 def test_datadog_check_name_matches_trace_correlation_format():
@@ -156,6 +252,66 @@ def test_write_metric_point_reports_to_datadog_listener():
     )
 
 
+def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypatch):
+    env = MagicMock()
+    env.grasshopper.global_configuration = {
+        "users": 10,
+        "scenario_name": "workflow_cuj",
+        "test_type": "load",
+    }
+    env.runner.user_count = 3
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    listeners.influxdb_listener = MagicMock()
+    greenlet = MagicMock()
+    monkeypatch.setattr(
+        "grasshopper.lib.util.listeners.gevent.spawn", lambda *args: greenlet
+    )
+
+    listeners._start_user_metrics(env)
+    listeners._stop_user_metrics(env)
+
+    calls = listeners.datadog_listener.record_custom_point.call_args_list
+    assert calls[0].kwargs["measurement"] == "locust_users"
+    assert calls[0].kwargs["fields"] == {"configured": 10}
+    assert calls[0].kwargs["tags"] == {
+        "scenario_name": "workflow_cuj",
+        "test_type": "load",
+        "scope": "environment",
+    }
+    influx_tags = (
+        listeners.influxdb_listener._InfluxDBListener__make_data_point.call_args.kwargs[
+            "tags"
+        ]
+    )
+    assert influx_tags == {
+        "cuj": "workflow_cuj",
+        "test_type": "load",
+        "scope": "environment",
+    }
+    assert calls[-1].kwargs["fields"] == {"active": 0}
+    greenlet.kill.assert_called_once_with(block=False)
+
+
+def test_user_load_metrics_omit_scenario_name_without_configuration(monkeypatch):
+    env = MagicMock()
+    env.grasshopper.global_configuration = {"users": 10, "test_type": "load"}
+    env.runner.user_count = 3
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    greenlet = MagicMock()
+    monkeypatch.setattr(
+        "grasshopper.lib.util.listeners.gevent.spawn", lambda *args: greenlet
+    )
+
+    listeners._start_user_metrics(env)
+
+    assert listeners.datadog_listener.record_custom_point.call_args.kwargs["tags"] == {
+        "test_type": "load",
+        "scope": "environment",
+    }
+
+
 def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     env = MagicMock()
     env.host = "https://perf.example"
@@ -166,7 +322,17 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     listeners.flush_check_to_dbs(
         "connection health",
         True,
-        {"job_type": "batch"},
+        {
+            "dataset_size": "m",
+            "input_type": "csv",
+            "workflow_name": "Weekly 357 Medium -- 100K",
+            "job_type": "batch",
+            "jobgroup_status": "COMPLETE",
+            "file_format": "delimited_text",
+            "execution_engine": "amp",
+            "workflow_complexity": "typical",
+            "jobgroup_id": "do-not-emit",
+        },
     )
 
     listeners.datadog_listener.record_check.assert_called_once()
@@ -177,5 +343,82 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
         "check_name": "connection health",
         "environment": "https://perf.example",
         "journey": "connections",
+        "dataset_size": "m",
+        "input_type": "csv",
+        "workflow_name": "Weekly 357 Medium -- 100K",
         "job_type": "batch",
+        "jobgroup_status": "COMPLETE",
+        "file_format": "delimited_text",
+        "execution_engine": "amp",
+        "workflow_complexity": "typical",
     }
+
+
+def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+    listeners.influxdb_listener = MagicMock()
+
+    listeners.flush_check_to_dbs("workflow created", True, {})
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert datadog_tags["scenario_name"] == "workflow_cuj_spike_test"
+    assert "cuj" not in datadog_tags
+    influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
+    assert "scenario_name" not in influx_tags
+
+
+def test_flush_check_to_dbs_uses_configured_scenario_name():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "composite_scenario"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs(
+        "workflow created", True, {"cuj": "workflow_cuj_spike_test"}
+    )
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert datadog_tags["scenario_name"] == "composite_scenario"
+    assert "cuj" not in datadog_tags
+
+
+def test_flush_failed_check_uses_configured_scenario_name():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {"scenario_name": "dataset_load"}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs("dataset check", False, {})
+
+    call_kwargs = listeners.datadog_listener.record_check.call_args.kwargs
+    assert call_kwargs["check_passed"] is False
+    assert call_kwargs["extra_tags"]["scenario_name"] == "dataset_load"
+    assert "cuj" not in call_kwargs["extra_tags"]
+
+
+def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {}
+    listeners = GrasshopperListeners(environment=env)
+    listeners.datadog_listener = MagicMock()
+
+    listeners.flush_check_to_dbs(
+        "workflow created", True, {"cuj": "should_not_be_used"}
+    )
+
+    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
+        "extra_tags"
+    ]
+    assert "cuj" not in datadog_tags
+    assert "scenario_name" not in datadog_tags
