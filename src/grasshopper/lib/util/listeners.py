@@ -181,6 +181,34 @@ class GrasshopperListeners:
         scenario_name = configuration.get("scenario_name")
         return str(scenario_name) if scenario_name else None
 
+    def _datadog_tags(self, tags):
+        """Return Datadog tags without changing the source tags used by InfluxDB."""
+        datadog_tags = {
+            key: value
+            for key, value in tags.items()
+            if key in DATADOG_TAG_KEYS and value is not None and value != ""
+        }
+        datadog_tags.update(
+            {
+                key: value
+                for key, value in _configured_datadog_tags(
+                    getattr(
+                        self.locust_environment.grasshopper,
+                        "global_configuration",
+                        {},
+                    )
+                ).items()
+                if key not in datadog_tags
+            }
+        )
+        if tags.get("scope") != "environment":
+            scenario_name = self._configured_scenario_name(self.locust_environment)
+            if scenario_name is not None:
+                datadog_tags["scenario_name"] = scenario_name
+        else:
+            datadog_tags.pop("scenario_name", None)
+        return datadog_tags
+
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
         environment_base_url = self.locust_environment.host
@@ -196,35 +224,12 @@ class GrasshopperListeners:
                 "locust_checks", fields, time, tags=tags
             )
             self.influxdb_listener.cache.append(point)
-        datadog_tags = {
-            key: value
-            for key, value in tags.items()
-            if key in DATADOG_TAG_KEYS and value != ""
-        }
-        datadog_tags.update(
-            {
-                key: value
-                for key, value in _configured_datadog_tags(
-                    getattr(
-                        self.locust_environment.grasshopper,
-                        "global_configuration",
-                        {},
-                    )
-                ).items()
-                if key not in datadog_tags
-            }
-        )
-        datadog_tags.pop("cuj", None)
-        datadog_tags.pop("scenario_name", None)
-        scenario_name = self._configured_scenario_name(self.locust_environment)
-        if scenario_name is not None:
-            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "check metric",
             "record_check",
             check_name=check_name,
             check_passed=check_passed,
-            extra_tags=datadog_tags,
+            extra_tags=self._datadog_tags(tags),
             time=time,
         )
 
@@ -243,23 +248,13 @@ class GrasshopperListeners:
             )
             self.influxdb_listener.cache.append(point)
 
-        datadog_tags = {
-            key: value
-            for key, value in metric_tags.items()
-            if key in DATADOG_TAG_KEYS and value is not None and value != ""
-        }
-        datadog_tags.pop("cuj", None)
-        datadog_tags.pop("scenario_name", None)
-        scenario_name = self._configured_scenario_name(self.locust_environment)
-        if scenario_name is not None:
-            datadog_tags["scenario_name"] = scenario_name
         self._send_to_datadog(
             "custom metric",
             "record_custom_point",
             measurement=measurement,
             fields=fields,
             time=time,
-            tags=datadog_tags,
+            tags=self._datadog_tags(metric_tags),
         )
 
     def _send_to_datadog(self, operation: str, method_name: str, *args, **kwargs):

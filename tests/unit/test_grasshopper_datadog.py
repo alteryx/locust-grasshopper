@@ -275,7 +275,6 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     assert calls[0].kwargs["measurement"] == "locust_users"
     assert calls[0].kwargs["fields"] == {"configured": 10}
     assert calls[0].kwargs["tags"] == {
-        "scenario_name": "workflow_cuj",
         "test_type": "load",
         "scope": "environment",
     }
@@ -361,8 +360,13 @@ def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
     listeners = GrasshopperListeners(environment=env)
     listeners.datadog_listener = MagicMock()
     listeners.influxdb_listener = MagicMock()
+    listeners.influxdb_listener._InfluxDBListener__make_data_point.return_value = {
+        "tags": {"cuj": "legacy_workflow_cuj"}
+    }
 
-    listeners.flush_check_to_dbs("workflow created", True, {})
+    listeners.flush_check_to_dbs(
+        "workflow created", True, {"cuj": "legacy_workflow_cuj"}
+    )
 
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
@@ -370,6 +374,7 @@ def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
     assert datadog_tags["scenario_name"] == "workflow_cuj_spike_test"
     assert "cuj" not in datadog_tags
     influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
+    assert influx_tags["cuj"] == "legacy_workflow_cuj"
     assert "scenario_name" not in influx_tags
 
 
@@ -381,7 +386,7 @@ def test_flush_check_to_dbs_uses_configured_scenario_name():
     listeners.datadog_listener = MagicMock()
 
     listeners.flush_check_to_dbs(
-        "workflow created", True, {"cuj": "workflow_cuj_spike_test"}
+        "workflow created", True, {"cuj": "legacy_workflow_cuj"}
     )
 
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
@@ -413,9 +418,7 @@ def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():
     listeners = GrasshopperListeners(environment=env)
     listeners.datadog_listener = MagicMock()
 
-    listeners.flush_check_to_dbs(
-        "workflow created", True, {"cuj": "should_not_be_used"}
-    )
+    listeners.flush_check_to_dbs("workflow created", True, {})
 
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
