@@ -172,17 +172,11 @@ class GrasshopperListeners:
             tags=self._user_metric_tags(environment),
         )
 
-    @staticmethod
-    def _configured_scenario_name(environment):
-        """Resolve a scenario name from Grasshopper configuration."""
-        configuration = getattr(environment.grasshopper, "global_configuration", {})
-        if not isinstance(configuration, Mapping):
-            return None
-        scenario_name = configuration.get("scenario_name")
-        return str(scenario_name) if scenario_name else None
-
     def _datadog_tags(self, tags):
         """Return Datadog tags without changing the source tags used by InfluxDB."""
+        configuration = getattr(
+            self.locust_environment.grasshopper, "global_configuration", {}
+        )
         datadog_tags = {
             key: value
             for key, value in tags.items()
@@ -191,22 +185,14 @@ class GrasshopperListeners:
         datadog_tags.update(
             {
                 key: value
-                for key, value in _configured_datadog_tags(
-                    getattr(
-                        self.locust_environment.grasshopper,
-                        "global_configuration",
-                        {},
-                    )
-                ).items()
+                for key, value in _configured_datadog_tags(configuration).items()
                 if key not in datadog_tags
             }
         )
-        if tags.get("scope") != "environment":
-            scenario_name = self._configured_scenario_name(self.locust_environment)
-            if scenario_name is not None:
-                datadog_tags["scenario_name"] = scenario_name
-        else:
+        if tags.get("scope") == "environment":
             datadog_tags.pop("scenario_name", None)
+        elif isinstance(configuration, Mapping) and configuration.get("scenario_name"):
+            datadog_tags["scenario_name"] = str(configuration["scenario_name"])
         return datadog_tags
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):

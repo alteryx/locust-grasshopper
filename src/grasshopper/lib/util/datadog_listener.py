@@ -12,30 +12,6 @@ from locust.env import Environment
 
 logger = logging.getLogger()
 
-DATADOG_TAG_KEYS = frozenset(
-    {
-        "scenario_name",
-        "check_name",
-        "environment",
-        "test_type",
-        "dataset_size",
-        "input_type",
-        "dataset_format",
-        "repository_name",
-        "workflow_name",
-        "file_format",
-        "execution_engine",
-        "workflow_complexity",
-        "job_type",
-        "jobgroup_status",
-        "request_type",
-        "trend_name",
-        "journey",
-        "success",
-        "scope",
-    }
-)
-
 DATADOG_SCENARIO_TAG_KEYS = (
     "dataset_size",
     "input_type",
@@ -47,6 +23,21 @@ DATADOG_SCENARIO_TAG_KEYS = (
     "file_format",
     "execution_engine",
     "workflow_complexity",
+)
+
+DATADOG_TAG_KEYS = frozenset(
+    {
+        "scenario_name",
+        "check_name",
+        "environment",
+        "test_type",
+        "request_type",
+        "trend_name",
+        "journey",
+        "success",
+        "scope",
+        *DATADOG_SCENARIO_TAG_KEYS,
+    }
 )
 
 
@@ -130,58 +121,11 @@ class DatadogApiListener:
         """Convert a Locust request event into Datadog request metrics."""
         status_code = getattr(response, "status_code", None)
         timestamp = self._unix_timestamp()
-        configuration = getattr(
-            getattr(self.environment, "grasshopper", None),
-            "global_configuration",
-            {},
-        )
-        scenario_name = (
-            configuration.get("scenario_name")
-            if isinstance(configuration, dict)
-            else None
-        )
-        configured_tags = _configured_datadog_tags(configuration)
-        context_tags = {
-            key: context.get(key)
-            for key in (
-                "test_type",
-                "dataset_size",
-                "input_type",
-                "dataset_format",
-                "repository_name",
-                "workflow_name",
-                "job_type",
-                "jobgroup_status",
-                "file_format",
-                "execution_engine",
-                "workflow_complexity",
-                "success",
-            )
-            if context and context.get(key) is not None and context.get(key) != ""
-        }
-        for key, value in configured_tags.items():
-            context_tags.setdefault(key, value)
-        if scenario_name:
-            context_tags["scenario_name"] = str(scenario_name)
-        trend_name = active_trend_name()
-        if (
-            not trend_name
-            and request_type == "CUSTOM"
-            and str(name).startswith("PX_TREND_")
-        ):
-            trend_name = str(name)
-        if trend_name:
-            context_tags["trend_name"] = str(trend_name)
-        tags = (
-            self.default_tags
-            | context_tags
-            | {
-                "name": name,
-                "request_name": name,
-                "request_type": request_type,
-                "environment": getattr(self.environment, "host", None),
-                "code": str(status_code) if status_code is not None else None,
-            }
+        tags = self._request_tags(
+            name=name,
+            request_type=request_type,
+            status_code=status_code,
+            context=context,
         )
 
         self._buffer_metric("locust_requests.count", 1, "count", tags, timestamp)
@@ -207,6 +151,46 @@ class DatadogApiListener:
                 tags | {"exception_type": type(exception).__name__},
                 timestamp,
             )
+
+    def _request_tags(self, name, request_type, status_code, context):
+        """Build the common tag set for request metrics."""
+        configuration = getattr(
+            getattr(self.environment, "grasshopper", None),
+            "global_configuration",
+            {},
+        )
+        context_tags = {
+            key: context[key]
+            for key in ("test_type", "success", *DATADOG_SCENARIO_TAG_KEYS)
+            if context and context.get(key) not in (None, "")
+        }
+        for key, value in _configured_datadog_tags(configuration).items():
+            context_tags.setdefault(key, value)
+
+        if isinstance(configuration, dict) and configuration.get("scenario_name"):
+            context_tags["scenario_name"] = str(configuration["scenario_name"])
+
+        trend_name = active_trend_name()
+        if (
+            not trend_name
+            and request_type == "CUSTOM"
+            and str(name).startswith("PX_TREND_")
+        ):
+            trend_name = str(name)
+        if trend_name:
+            context_tags["trend_name"] = str(trend_name)
+
+        return (
+            self.default_tags
+            | context_tags
+            | {
+                "name": name,
+                "request_name": name,
+                "request_type": request_type,
+                "environment": getattr(self.environment, "host", None),
+                "code": str(status_code) if status_code is not None else None,
+            }
+        )
 
     def record_check(
         self, check_name: str, check_passed: bool, extra_tags: dict, time=None
