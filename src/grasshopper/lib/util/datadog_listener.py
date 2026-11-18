@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from urllib import error, request
 
 import gevent
+from grasshopper.lib.util.trace_context import active_trend_name
 from locust.env import Environment
 
 logger = logging.getLogger()
@@ -28,6 +29,7 @@ DATADOG_TAG_KEYS = frozenset(
         "job_type",
         "jobgroup_status",
         "request_type",
+        "trend_name",
         "journey",
         "success",
         "scope",
@@ -161,6 +163,15 @@ class DatadogApiListener:
             context_tags.setdefault(key, value)
         if scenario_name:
             context_tags["scenario_name"] = str(scenario_name)
+        trend_name = active_trend_name()
+        if (
+            not trend_name
+            and request_type == "CUSTOM"
+            and str(name).startswith("PX_TREND_")
+        ):
+            trend_name = str(name)
+        if trend_name:
+            context_tags["trend_name"] = str(trend_name)
         tags = (
             self.default_tags
             | context_tags
