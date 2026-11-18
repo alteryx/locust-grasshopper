@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Any
 
 from grasshopper.lib.util.check_constants import CheckConstants
+from grasshopper.lib.util.trace_context import trend_name as set_trend_name
 from rich import box
 from rich.console import Console
 from rich.table import Table
@@ -34,7 +35,8 @@ def custom_trend(trend_name: str, extra_tag_keys=[]):
                 )
 
             start_time = datetime.now()
-            result = func(journey_object, *args, **kwargs)
+            with set_trend_name(trend_name):
+                result = func(journey_object, *args, **kwargs)
             end_time = datetime.now()
             time_delta = end_time - start_time
             environment.events.request.fire(
