@@ -5,16 +5,11 @@ The listeners module contains all the custom listeners that we have defined for 
 
 import logging
 import warnings
-from collections.abc import Mapping
 from datetime import datetime, timezone
 
 import gevent
 from grasshopper.lib.util.check_constants import CheckConstants
-from grasshopper.lib.util.datadog_listener import (
-    DATADOG_TAG_KEYS,
-    DatadogApiListener,
-    _configured_datadog_tags,
-)
+from grasshopper.lib.util.datadog_listener import DatadogApiListener
 from grasshopper.lib.util.utils import (
     report_checks_to_console,
     report_thresholds_to_console,
@@ -53,7 +48,11 @@ class GrasshopperListeners:
     @events.test_start.add_listener
     def on_test_start(self, environment: Environment, **_kwargs):
         """Create a listener for the test start event, starts an influxdb connection."""
-        influx_configuration = environment.grasshopper.influx_configuration
+        grasshopper = getattr(environment, "grasshopper", None)
+        if grasshopper is None:
+            return
+
+        influx_configuration = grasshopper.influx_configuration
         influx_host = influx_configuration.get("influx_host")
 
         if influx_host:
@@ -74,7 +73,7 @@ class GrasshopperListeners:
                 "initialization..."
             )
 
-        datadog_configuration = environment.grasshopper.datadog_configuration
+        datadog_configuration = grasshopper.datadog_configuration
         api_key = datadog_configuration.get("api_key")
         if api_key:
             logger.info(
@@ -113,14 +112,15 @@ class GrasshopperListeners:
     @staticmethod
     def _user_metric_tags(environment):
         """Return low-cardinality tags for environment-level load metrics."""
-        configuration = getattr(environment.grasshopper, "global_configuration", {})
-        if not isinstance(configuration, Mapping):
-            return {"test_type": "exploratory", "scope": "environment"}
+        grasshopper = getattr(environment, "grasshopper", None)
+        configuration = getattr(grasshopper, "global_configuration", {})
+        if not isinstance(configuration, dict):
+            configuration = {}
         test_type = configuration.get("test_type") or "exploratory"
         tags = {"test_type": str(test_type), "scope": "environment"}
         scenario_name = configuration.get("scenario_name")
         if scenario_name:
-            tags["cuj"] = str(scenario_name)
+            tags["scenario_name"] = str(scenario_name)
         return tags
 
     @staticmethod
@@ -128,13 +128,21 @@ class GrasshopperListeners:
         shape = getattr(environment, "shape_class", None)
         users = getattr(shape, "users", None)
         if not isinstance(users, (int, float)):
-            users = getattr(environment.grasshopper, "global_configuration", {}).get(
-                "users"
+            configuration = getattr(
+                getattr(environment, "grasshopper", None), "global_configuration", {}
             )
+            users = configuration.get("users") if isinstance(configuration, dict) else None
         return users if isinstance(users, (int, float)) else None
 
     def _start_user_metrics(self, environment):
         """Publish configured load and sample active users during the run."""
+        if self._user_metrics_greenlet is not None:
+            self._user_metrics_greenlet.kill(block=False)
+            self._user_metrics_greenlet = None
+
+        if self.datadog_listener is None and self.influxdb_listener is None:
+            return
+
         configured_users = self._configured_users(environment)
         if configured_users is not None:
             self.write_metric_point(
@@ -144,7 +152,7 @@ class GrasshopperListeners:
             )
 
         runner = getattr(environment, "runner", None)
-        if runner is None or not isinstance(getattr(runner, "user_count", None), int):
+        if runner is None:
             return
         self._user_metrics_greenlet = gevent.spawn(
             self._sample_active_users, environment
@@ -173,26 +181,17 @@ class GrasshopperListeners:
         )
 
     def _datadog_tags(self, tags):
-        """Return Datadog tags without changing the source tags used by InfluxDB."""
+        """Add the configured scenario without changing InfluxDB tags."""
+        datadog_tags = {key: value for key, value in tags.items() if key != "cuj"}
         configuration = getattr(
-            self.locust_environment.grasshopper, "global_configuration", {}
+            getattr(self.locust_environment, "grasshopper", None),
+            "global_configuration",
+            {},
         )
-        datadog_tags = {
-            key: value
-            for key, value in tags.items()
-            if key in DATADOG_TAG_KEYS and value is not None and value != ""
-        }
-        datadog_tags.update(
-            {
-                key: value
-                for key, value in _configured_datadog_tags(configuration).items()
-                if key not in datadog_tags
-            }
-        )
-        if tags.get("scope") == "environment":
-            datadog_tags.pop("scenario_name", None)
-        elif isinstance(configuration, Mapping) and configuration.get("scenario_name"):
-            datadog_tags["scenario_name"] = str(configuration["scenario_name"])
+        if tags.get("scope") != "environment" and isinstance(configuration, dict):
+            scenario_name = configuration.get("scenario_name")
+            if scenario_name:
+                datadog_tags["scenario_name"] = str(scenario_name)
         return datadog_tags
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):

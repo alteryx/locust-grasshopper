@@ -12,46 +12,20 @@ from locust.env import Environment
 
 logger = logging.getLogger()
 
-DATADOG_SCENARIO_TAG_KEYS = (
-    "dataset_size",
-    "input_type",
-    "dataset_format",
-    "workflow_name",
-    "job_type",
-    "jobgroup_status",
-    "repository_name",
-    "file_format",
-    "execution_engine",
-    "workflow_complexity",
-)
-
-DATADOG_TAG_KEYS = frozenset(
+_DATADOG_EXCLUDED_TAGS = frozenset(
     {
-        "scenario_name",
-        "check_name",
-        "environment",
-        "test_type",
-        "request_type",
-        "trend_name",
-        "journey",
-        "success",
-        "scope",
-        *DATADOG_SCENARIO_TAG_KEYS,
+        "job_id",
+        "jobgroup_id",
+        "cuj",
+        "workspace_token",
+        "connection_id",
+        "token",
+        "workflow_id",
+        "dataset_id",
+        "user_id",
+        "vu_id",
     }
 )
-
-
-def _configured_datadog_tags(configuration):
-    """Return safe Datadog dimensions from the active scenario configuration."""
-    if not isinstance(configuration, dict):
-        return {}
-    tags = {}
-    for key in DATADOG_SCENARIO_TAG_KEYS:
-        value = configuration.get(key)
-        if not value:
-            continue
-        tags[key] = str(value)
-    return tags
 
 
 class DatadogApiListener:
@@ -154,21 +128,11 @@ class DatadogApiListener:
 
     def _request_tags(self, name, request_type, status_code, context):
         """Build the common tag set for request metrics."""
-        configuration = getattr(
-            getattr(self.environment, "grasshopper", None),
-            "global_configuration",
-            {},
-        )
         context_tags = {
             key: context[key]
-            for key in ("test_type", "success", *DATADOG_SCENARIO_TAG_KEYS)
-            if context and context.get(key) not in (None, "")
+            for key in (context or {})
+            if key not in _DATADOG_EXCLUDED_TAGS and context.get(key) not in (None, "")
         }
-        for key, value in _configured_datadog_tags(configuration).items():
-            context_tags.setdefault(key, value)
-
-        if isinstance(configuration, dict) and configuration.get("scenario_name"):
-            context_tags["scenario_name"] = str(configuration["scenario_name"])
 
         trend_name = active_trend_name()
         if (
@@ -218,11 +182,7 @@ class DatadogApiListener:
     ):
         """Record numeric custom fields as Datadog gauge metrics."""
         timestamp = self._unix_timestamp(time)
-        metric_tags = self.default_tags | {
-            key: value
-            for key, value in (tags or {}).items()
-            if key in DATADOG_TAG_KEYS and value is not None and value != ""
-        }
+        metric_tags = self.default_tags | (tags or {})
         for field_name, value in fields.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 self._buffer_metric(
@@ -242,6 +202,7 @@ class DatadogApiListener:
         timestamp: int | None = None,
     ):
         """Append one Datadog series payload and flush when the batch is full."""
+        tags = self._datadog_tags(tags)
         metric_path = (
             f"{self.namespace}.{metric_name}" if self.namespace else metric_name
         )
@@ -251,7 +212,7 @@ class DatadogApiListener:
                 "type": metric_type,
                 "points": [[timestamp or self._unix_timestamp(), value]],
                 "tags": [
-                    f"{key}:{value}" for key, value in tags.items() if value is not None
+                    f"{key}:{value}" for key, value in tags.items()
                 ],
             }
         )
@@ -262,6 +223,7 @@ class DatadogApiListener:
         self, metric_name: str, value: float, tags: dict, timestamp: int | None = None
     ):
         """Append one Datadog distribution point for percentile aggregation."""
+        tags = self._datadog_tags(tags)
         metric_path = (
             f"{self.namespace}.{metric_name}" if self.namespace else metric_name
         )
@@ -271,7 +233,7 @@ class DatadogApiListener:
                 "type": "distribution",
                 "points": [[timestamp or self._unix_timestamp(), [value]]],
                 "tags": [
-                    f"{key}:{value}" for key, value in tags.items() if value is not None
+                    f"{key}:{value}" for key, value in tags.items()
                 ],
             }
         )
@@ -285,14 +247,15 @@ class DatadogApiListener:
 
     def flush(self):
         """Flush buffered metrics to the Datadog API in batches."""
-        while self.series_buffer:
-            batch = self.series_buffer[: self.batch_size]
-            del self.series_buffer[: self.batch_size]
-            self._submit_series(batch)
-        while self.distribution_buffer:
-            batch = self.distribution_buffer[: self.batch_size]
-            del self.distribution_buffer[: self.batch_size]
-            self._submit_distributions(batch)
+        while self.series_buffer or self.distribution_buffer:
+            if self.series_buffer:
+                batch = self.series_buffer[: self.batch_size]
+                del self.series_buffer[: self.batch_size]
+                self._submit_series(batch)
+            if self.distribution_buffer:
+                batch = self.distribution_buffer[: self.batch_size]
+                del self.distribution_buffer[: self.batch_size]
+                self._submit_distributions(batch)
 
     def _submit_series(self, series_batch: list[dict]):
         """Submit one already-built Datadog series batch."""
@@ -343,6 +306,11 @@ class DatadogApiListener:
         try:
             with request.urlopen(api_request, timeout=15) as response:
                 response.read()
+                logger.info(
+                    "Submitted %s Datadog distribution points to `%s`.",
+                    len(distribution_batch),
+                    self.site,
+                )
         except error.HTTPError as exc:
             logger.warning(
                 "Datadog distribution submission failed with HTTP %s for `%s`: %s",
@@ -366,3 +334,12 @@ class DatadogApiListener:
                 timestamp_source = timestamp_source.replace(tzinfo=timezone.utc)
             return int(timestamp_source.timestamp())
         return int(timestamp_source)
+
+    @staticmethod
+    def _datadog_tags(tags):
+        """Remove empty and explicitly sensitive tags before submission."""
+        return {
+            key: value
+            for key, value in tags.items()
+            if key not in _DATADOG_EXCLUDED_TAGS and value not in (None, "")
+        }
