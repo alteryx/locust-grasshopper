@@ -36,6 +36,6 @@ jobs:
             3.13
             3.14
             3.15
-      - run: pip install "tox==4.67.1"
+      - run: pip install "tox==4.65.0"
       - name: Run unit tests
         run: tox run --skip-missing-interpreters false

@@ -52,7 +52,7 @@ dev = [
     "pytest-cov == 7.1.0",
     "pytest-mock == 3.17.0",
     "requests-mock == 1.12.1",
-    "tox == 4.67.1",
+    "tox == 4.65.0",
 
     # Linting and formatting
     "ruff == 0.17.2",
