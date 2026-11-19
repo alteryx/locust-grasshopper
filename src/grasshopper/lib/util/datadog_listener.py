@@ -12,6 +12,7 @@ from locust.env import Environment
 
 logger = logging.getLogger()
 
+
 class DatadogApiListener:
     """Forward Locust and custom metrics to the Datadog metrics API."""
 
@@ -204,9 +205,7 @@ class DatadogApiListener:
                 "metric": metric_path,
                 "type": metric_type,
                 "points": [[timestamp or self._unix_timestamp(), value]],
-                "tags": [
-                    f"{key}:{value}" for key, value in tags.items()
-                ],
+                "tags": [f"{key}:{value}" for key, value in tags.items()],
             }
         )
         if len(self.series_buffer) >= self.batch_size:
@@ -225,9 +224,7 @@ class DatadogApiListener:
                 "metric": metric_path,
                 "type": "distribution",
                 "points": [[timestamp or self._unix_timestamp(), [value]]],
-                "tags": [
-                    f"{key}:{value}" for key, value in tags.items()
-                ],
+                "tags": [f"{key}:{value}" for key, value in tags.items()],
             }
         )
         if len(self.distribution_buffer) >= self.batch_size:
@@ -331,8 +328,4 @@ class DatadogApiListener:
     @staticmethod
     def _datadog_tags(tags):
         """Remove empty tags before submission."""
-        return {
-            key: value
-            for key, value in tags.items()
-            if value not in (None, "")
-        }
+        return {key: value for key, value in tags.items() if value not in (None, "")}

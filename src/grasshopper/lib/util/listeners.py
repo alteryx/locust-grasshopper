@@ -110,12 +110,17 @@ class GrasshopperListeners:
         self._send_to_datadog("shutdown", "close")
 
     @staticmethod
-    def _user_metric_tags(environment):
+    def _global_configuration(environment):
+        """Return the configured Grasshopper scenario metadata."""
+        configuration = getattr(
+            getattr(environment, "grasshopper", None), "global_configuration", {}
+        )
+        return configuration if isinstance(configuration, dict) else {}
+
+    @classmethod
+    def _user_metric_tags(cls, environment):
         """Return low-cardinality tags for environment-level load metrics."""
-        grasshopper = getattr(environment, "grasshopper", None)
-        configuration = getattr(grasshopper, "global_configuration", {})
-        if not isinstance(configuration, dict):
-            configuration = {}
+        configuration = cls._global_configuration(environment)
         test_type = configuration.get("test_type") or "exploratory"
         tags = {"test_type": str(test_type), "scope": "environment"}
         scenario_name = configuration.get("scenario_name")
@@ -123,28 +128,18 @@ class GrasshopperListeners:
             tags["scenario_name"] = str(scenario_name)
         return tags
 
-    @staticmethod
-    def _configured_scenario_name(environment):
+    @classmethod
+    def _configured_scenario_name(cls, environment):
         """Return the configured scenario name, when one is available."""
-        configuration = getattr(
-            getattr(environment, "grasshopper", None), "global_configuration", {}
-        )
-        scenario_name = (
-            configuration.get("scenario_name")
-            if isinstance(configuration, dict)
-            else None
-        )
+        scenario_name = cls._global_configuration(environment).get("scenario_name")
         return str(scenario_name) if scenario_name else None
 
-    @staticmethod
-    def _configured_users(environment):
+    @classmethod
+    def _configured_users(cls, environment):
         shape = getattr(environment, "shape_class", None)
         users = getattr(shape, "users", None)
         if not isinstance(users, (int, float)):
-            configuration = getattr(
-                getattr(environment, "grasshopper", None), "global_configuration", {}
-            )
-            users = configuration.get("users") if isinstance(configuration, dict) else None
+            users = cls._global_configuration(environment).get("users")
         return users if isinstance(users, (int, float)) else None
 
     def _start_user_metrics(self, environment):

@@ -179,9 +179,7 @@ def test_datadog_listener_uses_actual_request_name_tag():
 def test_request_metrics_use_configured_scenario_for_composite_journeys():
     env = MagicMock()
     env.host = "https://perf.example"
-    env.grasshopper.global_configuration = {
-        "scenario_name": "datasets_cuj_spike_test"
-    }
+    env.grasshopper.global_configuration = {"scenario_name": "datasets_cuj_spike_test"}
     listener = DatadogApiListener(environment=env, api_key="secret")
 
     listener.on_request(
@@ -371,9 +369,9 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
         "jobgroup_status": "COMPLETE",
         "file_format": "delimited_text",
         "execution_engine": "amp",
-            "workflow_complexity": "typical",
-            "jobgroup_id": "do-not-emit",
-        }
+        "workflow_complexity": "typical",
+        "jobgroup_id": "do-not-emit",
+    }
 
 
 def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
