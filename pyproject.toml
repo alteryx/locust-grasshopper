@@ -85,7 +85,7 @@ legacy_tox_ini = """
     min_version = 4.0
     env_list =
         py{310,311}-locustmin
-        py{310,311,312,313,314,315}-locustcurrent
+        py{311,312,313,314,315}-locustcurrent
     skip_missing_interpreters = true
 
     [testenv]
