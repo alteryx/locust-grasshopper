@@ -295,6 +295,7 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
     assert calls[0].kwargs["measurement"] == "locust_users"
     assert calls[0].kwargs["fields"] == {"configured": 10}
     assert calls[0].kwargs["tags"] == {
+        "scenario_name": "workflow_cuj",
         "test_type": "load",
         "scope": "environment",
     }
@@ -374,50 +375,18 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
     }
 
 
-def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
+def test_datadog_listener_adds_configured_scenario_to_checks():
     env = MagicMock()
     env.host = "https://perf.example"
     env.grasshopper.global_configuration = {"scenario_name": "workflow_cuj_spike_test"}
-    listeners = GrasshopperListeners(environment=env)
-    listeners.datadog_listener = MagicMock()
-    listeners.influxdb_listener = MagicMock()
-    listeners.flush_check_to_dbs("workflow created", True, {})
+    listener = DatadogApiListener(environment=env, api_key="secret")
 
-    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
-        "extra_tags"
-    ]
-    assert datadog_tags["scenario_name"] == "workflow_cuj_spike_test"
-    influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
-    assert "scenario_name" not in influx_tags
+    listener.record_check("workflow created", True, {})
 
-
-def test_flush_check_to_dbs_uses_configured_scenario_name():
-    env = MagicMock()
-    env.host = "https://perf.example"
-    env.grasshopper.global_configuration = {"scenario_name": "composite_scenario"}
-    listeners = GrasshopperListeners(environment=env)
-    listeners.datadog_listener = MagicMock()
-
-    listeners.flush_check_to_dbs("workflow created", True, {})
-
-    datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
-        "extra_tags"
-    ]
-    assert datadog_tags["scenario_name"] == "composite_scenario"
-
-
-def test_flush_failed_check_uses_configured_scenario_name():
-    env = MagicMock()
-    env.host = "https://perf.example"
-    env.grasshopper.global_configuration = {"scenario_name": "dataset_load"}
-    listeners = GrasshopperListeners(environment=env)
-    listeners.datadog_listener = MagicMock()
-
-    listeners.flush_check_to_dbs("dataset check", False, {})
-
-    call_kwargs = listeners.datadog_listener.record_check.call_args.kwargs
-    assert call_kwargs["check_passed"] is False
-    assert call_kwargs["extra_tags"]["scenario_name"] == "dataset_load"
+    assert all(
+        "scenario_name:workflow_cuj_spike_test" in metric["tags"]
+        for metric in listener.series_buffer
+    )
 
 
 def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():

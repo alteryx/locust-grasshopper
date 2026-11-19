@@ -129,12 +129,6 @@ class GrasshopperListeners:
         return tags
 
     @classmethod
-    def _configured_scenario_name(cls, environment):
-        """Return the configured scenario name, when one is available."""
-        scenario_name = cls._global_configuration(environment).get("scenario_name")
-        return str(scenario_name) if scenario_name else None
-
-    @classmethod
     def _configured_users(cls, environment):
         shape = getattr(environment, "shape_class", None)
         users = getattr(shape, "users", None)
@@ -188,17 +182,6 @@ class GrasshopperListeners:
             tags=self._user_metric_tags(environment),
         )
 
-    def _datadog_tags(self, tags):
-        """Add the configured scenario without changing InfluxDB tags."""
-        datadog_tags = dict(tags)
-        if tags.get("scope") == "environment":
-            datadog_tags.pop("scenario_name", None)
-        else:
-            scenario_name = self._configured_scenario_name(self.locust_environment)
-            if scenario_name:
-                datadog_tags["scenario_name"] = scenario_name
-        return datadog_tags
-
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
         environment_base_url = self.locust_environment.host
@@ -219,7 +202,7 @@ class GrasshopperListeners:
             "record_check",
             check_name=check_name,
             check_passed=check_passed,
-            extra_tags=self._datadog_tags(tags),
+            extra_tags=tags,
             time=time,
         )
 
@@ -244,7 +227,7 @@ class GrasshopperListeners:
             measurement=measurement,
             fields=fields,
             time=time,
-            tags=self._datadog_tags(metric_tags),
+            tags=metric_tags,
         )
 
     def _send_to_datadog(self, operation: str, method_name: str, *args, **kwargs):

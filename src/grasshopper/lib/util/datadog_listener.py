@@ -113,30 +113,10 @@ class DatadogApiListener:
 
     def _request_tags(self, name, request_type, status_code, context):
         """Build the common tag set for request metrics."""
-        context_tags = {
-            key: context[key]
-            for key in (context or {})
-            if context.get(key) not in (None, "")
-        }
-        configuration = getattr(
-            getattr(self.environment, "grasshopper", None),
-            "global_configuration",
-            {},
-        )
-        if isinstance(configuration, dict):
-            scenario_name = configuration.get("scenario_name")
-            if scenario_name:
-                context_tags["scenario_name"] = str(scenario_name)
-
-        trend_name = active_trend_name()
-        if (
-            not trend_name
-            and request_type == "CUSTOM"
-            and str(name).startswith("PX_TREND_")
-        ):
-            trend_name = str(name)
+        context_tags = self._non_empty_tags(context)
+        trend_name = self._trend_name(name, request_type)
         if trend_name:
-            context_tags["trend_name"] = str(trend_name)
+            context_tags["trend_name"] = trend_name
 
         return (
             self.default_tags
@@ -149,6 +129,37 @@ class DatadogApiListener:
                 "code": str(status_code) if status_code is not None else None,
             }
         )
+
+    def _configured_scenario_name(self):
+        """Return the configured scenario name, when one is available."""
+        configuration = getattr(
+            getattr(self.environment, "grasshopper", None),
+            "global_configuration",
+            {},
+        )
+        scenario_name = (
+            configuration.get("scenario_name")
+            if isinstance(configuration, dict)
+            else None
+        )
+        return str(scenario_name) if scenario_name else None
+
+    @staticmethod
+    def _non_empty_tags(tags):
+        return {
+            key: value for key, value in (tags or {}).items() if value not in (None, "")
+        }
+
+    @staticmethod
+    def _trend_name(name, request_type):
+        trend_name = active_trend_name()
+        if (
+            not trend_name
+            and request_type == "CUSTOM"
+            and str(name).startswith("PX_TREND_")
+        ):
+            trend_name = name
+        return str(trend_name) if trend_name else None
 
     def record_check(
         self, check_name: str, check_passed: bool, extra_tags: dict, time=None
@@ -325,7 +336,11 @@ class DatadogApiListener:
             return int(timestamp_source.timestamp())
         return int(timestamp_source)
 
-    @staticmethod
-    def _datadog_tags(tags):
-        """Remove empty tags before submission."""
-        return {key: value for key, value in tags.items() if value not in (None, "")}
+    def _datadog_tags(self, tags):
+        """Normalize tags shared by all Datadog metric paths."""
+        normalized = self._non_empty_tags(tags)
+        if normalized.get("scope") == "environment":
+            normalized.pop("scenario_name", None)
+        elif scenario_name := self._configured_scenario_name():
+            normalized["scenario_name"] = scenario_name
+        return normalized
