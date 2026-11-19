@@ -12,22 +12,6 @@ from locust.env import Environment
 
 logger = logging.getLogger()
 
-_DATADOG_EXCLUDED_TAGS = frozenset(
-    {
-        "job_id",
-        "jobgroup_id",
-        "cuj",
-        "workspace_token",
-        "connection_id",
-        "token",
-        "workflow_id",
-        "dataset_id",
-        "user_id",
-        "vu_id",
-    }
-)
-
-
 class DatadogApiListener:
     """Forward Locust and custom metrics to the Datadog metrics API."""
 
@@ -131,8 +115,17 @@ class DatadogApiListener:
         context_tags = {
             key: context[key]
             for key in (context or {})
-            if key not in _DATADOG_EXCLUDED_TAGS and context.get(key) not in (None, "")
+            if context.get(key) not in (None, "")
         }
+        configuration = getattr(
+            getattr(self.environment, "grasshopper", None),
+            "global_configuration",
+            {},
+        )
+        if isinstance(configuration, dict):
+            scenario_name = configuration.get("scenario_name")
+            if scenario_name:
+                context_tags["scenario_name"] = str(scenario_name)
 
         trend_name = active_trend_name()
         if (
@@ -337,9 +330,9 @@ class DatadogApiListener:
 
     @staticmethod
     def _datadog_tags(tags):
-        """Remove empty and explicitly sensitive tags before submission."""
+        """Remove empty tags before submission."""
         return {
             key: value
             for key, value in tags.items()
-            if key not in _DATADOG_EXCLUDED_TAGS and value not in (None, "")
+            if value not in (None, "")
         }

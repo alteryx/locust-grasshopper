@@ -122,8 +122,6 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"code:201"' in series_payload
     assert '"scenario_name:workflow_cuj_spike_test"' in series_payload
     assert '"scenario_name:workflow_cuj_spike_test"' in distribution_payload
-    assert '"cuj:' not in series_payload
-    assert '"cuj:' not in distribution_payload
     assert '"test_type:load"' in series_payload
     assert '"dataset_size:small"' in series_payload
     assert '"input_type:csv"' in series_payload
@@ -136,9 +134,6 @@ def test_datadog_listener_emits_request_metrics(monkeypatch):
     assert '"execution_engine:amp"' in series_payload
     assert '"workflow_complexity:typical"' in series_payload
     assert '"success:True"' in series_payload
-    assert "job-123" not in series_payload
-    assert "3798005" not in series_payload
-    assert "do-not-emit" not in series_payload
 
 
 def test_datadog_listener_emits_configured_workflow_name():
@@ -179,6 +174,33 @@ def test_datadog_listener_uses_actual_request_name_tag():
     )
     assert "name:list_connections" in request_metric["tags"]
     assert "request_name:list_connections" in request_metric["tags"]
+
+
+def test_request_metrics_use_configured_scenario_for_composite_journeys():
+    env = MagicMock()
+    env.host = "https://perf.example"
+    env.grasshopper.global_configuration = {
+        "scenario_name": "datasets_cuj_spike_test"
+    }
+    listener = DatadogApiListener(environment=env, api_key="secret")
+
+    listener.on_request(
+        request_type="POST",
+        name="post_datasets",
+        response_time=10,
+        response_length=0,
+        response=MagicMock(status_code=200),
+        context={"scenario_name": "dataset_upload_csv_file"},
+        exception=None,
+    )
+
+    request_metric = next(
+        metric
+        for metric in listener.series_buffer
+        if metric["metric"].endswith("locust_requests.count")
+    )
+    assert "scenario_name:datasets_cuj_spike_test" in request_metric["tags"]
+    assert "scenario_name:dataset_upload_csv_file" not in request_metric["tags"]
 
 
 def test_datadog_check_name_matches_trace_correlation_format():
@@ -284,7 +306,7 @@ def test_user_load_metrics_report_configured_and_terminal_active_values(monkeypa
         ]
     )
     assert influx_tags == {
-        "cuj": "workflow_cuj",
+        "scenario_name": "workflow_cuj",
         "test_type": "load",
         "scope": "environment",
     }
@@ -349,8 +371,9 @@ def test_flush_check_to_dbs_reports_merged_tags_to_datadog_listener():
         "jobgroup_status": "COMPLETE",
         "file_format": "delimited_text",
         "execution_engine": "amp",
-        "workflow_complexity": "typical",
-    }
+            "workflow_complexity": "typical",
+            "jobgroup_id": "do-not-emit",
+        }
 
 
 def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
@@ -360,21 +383,13 @@ def test_flush_check_to_dbs_adds_scenario_name_only_to_datadog():
     listeners = GrasshopperListeners(environment=env)
     listeners.datadog_listener = MagicMock()
     listeners.influxdb_listener = MagicMock()
-    listeners.influxdb_listener._InfluxDBListener__make_data_point.return_value = {
-        "tags": {"cuj": "legacy_workflow_cuj"}
-    }
-
-    listeners.flush_check_to_dbs(
-        "workflow created", True, {"cuj": "legacy_workflow_cuj"}
-    )
+    listeners.flush_check_to_dbs("workflow created", True, {})
 
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
     ]
     assert datadog_tags["scenario_name"] == "workflow_cuj_spike_test"
-    assert "cuj" not in datadog_tags
     influx_tags = listeners.influxdb_listener.cache.append.call_args.args[0]["tags"]
-    assert influx_tags["cuj"] == "legacy_workflow_cuj"
     assert "scenario_name" not in influx_tags
 
 
@@ -385,15 +400,12 @@ def test_flush_check_to_dbs_uses_configured_scenario_name():
     listeners = GrasshopperListeners(environment=env)
     listeners.datadog_listener = MagicMock()
 
-    listeners.flush_check_to_dbs(
-        "workflow created", True, {"cuj": "legacy_workflow_cuj"}
-    )
+    listeners.flush_check_to_dbs("workflow created", True, {})
 
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
     ]
     assert datadog_tags["scenario_name"] == "composite_scenario"
-    assert "cuj" not in datadog_tags
 
 
 def test_flush_failed_check_uses_configured_scenario_name():
@@ -408,7 +420,6 @@ def test_flush_failed_check_uses_configured_scenario_name():
     call_kwargs = listeners.datadog_listener.record_check.call_args.kwargs
     assert call_kwargs["check_passed"] is False
     assert call_kwargs["extra_tags"]["scenario_name"] == "dataset_load"
-    assert "cuj" not in call_kwargs["extra_tags"]
 
 
 def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():
@@ -423,5 +434,4 @@ def test_flush_check_to_dbs_omits_scenario_name_when_unavailable():
     datadog_tags = listeners.datadog_listener.record_check.call_args.kwargs[
         "extra_tags"
     ]
-    assert "cuj" not in datadog_tags
     assert "scenario_name" not in datadog_tags

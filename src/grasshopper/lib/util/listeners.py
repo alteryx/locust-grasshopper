@@ -124,6 +124,19 @@ class GrasshopperListeners:
         return tags
 
     @staticmethod
+    def _configured_scenario_name(environment):
+        """Return the configured scenario name, when one is available."""
+        configuration = getattr(
+            getattr(environment, "grasshopper", None), "global_configuration", {}
+        )
+        scenario_name = (
+            configuration.get("scenario_name")
+            if isinstance(configuration, dict)
+            else None
+        )
+        return str(scenario_name) if scenario_name else None
+
+    @staticmethod
     def _configured_users(environment):
         shape = getattr(environment, "shape_class", None)
         users = getattr(shape, "users", None)
@@ -182,16 +195,13 @@ class GrasshopperListeners:
 
     def _datadog_tags(self, tags):
         """Add the configured scenario without changing InfluxDB tags."""
-        datadog_tags = {key: value for key, value in tags.items() if key != "cuj"}
-        configuration = getattr(
-            getattr(self.locust_environment, "grasshopper", None),
-            "global_configuration",
-            {},
-        )
-        if tags.get("scope") != "environment" and isinstance(configuration, dict):
-            scenario_name = configuration.get("scenario_name")
+        datadog_tags = dict(tags)
+        if tags.get("scope") == "environment":
+            datadog_tags.pop("scenario_name", None)
+        else:
+            scenario_name = self._configured_scenario_name(self.locust_environment)
             if scenario_name:
-                datadog_tags["scenario_name"] = str(scenario_name)
+                datadog_tags["scenario_name"] = scenario_name
         return datadog_tags
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
