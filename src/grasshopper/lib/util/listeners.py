@@ -7,6 +7,7 @@ import logging
 import warnings
 from datetime import datetime, timezone
 
+import gevent
 from grasshopper.lib.util.check_constants import CheckConstants
 from grasshopper.lib.util.datadog_listener import DatadogApiListener
 from grasshopper.lib.util.utils import (
@@ -42,11 +43,16 @@ class GrasshopperListeners:
         environment.events.test_start.add_listener(self.on_test_start)
         environment.events.test_stop.add_listener(self.on_test_stop_append_metric_data)
         self.locust_environment = environment
+        self._user_metrics_greenlet = None
 
     @events.test_start.add_listener
     def on_test_start(self, environment: Environment, **_kwargs):
         """Create a listener for the test start event, starts an influxdb connection."""
-        influx_configuration = environment.grasshopper.influx_configuration
+        grasshopper = getattr(environment, "grasshopper", None)
+        if grasshopper is None:
+            return
+
+        influx_configuration = grasshopper.influx_configuration
         influx_host = influx_configuration.get("influx_host")
 
         if influx_host:
@@ -67,7 +73,7 @@ class GrasshopperListeners:
                 "initialization..."
             )
 
-        datadog_configuration = environment.grasshopper.datadog_configuration
+        datadog_configuration = grasshopper.datadog_configuration
         api_key = datadog_configuration.get("api_key")
         if api_key:
             logger.info(
@@ -83,10 +89,12 @@ class GrasshopperListeners:
                 "DD_API_KEY and DD_ENV were not both specified. "
                 "Skipping Datadog listener initialization..."
             )
+        self._start_user_metrics(environment)
 
     @events.test_stop.add_listener
     def on_test_stop_append_metric_data(self, environment, **_kwargs):
         """Create a listener which appends metrics to the environment.stats object."""
+        self._stop_user_metrics(environment)
         try:
             self._append_trend_data(environment)
         except Exception as e:  # noqa: BLE001
@@ -100,6 +108,79 @@ class GrasshopperListeners:
                 f"Unexpected exception appending trend data to environment object: {e}"
             )
         self._send_to_datadog("shutdown", "close")
+
+    @staticmethod
+    def _global_configuration(environment):
+        """Return the configured Grasshopper scenario metadata."""
+        configuration = getattr(
+            getattr(environment, "grasshopper", None), "global_configuration", {}
+        )
+        return configuration if isinstance(configuration, dict) else {}
+
+    @classmethod
+    def _user_metric_tags(cls, environment):
+        """Return low-cardinality tags for environment-level load metrics."""
+        configuration = cls._global_configuration(environment)
+        test_type = configuration.get("test_type") or "exploratory"
+        tags = {"test_type": str(test_type), "scope": "environment"}
+        scenario_name = configuration.get("scenario_name")
+        if scenario_name:
+            tags["scenario_name"] = str(scenario_name)
+        return tags
+
+    @classmethod
+    def _configured_users(cls, environment):
+        shape = getattr(environment, "shape_class", None)
+        users = getattr(shape, "users", None)
+        if not isinstance(users, (int, float)):
+            users = cls._global_configuration(environment).get("users")
+        return users if isinstance(users, (int, float)) else None
+
+    def _start_user_metrics(self, environment):
+        """Publish configured load and sample active users during the run."""
+        if self._user_metrics_greenlet is not None:
+            self._user_metrics_greenlet.kill(block=False)
+            self._user_metrics_greenlet = None
+
+        if self.datadog_listener is None and self.influxdb_listener is None:
+            return
+
+        configured_users = self._configured_users(environment)
+        if configured_users is not None:
+            self.write_metric_point(
+                "locust_users",
+                {"configured": int(configured_users)},
+                tags=self._user_metric_tags(environment),
+            )
+
+        runner = getattr(environment, "runner", None)
+        if runner is None:
+            return
+        self._user_metrics_greenlet = gevent.spawn(
+            self._sample_active_users, environment
+        )
+
+    def _sample_active_users(self, environment):
+        while True:
+            runner = getattr(environment, "runner", None)
+            active_users = getattr(runner, "user_count", 0)
+            self.write_metric_point(
+                "locust_users",
+                {"active": int(active_users)},
+                tags=self._user_metric_tags(environment),
+            )
+            gevent.sleep(1)
+
+    def _stop_user_metrics(self, environment):
+        """Stop active-user sampling and publish the terminal zero point."""
+        if self._user_metrics_greenlet is not None:
+            self._user_metrics_greenlet.kill(block=False)
+            self._user_metrics_greenlet = None
+        self.write_metric_point(
+            "locust_users",
+            {"active": 0},
+            tags=self._user_metric_tags(environment),
+        )
 
     def flush_check_to_dbs(self, check_name: str, check_passed: bool, extra_tags: dict):
         """Flush a check datapoint to whatever grasshopper dbs are being used."""
